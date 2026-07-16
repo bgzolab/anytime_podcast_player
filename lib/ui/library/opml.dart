@@ -24,8 +24,10 @@ class _OPMLSelectState extends State<OPMLSelect> {
         return _buildAndroid(context);
       case TargetPlatform.iOS:
         return _buildIos(context);
-      default:
-        assert(false, 'Unexpected platform $defaultTargetPlatform');
+      case TargetPlatform.windows:
+      case TargetPlatform.linux:
+      case TargetPlatform.macOS:
+      case TargetPlatform.fuchsia:
         return _buildAndroid(context);
     }
   }

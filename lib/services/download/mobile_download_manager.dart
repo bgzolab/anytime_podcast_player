@@ -9,6 +9,7 @@ import 'dart:ui';
 import 'package:anytime/core/environment.dart';
 import 'package:anytime/entities/downloadable.dart';
 import 'package:anytime/services/download/download_manager.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:logging/logging.dart';
 
@@ -31,7 +32,13 @@ class MobileDownloaderManager implements DownloadManager {
   Future _init() async {
     log.fine('Initialising download manager');
 
-    await FlutterDownloader.initialize();
+    try {
+      await FlutterDownloader.initialize();
+    } on MissingPluginException catch (e) {
+      log.warning('Download manager not available on this platform: $e');
+      return;
+    }
+
     IsolateNameServer.removePortNameMapping(portName);
 
     IsolateNameServer.registerPortWithName(_port.sendPort, portName);

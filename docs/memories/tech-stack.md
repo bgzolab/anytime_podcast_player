@@ -167,6 +167,8 @@ flutter_lints: ^4.0.0       # lint 规则
 ```
 test/
 ├── unit/
+│   ├── bloc/
+│   │   └── timeline_bloc_test.dart   # 时间线 BLoC：分页、排序、日期筛选、错误处理
 │   ├── core/environment_test.dart
 │   ├── navigation/navigation_route_observer_test.dart
 │   ├── persistence/sembast_test.dart

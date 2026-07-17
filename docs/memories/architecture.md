@@ -64,10 +64,11 @@ Anytime 是一个移动端播客播放器（Android & iOS），使用 **Dart/Flu
 lib/ui/
 ├── anytime_podcast_app.dart   # 根组件：Provider 注入、主题、导航
 ├── themes.dart                # 浅色/深色主题（橙色强调色）
-├── library/                   # 三个主标签页
+├── library/                   # 四个主标签页
 │   ├── library_page.dart      #   订阅库
 │   ├── discovery_page.dart    #   发现/排行榜
-│   └── downloads_page.dart    #   下载管理
+│   ├── downloads_page.dart    #   下载管理
+│   ├── timeline.dart          #   时间线（所有订阅播客的剧集，按日期分组）
 │   └── opml_import_page.dart  # OPML 导入
 │   └── opml_export_page.dart  # OPML 导出
 ├── podcast/                   # 播客详情 & 播放器
@@ -105,6 +106,8 @@ lib/ui/
 ```
 lib/bloc/
 ├── bloc.dart                  # 抽象 Bloc 基类（BehaviorSubject 生命周期）
+├── timeline/
+│   └── timeline_bloc.dart     # 时间线：分页加载、日期筛选、排序切换
 ├── podcast/
 │   ├── audio_bloc.dart        # 音频播放状态：播放/暂停/进度/速度
 │   ├── episode_bloc.dart      # 剧集列表：过滤/排序/更新/删除
@@ -192,10 +195,12 @@ lib/api/podcast/
 lib/repository/
 ├── repository.dart            # 抽象 Repository 接口
 │   CRUD: save/find/findAll/delete 按类型（Podcast, Episode 等）
+│   分页查询：findEpisodesBefore() / countEpisodesSince()（时间线使用）
 └── sembast/
     ├── sembast_repository.dart      # Sembast (NoSQL) 实现
     │   ├── 上层覆盖了内存播客缓存 → 先查缓存再查 DB
-    │   └── 按 Podcast / Episode / Queue 分类存储
+    │   ├── 按 Podcast / Episode / Queue 分类存储
+    │   └── 分页查询基于 Sembast Finder.limit + Filter.lessThan(publicationDate)
     └── sembast_database_service.dart # 数据库辅助：版本管理、数据迁移
 ```
 
@@ -272,6 +277,7 @@ MultiProvider(
     ChangeNotifierProvider(SettingsBloc),
     ChangeNotifierProvider(OpmlBloc),
     ChangeNotifierProvider(QueueBloc),
+    ChangeNotifierProvider(TimelineBloc),  // 时间线：分页加载 + 日期筛选
   ],
   child: MaterialApp(...),
 )
@@ -301,7 +307,8 @@ MaterialApp
   └── AnytimeHomePage (底部导航)
         ├── Tab 0: LibraryPage (订阅库)
         ├── Tab 1: DiscoveryPage (发现)
-        └── Tab 2: DownloadsPage (下载)
+        ├── Tab 2: DownloadsPage (下载)
+        ├── Tab 3: Timeline (时间线) ← 按日期排列所有订阅剧集
         └── MiniPlayer (浮动底部)
   ├── PodcastPage (播客详情) ← 从订阅/搜索/发现进入
   ├── NowPlayingPage (全屏播放) ← 点击 MiniPlayer 进入

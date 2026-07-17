@@ -53,6 +53,8 @@ BLoC ( receives Event ) → 处理 → BehaviorSubject.add(State)
                                   UI 通过 StreamBuilder 渲染
 ```
 
+**注意：** 多数 BLoC（如 `EpisodeBloc`）暴露的是 `switchMap` 返回的原始 `Stream`，不缓存状态。`TimelineBloc` 例外——它把 `switchMap` 输出管道到 `BehaviorSubject`，确保晚订阅的 Widget（如 Tab 切换后首次渲染）也能收到最新状态，避免 blank screen。
+
 **事件约定：**
 - BLoC 的 `eventSink` 接收事件对象（如 `PodcastEvent.refreshSubscriptions`）
 - 事件使用 `freezed`-like 模式（手写 sealed class）
@@ -111,6 +113,12 @@ AnytimePodcastApp (StatefulWidget)
             │    └── 排行榜列表 → PodcastTile → PodcastPage
             ├── DownloadsPage (Tab 2)
             │    └── 已下载剧集列表
+            ├── Timeline (Tab 3)
+            │    ├── 按日期分组的剧集列表（Today / Yesterday / This Week / 完整日期）
+            │    ├── 工具栏：刷新按钮 + 排序切换（最新/最早）
+            │    ├── 无限滚动：滚到底自动加载更多
+            │    ├── 日期筛选：点击日期头 → showDatePicker → 只显示当天剧集
+            │    └── Empty/Loading/Error 状态
             └── MiniPlayer (浮动底部条)
                  ├── 播客封面缩略图 + 标题
                  ├── 播放/暂停按钮

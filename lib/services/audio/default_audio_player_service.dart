@@ -461,11 +461,13 @@ class DefaultAudioPlayerService extends AudioPlayerService {
   Future<void> suspend() async {
     _stopPositionTicker();
 
-    // Persist state for cold-start recovery and stop the player to prevent
-    // ExoPlayer from continuing to stream audio in the background while the
-    // app is suspended. This saves the user's mobile data.
-    _persistState();
-    await _audioHandler.stop();
+    // Only persist state and stop the player when not actively playing.
+    // If the user is listening, allow background playback to continue.
+    // Stopping an actively playing stream would kill background audio.
+    if (!_audioHandler.playbackState.value.playing) {
+      _persistState();
+      await _audioHandler.stop();
+    }
   }
 
   @override

@@ -531,6 +531,23 @@ class DefaultAudioPlayerService extends AudioPlayerService {
     _queueState.add(QueueListState(playing: _currentEpisode, queue: _queue));
   }
 
+  /// Normalizes [url] by collapsing multiple consecutive slashes in the path
+  /// into a single slash. This works around a [just_audio] proxy server bug
+  /// where double slashes (e.g. `//path/file.m4a`) cause the HTTP server to
+  /// misparse the request URI as an empty path with an authority, making the
+  /// handler lookup fail with a null check error.
+  ///
+  /// See also: [https://github.com/ryanheise/just_audio/issues]
+  String _normalizeAudioUrl(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null || !uri.hasScheme) return url;
+
+    final normalizedPath = uri.path.replaceAll(RegExp(r'/{2,}'), '/');
+    if (normalizedPath == uri.path) return url;
+
+    return uri.replace(path: normalizedPath).toString();
+  }
+
   Future<String?> _generateEpisodeUri(Episode episode) async {
     var uri = episode.contentUrl;
 
@@ -538,6 +555,8 @@ class DefaultAudioPlayerService extends AudioPlayerService {
       uri = await resolvePath(episode);
 
       episode.streaming = false;
+    } else if (uri != null) {
+      uri = _normalizeAudioUrl(uri);
     }
 
     return uri;
@@ -745,30 +764,37 @@ class DefaultAudioPlayerService extends AudioPlayerService {
         _currentEpisode!.chapters = await podcastService.loadChaptersByUrl(url: _currentEpisode!.chaptersUrl!);
         _currentEpisode!.chaptersLoading = false;
       } else {
-        var mp3Info = await MP3Processor.fromUri(_currentEpisode!.contentUrl!);
+        // Attempt to parse ID3 chapters from the audio file. Some audio
+        // formats (e.g. M4A/MP4) throw InvalidMP3FileException here, which is
+        // harmless — they simply don't have embedded chapters.
+        try {
+          var mp3Info = await MP3Processor.fromUri(_currentEpisode!.contentUrl!);
 
-        if (mp3Info.id3 != null) {
-          if (mp3Info.id3?.chapters != null) {
-            final chapters = <Chapter>[];
+          if (mp3Info.id3 != null) {
+            if (mp3Info.id3?.chapters != null) {
+              final chapters = <Chapter>[];
 
-            for (var chapter in mp3Info.id3!.chapters) {
-              double startSeconds = chapter.startTime / 1000.0;
-              double endSeconds = 0.0;
+              for (var chapter in mp3Info.id3!.chapters) {
+                double startSeconds = chapter.startTime / 1000.0;
+                double endSeconds = 0.0;
 
-              if (chapter.endTime != null) {
-                endSeconds = chapter.endTime! / 1000.0;
+                if (chapter.endTime != null) {
+                  endSeconds = chapter.endTime! / 1000.0;
+                }
+
+                chapters.add(Chapter(
+                  title: chapter.title ?? '',
+                  imageUrl: null,
+                  startTime: startSeconds,
+                  endTime: endSeconds,
+                ));
               }
 
-              chapters.add(Chapter(
-                title: chapter.title ?? '',
-                imageUrl: null,
-                startTime: startSeconds,
-                endTime: endSeconds,
-              ));
+              _currentEpisode!.chapters = chapters;
             }
-
-            _currentEpisode!.chapters = chapters;
           }
+        } catch (e) {
+          log.fine('Could not parse chapter metadata (audio may not be MP3): $e');
         }
       }
 

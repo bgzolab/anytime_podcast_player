@@ -202,6 +202,15 @@ abstract class PodcastService {
 
   Future<List<Episode>> loadEpisodes();
 
+  /// Paginated: returns up to [limit] episodes published strictly before
+  /// [beforeDate], sorted newest-first. Pass the oldest [publicationDate]
+  /// from the previous page as [beforeDate] to get the next page.
+  Future<List<Episode>> loadEpisodesBefore(DateTime beforeDate, {int limit = 100});
+
+  /// Returns the number of episodes published on or after [sinceDate].
+  /// Used to compute the scroll offset for date-jump navigation.
+  Future<int> countEpisodesSince(DateTime sinceDate);
+
   Future<List<Chapter>> loadChaptersByUrl({required String url});
 
   Future<Transcript> loadTranscriptByUrl({required TranscriptUrl transcriptUrl});

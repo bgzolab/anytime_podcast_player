@@ -614,6 +614,16 @@ class MobilePodcastService extends PodcastService {
   }
 
   @override
+  Future<List<Episode>> loadEpisodesBefore(DateTime beforeDate, {int limit = 100}) async {
+    return repository.findEpisodesBefore(beforeDate, limit: limit);
+  }
+
+  @override
+  Future<int> countEpisodesSince(DateTime sinceDate) async {
+    return repository.countEpisodesSince(sinceDate);
+  }
+
+  @override
   Future<void> deleteDownload(Episode episode) async {
     // If this episode is currently downloading, cancel the download first.
     if (episode.downloadState == DownloadState.downloaded) {

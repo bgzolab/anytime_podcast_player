@@ -189,6 +189,35 @@ class SembastRepository extends Repository {
   }
 
   @override
+  Future<List<Episode>> findEpisodesBefore(DateTime beforeDate, {int limit = 100}) async {
+    final beforeMs = beforeDate.millisecondsSinceEpoch.toString();
+
+    final finder = Finder(
+      filter: Filter.lessThan('publicationDate', beforeMs),
+      sortOrders: [SortOrder('publicationDate', false)],
+      limit: limit,
+    );
+
+    final List<RecordSnapshot<int, Map<String, Object?>>> recordSnapshots =
+        await _episodeStore.find(await _db, finder: finder);
+
+    return recordSnapshots
+        .map((snapshot) => Episode.fromMap(snapshot.key, snapshot.value))
+        .toList();
+  }
+
+  @override
+  Future<int> countEpisodesSince(DateTime sinceDate) async {
+    final sinceMs = sinceDate.millisecondsSinceEpoch.toString();
+    final db = await _db;
+
+    return _episodeStore.count(
+      db,
+      filter: Filter.greaterThanOrEquals('publicationDate', sinceMs),
+    );
+  }
+
+  @override
   Future<Episode?> findEpisodeById(int? id) async {
     final finder = Finder(filter: Filter.byKey(id));
     final RecordSnapshot<int, Map<String, Object?>> snapshot =

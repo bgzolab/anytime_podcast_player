@@ -614,6 +614,10 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                     icon: index == 3 ? const Icon(Icons.download) : const Icon(Icons.download_outlined),
                     label: L.of(context)!.downloads,
                   ),
+                  BottomNavigationBarItem(
+                    icon: index == 3 ? const Icon(Icons.timeline) : const Icon(Icons.timeline_outlined),
+                    label: L.of(context)!.timeline,
+                  ),
                 ],
               );
             }),
@@ -630,8 +634,10 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
       return const Discovery(
         categories: true,
       );
-    } else {
+    } else if (index == 2) {
       return const Downloads();
+    } else {
+      return const Timeline();
     }
   }
 

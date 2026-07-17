@@ -86,6 +86,26 @@ class L {
         );
   }
 
+  String get timeline {
+    return message('timeline') ??
+        Intl.message(
+          'Timeline',
+          name: 'timeline',
+          desc: 'Timeline tab label',
+          locale: localeName,
+        );
+  }
+
+  String get no_episodes_message {
+    return message('no_episodes_message') ??
+        Intl.message(
+          'No episodes yet',
+          name: 'no_episodes_message',
+          desc: 'Displayed when the timeline has no episodes',
+          locale: localeName,
+        );
+  }
+
   /// Podcasts
   String get subscribe_button_label {
     return message('subscribe_button_label') ??

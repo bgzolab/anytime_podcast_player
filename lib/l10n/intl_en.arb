@@ -30,6 +30,18 @@
     "type": "text",
     "placeholders": {}
   },
+  "timeline": "Timeline",
+  "@timeline": {
+    "description": "Timeline tab label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "no_episodes_message": "No episodes yet",
+  "@no_episodes_message": {
+    "description": "Displayed when the timeline has no episodes",
+    "type": "text",
+    "placeholders": {}
+  },
   "subscribe_button_label": "Follow",
   "@subscribe_button_label": {
     "description": "Subscribe button label",

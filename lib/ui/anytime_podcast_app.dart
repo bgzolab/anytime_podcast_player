@@ -14,6 +14,7 @@ import 'package:anytime/bloc/podcast/podcast_bloc.dart';
 import 'package:anytime/bloc/podcast/queue_bloc.dart';
 import 'package:anytime/bloc/search/search_bloc.dart';
 import 'package:anytime/bloc/settings/settings_bloc.dart';
+import 'package:anytime/bloc/timeline/timeline_bloc.dart';
 import 'package:anytime/bloc/ui/pager_bloc.dart';
 import 'package:anytime/core/environment.dart';
 import 'package:anytime/entities/feed.dart';
@@ -38,6 +39,7 @@ import 'package:anytime/state/library_state.dart';
 import 'package:anytime/ui/library/discovery.dart';
 import 'package:anytime/ui/library/downloads.dart';
 import 'package:anytime/ui/library/library.dart';
+import 'package:anytime/ui/library/timeline.dart';
 import 'package:anytime/ui/podcast/mini_player.dart';
 import 'package:anytime/ui/podcast/podcast_details.dart';
 import 'package:anytime/ui/podcast/up_next_view.dart';
@@ -209,6 +211,12 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
             podcastService: widget.podcastService!,
           ),
           dispose: (_, value) => value.dispose(),
+        ),
+        Provider<TimelineBloc>(
+          create: (_) => TimelineBloc(
+            podcastService: widget.podcastService!,
+          ),
+          dispose: (_, value) => value.dispose(),
         )
       ],
       child: MaterialApp(
@@ -271,12 +279,14 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
 
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
     final podcastBloc = Provider.of<PodcastBloc>(context, listen: false);
+    final timelineBloc = Provider.of<TimelineBloc>(context, listen: false);
 
     WidgetsBinding.instance.addObserver(this);
 
     /// TODO: These should auto register and trigger.
     audioBloc.transitionLifecycleState(LifecycleState.resume);
     podcastBloc.transitionLifecycleState(LifecycleState.resume);
+    timelineBloc.transitionLifecycleState(LifecycleState.resume);
 
     /// Handle deep links
     _setupLinkListener();
@@ -343,9 +353,11 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
   void dispose() {
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
     final podcastBloc = Provider.of<PodcastBloc>(context, listen: false);
+    final timelineBloc = Provider.of<TimelineBloc>(context, listen: false);
 
     audioBloc.transitionLifecycleState(LifecycleState.detach);
     podcastBloc.transitionLifecycleState(LifecycleState.detach);
+    timelineBloc.transitionLifecycleState(LifecycleState.detach);
 
     deepLinkSubscription?.cancel();
 
@@ -357,12 +369,14 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
     final podcastBloc = Provider.of<PodcastBloc>(context, listen: false);
+    final timelineBloc = Provider.of<TimelineBloc>(context, listen: false);
     var settingsBloc = Provider.of<SettingsBloc>(context, listen: false);
 
     switch (state) {
       case AppLifecycleState.resumed:
         audioBloc.transitionLifecycleState(LifecycleState.resume);
         podcastBloc.transitionLifecycleState(LifecycleState.resume);
+        timelineBloc.transitionLifecycleState(LifecycleState.resume);
         if (context.mounted) {
           SettingsService? settings = await MobileSettingsService.instance();
           settingsBloc.theme(settings!.theme);
@@ -371,6 +385,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
       case AppLifecycleState.paused:
         audioBloc.transitionLifecycleState(LifecycleState.pause);
         podcastBloc.transitionLifecycleState(LifecycleState.pause);
+        timelineBloc.transitionLifecycleState(LifecycleState.pause);
         break;
       default:
         break;
@@ -585,6 +600,10 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                     icon: index == 2 ? const Icon(Icons.download) : const Icon(Icons.download_outlined),
                     label: L.of(context)!.downloads,
                   ),
+                  BottomNavigationBarItem(
+                    icon: index == 3 ? const Icon(Icons.timeline) : const Icon(Icons.timeline_outlined),
+                    label: L.of(context)!.timeline,
+                  ),
                 ],
               );
             }),
@@ -599,8 +618,10 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
       return const Discovery(
         categories: true,
       );
-    } else {
+    } else if (index == 2) {
       return const Downloads();
+    } else {
+      return const Timeline();
     }
   }
 

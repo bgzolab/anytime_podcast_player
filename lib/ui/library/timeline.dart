@@ -33,8 +33,15 @@ class _TimelineItem {
         headerText = null;
 }
 
-/// Displays all episodes from subscribed podcasts in a date-grouped timeline,
-/// with a toggle between newest-first and oldest-first sort order.
+/// Displays a paginated, date-grouped timeline of all episodes from subscribed
+/// podcasts. Supports:
+///
+/// - **Infinite scroll**: loads more episodes when the user scrolls near the
+///   bottom of the list.
+/// - **Sort toggle**: newest-first (default) / oldest-first.
+/// - **Date jump**: tap any date header to open a date picker and jump the
+///   timeline to that day.
+/// - **Manual refresh**: tap the refresh button in the toolbar.
 class Timeline extends StatefulWidget {
   const Timeline({
     super.key,
@@ -50,8 +57,9 @@ class _TimelineState extends State<Timeline> {
     super.initState();
 
     final bloc = Provider.of<TimelineBloc>(context, listen: false);
-
-    bloc.event(TimelineEvent.fetch);
+    if (!bloc.hasData) {
+      bloc.event(TimelineEvent.refresh);
+    }
   }
 
   @override
@@ -63,39 +71,94 @@ class _TimelineState extends State<Timeline> {
       builder: (BuildContext context, AsyncSnapshot<BlocState> snapshot) {
         final state = snapshot.data;
 
-        if (state is BlocPopulatedState<List<Episode>>) {
-          return _buildTimelineList(context, state.results, bloc);
-        } else {
-          if (state is BlocLoadingState) {
-            return const SliverFillRemaining(
-              hasScrollBody: false,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  PlatformProgressIndicator(),
-                ],
-              ),
-            );
-          } else if (state is BlocErrorState) {
-            return const SliverFillRemaining(
-              hasScrollBody: false,
-              child: Text('ERROR'),
-            );
-          }
-
-          return SliverFillRemaining(
-            hasScrollBody: false,
-            child: Container(),
+        // LoadingMore — keep showing the current list
+        if (state is BlocBackgroundLoadingState) {
+          return _buildTimelineList(
+            context,
+            state.data as List<Episode>?,
+            bloc,
+            isLoadingMore: true,
           );
         }
+
+        if (state is BlocPopulatedState) {
+          // No auto-scroll needed — when a date filter is active, only a
+          // single day's episodes are shown so the list naturally starts
+          // at the top.
+          return _buildTimelineList(
+            context,
+            state.results as List<Episode>?,
+            bloc,
+            isLoadingMore: false,
+          );
+        }
+
+        if (state is BlocLoadingState) {
+          // First-time load or refreshing — show spinner.
+          // If there's existing data underneath (from refresh), show it.
+          final existing = state.data as List<Episode>?;
+          if (existing != null && existing.isNotEmpty) {
+            return _buildTimelineList(context, existing, bloc, isLoadingMore: true);
+          }
+          return const SliverFillRemaining(
+            hasScrollBody: false,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                PlatformProgressIndicator(),
+              ],
+            ),
+          );
+        }
+
+        if (state is BlocErrorState) {
+          return SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Failed to load timeline',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => bloc.event(TimelineEvent.refresh),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        return const SliverFillRemaining(
+          hasScrollBody: false,
+          child: SizedBox.shrink(),
+        );
       },
     );
   }
 
-  /// Builds the grouped timeline list. Shows an empty-state message when
-  /// [episodes] is null or empty.
-  Widget _buildTimelineList(BuildContext context, List<Episode>? episodes, TimelineBloc bloc) {
+  // ---------------------------------------------------------------------------
+  // Timeline list builder
+  // ---------------------------------------------------------------------------
+
+  /// Builds the grouped timeline sliver list, toolbar, and optional
+  /// loading‑more indicator.
+  Widget _buildTimelineList(
+    BuildContext context,
+    List<Episode>? episodes,
+    TimelineBloc bloc, {
+    bool isLoadingMore = false,
+  }) {
     if (episodes == null || episodes.isEmpty) {
       return SliverFillRemaining(
         hasScrollBody: false,
@@ -122,7 +185,6 @@ class _TimelineState extends State<Timeline> {
       );
     }
 
-    // Build flat list of grouped items (excluding the sort toggle row).
     final items = _buildGroupedItems(episodes);
 
     final queueBloc = Provider.of<QueueBloc>(context);
@@ -130,18 +192,37 @@ class _TimelineState extends State<Timeline> {
     return StreamBuilder<QueueState>(
       stream: queueBloc.queue,
       builder: (context, snapshot) {
+        final hasFilter = bloc.dateFilter != null;
+        final toolbarOffset = hasFilter ? 1 : 0;
+
         return SliverList(
           delegate: SliverChildBuilderDelegate(
             (BuildContext context, int index) {
-              // Index 0: sort toggle row
-              if (index == 0) {
-                return _buildSortToggle(context, bloc);
+              // Index 0: optional filter‑clear banner
+              if (hasFilter && index == 0) {
+                return _buildFilterBanner(context, bloc);
               }
 
-              final item = items[index - 1];
+              // Next item: toolbar (sort + refresh)
+              if (index == toolbarOffset) {
+                return _buildToolbar(context, bloc, isLoadingMore);
+              }
+
+              final itemIndex = index - (toolbarOffset + 1);
+
+              // If we've emitted all items, show the loading‑more indicator
+              // at the bottom and trigger the next page load.
+              if (itemIndex >= items.length) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  bloc.loadMore();
+                });
+                return _buildLoadingMoreIndicator();
+              }
+
+              final item = items[itemIndex];
 
               if (item.type == _TimelineItemType.header) {
-                return _buildHeader(context, item.headerText!);
+                return _buildHeader(context, item.headerText!, bloc);
               }
 
               final episode = item.episode!;
@@ -158,13 +239,143 @@ class _TimelineState extends State<Timeline> {
                 queued: queued,
               );
             },
-            childCount: 1 + items.length,
+            childCount: (hasFilter ? 1 : 0) + 1 + items.length + (bloc.hasMore ? 1 : 0),
             addAutomaticKeepAlives: false,
           ),
         );
       },
     );
   }
+
+  Widget _buildLoadingMoreIndicator() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 24.0),
+      child: Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(strokeWidth: 2.0),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Toolbar
+  // ---------------------------------------------------------------------------
+
+  /// Builds a banner shown when a date filter is active.
+  Widget _buildFilterBanner(BuildContext context, TimelineBloc bloc) {
+    final theme = Theme.of(context);
+    final dateStr = DateFormat.yMMMd().format(bloc.dateFilter!);
+
+    return Container(
+      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Row(
+        children: <Widget>[
+          Icon(Icons.filter_alt, size: 16, color: theme.colorScheme.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Showing $dateStr',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ),
+          TextButton.icon(
+            onPressed: () => bloc.clearDateFilter(),
+            icon: const Icon(Icons.close, size: 16),
+            label: const Text('Clear'),
+            style: TextButton.styleFrom(
+              foregroundColor: theme.colorScheme.primary,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the toolbar row with refresh button and sort toggle.
+  Widget _buildToolbar(BuildContext context, TimelineBloc bloc, bool isLoadingMore) {
+    final theme = Theme.of(context);
+    final isDescending = bloc.sortDescending;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          // Loading indicator during refresh
+          if (isLoadingMore)
+            const Padding(
+              padding: EdgeInsets.only(right: 8.0),
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2.0),
+              ),
+            ),
+
+          // Refresh button
+          Semantics(
+            button: true,
+            child: IconButton(
+              icon: Icon(
+                Icons.refresh,
+                size: 20.0,
+                color: theme.colorScheme.secondary,
+              ),
+              tooltip: 'Refresh timeline',
+              onPressed: () => bloc.event(TimelineEvent.refresh),
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+
+          // Sort toggle
+          Semantics(
+            button: true,
+            child: InkWell(
+              onTap: () {
+                bloc.event(
+                  isDescending ? TimelineEvent.sortOldestFirst : TimelineEvent.sortNewestFirst,
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(
+                      isDescending ? Icons.arrow_downward : Icons.arrow_upward,
+                      size: 16.0,
+                      color: theme.colorScheme.secondary,
+                    ),
+                    const SizedBox(width: 4.0),
+                    Text(
+                      isDescending
+                          ? L.of(context)!.episode_sort_latest_first_label
+                          : L.of(context)!.episode_sort_earliest_first_label,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.secondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Date grouping
+  // ---------------------------------------------------------------------------
 
   /// Groups [episodes] by date bucket and returns a flat list of display items.
   List<_TimelineItem> _buildGroupedItems(List<Episode> episodes) {
@@ -201,66 +412,58 @@ class _TimelineState extends State<Timeline> {
     return DateFormat.yMMMd().format(date);
   }
 
-  /// Builds the sort toggle row displayed at the top of the timeline.
-  Widget _buildSortToggle(BuildContext context, TimelineBloc bloc) {
-    final theme = Theme.of(context);
-    final isDescending = bloc.sortDescending;
+  // ---------------------------------------------------------------------------
+  // Header (tappable — opens date picker)
+  // ---------------------------------------------------------------------------
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: <Widget>[
-          Semantics(
-            button: true,
-            child: InkWell(
-              onTap: () {
-                bloc.event(
-                  isDescending ? TimelineEvent.sortOldestFirst : TimelineEvent.sortNewestFirst,
-                );
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Icon(
-                      isDescending ? Icons.arrow_downward : Icons.arrow_upward,
-                      size: 16.0,
-                      color: theme.colorScheme.secondary,
-                    ),
-                    const SizedBox(width: 4.0),
-                    Text(
-                      isDescending
-                          ? L.of(context)!.episode_sort_latest_first_label
-                          : L.of(context)!.episode_sort_earliest_first_label,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.secondary,
-                      ),
-                    ),
-                  ],
+  /// Builds a date-section header. Tapping it opens a [showDatePicker] so the
+  /// user can jump to another date in the timeline.
+  Widget _buildHeader(BuildContext context, String text, TimelineBloc bloc) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: () => _showDatePicker(context, bloc),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 4.0),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                text,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
                 ),
               ),
             ),
-          ),
-        ],
+            Icon(
+              Icons.calendar_today,
+              size: 14.0,
+              color: theme.colorScheme.primary.withValues(alpha: 0.6),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  /// Builds a date-section header widget.
-  Widget _buildHeader(BuildContext context, String text) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 4.0),
-      child: Text(
-        text,
-        style: theme.textTheme.titleSmall?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary,
-        ),
-      ),
+  /// Shows a [showDatePicker]. When the user picks a date, calls
+  /// [TimelineBloc.jumpToDate] to load enough pages and scroll there.
+  Future<void> _showDatePicker(BuildContext context, TimelineBloc bloc) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: DateTime(2000),
+      lastDate: now,
+      helpText: 'Jump to date in timeline',
     );
+
+    if (picked != null && context.mounted) {
+      // Use start-of-day so the entire selected day is included.
+      // (Using 23:59:59 would exclude most episodes from that day.)
+      final target = DateTime(picked.year, picked.month, picked.day);
+      bloc.jumpToDate(target);
+    }
   }
 }

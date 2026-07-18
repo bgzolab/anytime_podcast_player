@@ -160,6 +160,7 @@ class _TimelineState extends State<Timeline> {
     bool isLoadingMore = false,
   }) {
     if (episodes == null || episodes.isEmpty) {
+      final hasHidden = bloc.hasHiddenPlayed;
       return SliverFillRemaining(
         hasScrollBody: false,
         child: Padding(
@@ -169,13 +170,15 @@ class _TimelineState extends State<Timeline> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               Icon(
-                Icons.timeline,
+                hasHidden ? Icons.visibility_off : Icons.timeline,
                 size: 75,
                 color: Theme.of(context).primaryColor,
               ),
               const Padding(padding: EdgeInsets.only(top: 16.0)),
               Text(
-                L.of(context)!.no_episodes_message,
+                hasHidden
+                    ? 'All episodes are played. Tap the visibility icon above to show them.'
+                    : L.of(context)!.no_episodes_message,
                 style: Theme.of(context).textTheme.titleLarge,
                 textAlign: TextAlign.center,
               ),
@@ -299,10 +302,11 @@ class _TimelineState extends State<Timeline> {
     );
   }
 
-  /// Builds the toolbar row with refresh button and sort toggle.
+  /// Builds the toolbar row with refresh button, show-played toggle and sort toggle.
   Widget _buildToolbar(BuildContext context, TimelineBloc bloc, bool isLoadingMore) {
     final theme = Theme.of(context);
     final isDescending = bloc.sortDescending;
+    final showPlayed = bloc.showPlayed;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
@@ -319,6 +323,23 @@ class _TimelineState extends State<Timeline> {
                 child: CircularProgressIndicator(strokeWidth: 2.0),
               ),
             ),
+
+          // Show/hide played episodes toggle
+          Semantics(
+            button: true,
+            child: IconButton(
+              icon: Icon(
+                showPlayed ? Icons.visibility : Icons.visibility_off,
+                size: 20.0,
+                color: showPlayed
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.secondary,
+              ),
+              tooltip: showPlayed ? 'Hide played episodes' : 'Show played episodes',
+              onPressed: () => bloc.event(TimelineEvent.toggleShowPlayed),
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
 
           // Refresh button
           Semantics(

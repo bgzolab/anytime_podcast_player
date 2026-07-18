@@ -22,6 +22,9 @@ enum TimelineEvent {
 
   /// Sort episodes with oldest first (ascending by publicationDate).
   sortOldestFirst,
+
+  /// Toggle whether played episodes are shown or hidden.
+  toggleShowPlayed,
 }
 
 /// The BLoC provides cursor-paginated access to all episodes from subscribed
@@ -50,6 +53,7 @@ class TimelineBloc extends Bloc {
 
   bool _sortDescending = true;
   bool _isLoadingMore = false;
+  bool _showPlayed = false;
 
   /// Accumulated episodes across all loaded pages.
   final List<Episode> _allEpisodes = [];
@@ -100,6 +104,12 @@ class TimelineBloc extends Bloc {
   /// Whether the current sort is newest-first (true) or oldest-first (false).
   bool get sortDescending => _sortDescending;
 
+  /// Whether played episodes are currently shown (true) or hidden (false).
+  bool get showPlayed => _showPlayed;
+
+  /// Whether there are played episodes that are being hidden by the filter.
+  bool get hasHiddenPlayed => !_showPlayed && _allEpisodes.any((ep) => ep.played);
+
   /// Whether at least one successful fetch has completed.
   bool get hasData => _lastFetchTime != null;
 
@@ -149,6 +159,9 @@ class TimelineBloc extends Bloc {
           return _emitFromCache();
         case TimelineEvent.sortOldestFirst:
           _sortDescending = false;
+          return _emitFromCache();
+        case TimelineEvent.toggleShowPlayed:
+          _showPlayed = !_showPlayed;
           return _emitFromCache();
       }
     }).listen((state) => _stateOutput.add(state));
@@ -288,6 +301,11 @@ class TimelineBloc extends Bloc {
         final epDay = DateTime(d.year, d.month, d.day);
         return epDay == filterDay;
       }).toList();
+    }
+
+    // Hide played episodes unless the user has opted to show them.
+    if (!_showPlayed) {
+      filtered = filtered.where((ep) => !ep.played).toList();
     }
 
     if (filtered.isEmpty) return filtered;

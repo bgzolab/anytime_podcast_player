@@ -864,6 +864,57 @@ class MobilePodcastService extends PodcastService {
     });
   }
 
+  @override
+  Stream<RefreshProgress> refreshFeedsWithProgress() async* {
+    // Check connectivity first.
+    final connectivityResult = await Connectivity().checkConnectivity();
+    final hasConnectivity = !connectivityResult.contains(ConnectivityResult.none);
+    final allowConnectivity = connectivityResult.contains(ConnectivityResult.wifi) ||
+        (settingsService.backgroundUpdateMobileData && connectivityResult.contains(ConnectivityResult.mobile));
+
+    if (!hasConnectivity || !allowConnectivity) {
+      _log.fine('No suitable connectivity for feed refresh');
+      yield const RefreshProgress(total: 0, completed: 0, currentSource: '', finished: true);
+      return;
+    }
+
+    _libraryState.add(LibraryRefreshingState());
+
+    final subs = await subscriptions();
+    subs.sort((a, b) => a.lastUpdated.compareTo(b.lastUpdated));
+
+    final total = subs.length;
+    var completed = 0;
+    var newOrUpdatedEpisodes = false;
+
+    for (var i = 0; i < total; i++) {
+      final sub = subs[i];
+      yield RefreshProgress(total: total, completed: completed, currentSource: sub.title);
+
+      try {
+        final p = await loadPodcast(podcast: sub, ignoreCache: true, highlightNewEpisodes: true)
+            .timeout(const Duration(seconds: 5));
+
+        if (p != null && (p.newEpisodes > 0 || p.updatedEpisodes)) {
+          newOrUpdatedEpisodes = true;
+        }
+      } catch (e) {
+        _log.warning('Failed to refresh ${sub.title}: $e');
+      }
+
+      completed++;
+    }
+
+    if (newOrUpdatedEpisodes) {
+      _libraryState.add(LibraryUpdatedState());
+    }
+
+    _libraryState.add(LibraryReadyState());
+    settingsService.lastFeedRefresh = DateTime.now();
+
+    yield RefreshProgress(total: total, completed: completed, currentSource: '', finished: true);
+  }
+
   /// Remove HTML padding from the content. The padding may look fine within
   /// the context of a browser, but can look out of place on a mobile screen.
   String _format(String? input) {

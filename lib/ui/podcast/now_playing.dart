@@ -617,7 +617,7 @@ class _EpisodeTabBarState extends State<EpisodeTabBar> {
         Tab(
           child: Align(
             alignment: Alignment.center,
-            child: Text(L.of(context)!.notes_label),
+            child: Text(L.of(context)!.show_notes_label),
           ),
         ),
       ],

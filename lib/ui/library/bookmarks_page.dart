@@ -10,12 +10,9 @@ import 'package:anytime/state/bloc_state.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-/// A standalone page that displays all bookmarked episodes with their bookmarks.
+/// Displays all bookmarked episodes grouped by podcast → episode.
 ///
-/// Structure: Podcast → Episode → Bookmarks
-/// - Top level: podcast names with episode count
-/// - Second level: episodes within each podcast, showing bookmark count
-/// - Third level (expandable): individual bookmarks with position, note, date
+/// Returns slivers for embedding inside the parent [CustomScrollView].
 class BookmarksPage extends StatefulWidget {
   const BookmarksPage({super.key});
 
@@ -27,175 +24,241 @@ class _BookmarksPageState extends State<BookmarksPage> {
   @override
   void initState() {
     super.initState();
-    final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
-    bookmarkBloc.event(BookmarkFetchAllEvent());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
+      bookmarkBloc.event(BookmarkFetchAllEvent());
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(L.of(context)!.bookmarks_label),
-      ),
-      body: StreamBuilder<BlocState<List<Bookmark>>>(
-        stream: bookmarkBloc.state,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData || snapshot.data is BlocLoadingState) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    return StreamBuilder<BlocState<List<Bookmark>>>(
+      stream: bookmarkBloc.state,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data is BlocLoadingState) {
+          return const SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-          if (snapshot.data is BlocErrorState) {
-            return Center(
-              child: Text(L.of(context)!.no_bookmarks_message),
-            );
-          }
+        if (snapshot.data is BlocErrorState) {
+          return SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(child: Text(L.of(context)!.no_bookmarks_message)),
+          );
+        }
 
-          final state = snapshot.data;
-          final bookmarks = (state is BlocPopulatedState<List<Bookmark>>) ? state.results ?? [] : <Bookmark>[];
+        final state = snapshot.data;
+        final bookmarks = (state is BlocPopulatedState<List<Bookmark>>) ? state.results ?? [] : <Bookmark>[];
 
-          if (bookmarks.isEmpty) {
-            return _buildEmptyState(context);
-          }
+        if (bookmarks.isEmpty) {
+          return SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.bookmarks_outlined, size: 64.0, color: Theme.of(context).disabledColor),
+                  const SizedBox(height: 16.0),
+                  Text(
+                    L.of(context)!.no_bookmarks_message,
+                    style: Theme.of(context).textTheme.titleMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
 
-          return _buildPodcastList(context, bookmarks, bookmarkBloc);
-        },
-      ),
+        return _buildSliverList(context, bookmarks, bookmarkBloc);
+      },
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.bookmarks_outlined,
-              size: 64.0,
-              color: Theme.of(context).disabledColor,
-            ),
-            const SizedBox(height: 16.0),
-            Text(
-              L.of(context)!.no_bookmarks_message,
-              style: Theme.of(context).textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Groups bookmarks by podcast → episode, then builds a two-level list.
-  Widget _buildPodcastList(
+  Widget _buildSliverList(
     BuildContext context,
     List<Bookmark> bookmarks,
     BookmarkBloc bookmarkBloc,
   ) {
-    // Group: podcastName → { episodeGuid → { episodeTitle, bookmarks[] } }
+    // Group: podcastName → episodeGuid → _EpisodeBookmarks
     final podcastMap = <String, Map<String, _EpisodeBookmarks>>{};
     for (final b in bookmarks) {
       final podcastName = b.podcastName ?? 'Unknown Podcast';
-      final episodeGuid = b.episodeGuid;
       podcastMap
           .putIfAbsent(podcastName, () => {})
-          .putIfAbsent(episodeGuid, () => _EpisodeBookmarks(episodeTitle: b.episodeTitle ?? 'Unknown Episode', episodeGuid: episodeGuid, podcastGuid: b.podcastGuid))
+          .putIfAbsent(b.episodeGuid, () => _EpisodeBookmarks(episodeTitle: b.episodeTitle ?? 'Unknown Episode'))
           .bookmarks
           .add(b);
     }
 
     final podcastNames = podcastMap.keys.toList()..sort();
 
-    return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 80.0),
-      itemCount: podcastNames.length,
-      itemBuilder: (context, podcastIndex) {
-        final podcastName = podcastNames[podcastIndex];
-        final episodeMap = podcastMap[podcastName]!;
-        final episodes = episodeMap.values.toList();
+    // Build a flat list of display items for the SliverList.
+    final items = <_DisplayItem>[];
+    for (final podcastName in podcastNames) {
+      final episodeMap = podcastMap[podcastName]!;
+      final episodes = episodeMap.values.toList();
+      final totalBookmarks = episodes.fold(0, (sum, ep) => sum + ep.bookmarks.length);
+      items.add(_DisplayItem.podcastHeader(podcastName, episodes.length, totalBookmarks));
 
-        return _PodcastExpansionTile(
-          podcastName: podcastName,
-          episodeCount: episodes.length,
-          bookmarkCount: bookmarks.where((b) => (b.podcastName ?? 'Unknown Podcast') == podcastName).length,
-          initiallyExpanded: podcastIndex == 0,
-          episodes: episodes,
-          bookmarkBloc: bookmarkBloc,
-        );
-      },
+      for (final ep in episodes) {
+        items.add(_DisplayItem.episode(ep));
+        for (final bookmark in ep.bookmarks) {
+          items.add(_DisplayItem.bookmark(bookmark));
+        }
+      }
+    }
+
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (BuildContext context, int index) {
+          final item = items[index];
+
+          if (item.isPodcastHeader) {
+            return _PodcastHeaderTile(
+              podcastName: item.podcastName!,
+              episodeCount: item.episodeCount!,
+              bookmarkCount: item.bookmarkCount!,
+            );
+          }
+
+          if (item.isEpisode) {
+            return _EpisodeTile(episodeBookmarks: item.episodeBookmarks!);
+          }
+
+          // Bookmark tile
+          return _BookmarkTile(
+            bookmark: item.bookmark!,
+            onDelete: () => bookmarkBloc.event(BookmarkDeleteEvent(bookmark: item.bookmark!)),
+          );
+        },
+        childCount: items.length,
+      ),
     );
   }
 }
 
-/// Groups bookmarks for a single episode.
-class _EpisodeBookmarks {
-  final String episodeTitle;
-  final String episodeGuid;
-  final String? podcastGuid;
-  final List<Bookmark> bookmarks = [];
+/// A flat list item that can be a podcast header, episode, or bookmark.
+class _DisplayItem {
+  final int type; // 0 = podcast header, 1 = episode, 2 = bookmark
+  final String? podcastName;
+  final int? episodeCount;
+  final int? bookmarkCount;
+  final _EpisodeBookmarks? episodeBookmarks;
+  final Bookmark? bookmark;
 
-  _EpisodeBookmarks({
-    required this.episodeTitle,
-    required this.episodeGuid,
-    this.podcastGuid,
-  });
+  _DisplayItem.podcastHeader(this.podcastName, this.episodeCount, this.bookmarkCount)
+      : type = 0,
+        episodeBookmarks = null,
+        bookmark = null;
+
+  _DisplayItem.episode(this.episodeBookmarks)
+      : type = 1,
+        podcastName = null,
+        episodeCount = null,
+        bookmarkCount = null,
+        bookmark = null;
+
+  _DisplayItem.bookmark(this.bookmark)
+      : type = 2,
+        podcastName = null,
+        episodeCount = null,
+        bookmarkCount = null,
+        episodeBookmarks = null;
+
+  bool get isPodcastHeader => type == 0;
+  bool get isEpisode => type == 1;
 }
 
-/// A podcast-level expansion tile containing episode tiles.
-class _PodcastExpansionTile extends StatelessWidget {
+class _EpisodeBookmarks {
+  final String episodeTitle;
+  final List<Bookmark> bookmarks = [];
+
+  _EpisodeBookmarks({required this.episodeTitle});
+}
+
+class _PodcastHeaderTile extends StatelessWidget {
   final String podcastName;
   final int episodeCount;
   final int bookmarkCount;
-  final bool initiallyExpanded;
-  final List<_EpisodeBookmarks> episodes;
-  final BookmarkBloc bookmarkBloc;
 
-  const _PodcastExpansionTile({
+  const _PodcastHeaderTile({
     required this.podcastName,
     required this.episodeCount,
     required this.bookmarkCount,
-    required this.initiallyExpanded,
-    required this.episodes,
-    required this.bookmarkBloc,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    return ExpansionTile(
-      leading: Icon(Icons.podcasts, color: theme.primaryColor),
-      title: Text(
-        podcastName,
-        style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+    return Container(
+      color: theme.scaffoldBackgroundColor,
+      padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 4.0),
+      child: Row(
+        children: [
+          Icon(Icons.podcasts, size: 20.0, color: theme.primaryColor),
+          const SizedBox(width: 8.0),
+          Expanded(
+            child: Text(
+              podcastName,
+              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Text(
+            '$episodeCount ep · $bookmarkCount bm',
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.disabledColor),
+          ),
+        ],
       ),
-      subtitle: Text(
-        '$episodeCount ${episodeCount == 1 ? "episode" : "episodes"} · $bookmarkCount ${bookmarkCount == 1 ? "bookmark" : "bookmarks"}',
-        style: theme.textTheme.bodySmall?.copyWith(color: theme.disabledColor),
-      ),
-      initiallyExpanded: initiallyExpanded,
-      children: episodes.map((ep) {
-        return _EpisodeExpansionTile(
-          episodeBookmarks: ep,
-          bookmarkBloc: bookmarkBloc,
-        );
-      }).toList(),
     );
   }
 }
 
-/// An episode-level expansion tile showing bookmark count, expandable to individual bookmarks.
-class _EpisodeExpansionTile extends StatelessWidget {
+class _EpisodeTile extends StatelessWidget {
   final _EpisodeBookmarks episodeBookmarks;
-  final BookmarkBloc bookmarkBloc;
 
-  const _EpisodeExpansionTile({
-    required this.episodeBookmarks,
-    required this.bookmarkBloc,
-  });
+  const _EpisodeTile({required this.episodeBookmarks});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final count = episodeBookmarks.bookmarks.length;
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 16.0),
+      child: Row(
+        children: [
+          Icon(Icons.bookmark, size: 18.0, color: theme.primaryColor),
+          const SizedBox(width: 8.0),
+          Expanded(
+            child: Text(
+              episodeBookmarks.episodeTitle,
+              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Text(
+            '$count bm',
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.disabledColor),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BookmarkTile extends StatelessWidget {
+  final Bookmark bookmark;
+  final VoidCallback onDelete;
+
+  const _BookmarkTile({required this.bookmark, required this.onDelete});
 
   String _formatPosition(int positionMs) {
     final duration = Duration(milliseconds: positionMs);
@@ -206,87 +269,59 @@ class _EpisodeExpansionTile extends StatelessWidget {
     return '$h:$m:$s';
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.month}/${date.day}/${date.year}';
-  }
+  String _formatDate(DateTime date) => '${date.month}/${date.day}/${date.year}';
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final count = episodeBookmarks.bookmarks.length;
 
-    return ExpansionTile(
-      leading: Icon(Icons.bookmark, color: theme.primaryColor),
-      title: Text(
-        episodeBookmarks.episodeTitle,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+    return Dismissible(
+      key: ValueKey('bm_${bookmark.id}'),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) => onDelete(),
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 16.0),
+        color: Colors.red,
+        child: const Icon(Icons.delete, color: Colors.white),
       ),
-      subtitle: Text(
-        '$count ${count == 1 ? "bookmark" : "bookmarks"}',
-        style: theme.textTheme.bodySmall?.copyWith(color: theme.disabledColor),
-      ),
-      children: episodeBookmarks.bookmarks.map((bookmark) {
-        return Dismissible(
-          key: ValueKey('bm_${bookmark.id}'),
-          direction: DismissDirection.endToStart,
-          onDismissed: (_) {
-            bookmarkBloc.event(BookmarkDeleteEvent(bookmark: bookmark));
-          },
-          background: Container(
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: 16.0),
-            color: Colors.red,
-            child: const Icon(Icons.delete, color: Colors.white),
+      child: Padding(
+        padding: const EdgeInsets.only(left: 42.0),
+        child: ListTile(
+          dense: true,
+          leading: Icon(Icons.access_time, size: 18.0, color: theme.primaryColor),
+          title: Text(
+            _formatPosition(bookmark.positionMs),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.only(left: 56.0, right: 16.0),
-            leading: Icon(Icons.access_time, size: 20.0, color: theme.primaryColor),
-            title: Text(
-              _formatPosition(bookmark.positionMs),
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                fontFeatures: const [FontFeature.tabularFigures()],
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (bookmark.note != null && bookmark.note!.isNotEmpty)
+                Text(bookmark.note!, maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(
+                _formatDate(bookmark.createdAt),
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.disabledColor),
               ),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (bookmark.note != null && bookmark.note!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2.0),
-                    child: Text(
-                      bookmark.note!,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 2.0),
-                  child: Text(
-                    _formatDate(bookmark.createdAt),
-                    style: theme.textTheme.bodySmall?.copyWith(color: theme.disabledColor),
-                  ),
-                ),
-              ],
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.play_circle_outline),
-              tooltip: L.of(context)!.bookmark_seek_label(_formatPosition(bookmark.positionMs)),
-              onPressed: () {
-                final audioBloc = Provider.of<AudioBloc>(context, listen: false);
-                audioBloc.transitionPosition(bookmark.positionMs / 1000.0);
-              },
-            ),
-            onTap: () {
+            ],
+          ),
+          trailing: IconButton(
+            icon: const Icon(Icons.play_circle_outline, size: 22.0),
+            onPressed: () {
               final audioBloc = Provider.of<AudioBloc>(context, listen: false);
               audioBloc.transitionPosition(bookmark.positionMs / 1000.0);
             },
           ),
-        );
-      }).toList(),
+          onTap: () {
+            final audioBloc = Provider.of<AudioBloc>(context, listen: false);
+            audioBloc.transitionPosition(bookmark.positionMs / 1000.0);
+          },
+        ),
+      ),
     );
   }
 }

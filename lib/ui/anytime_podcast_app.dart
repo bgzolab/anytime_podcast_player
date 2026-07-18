@@ -17,6 +17,7 @@ import 'package:anytime/bloc/search/search_bloc.dart';
 import 'package:anytime/bloc/settings/settings_bloc.dart';
 import 'package:anytime/bloc/timeline/timeline_bloc.dart';
 import 'package:anytime/bloc/ui/pager_bloc.dart';
+import 'package:anytime/core/bookmark_sound.dart';
 import 'package:anytime/core/environment.dart';
 import 'package:anytime/entities/feed.dart';
 import 'package:anytime/entities/podcast.dart';
@@ -314,6 +315,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
       final positionMs = widget.audioPlayerService?.playPosition?.value.position.inMilliseconds;
       if (episode != null && positionMs != null) {
         bookmarkBloc.event(BookmarkCreateEvent(episode: episode, positionMs: positionMs));
+        BookmarkSound.play();
       }
     };
 

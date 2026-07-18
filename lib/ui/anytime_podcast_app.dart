@@ -254,7 +254,10 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
           Locale('ru', ''),
           Locale('tr', ''),
           Locale('vi', ''),
-          Locale('zh_Hans', ''),
+          // zh_Hant / zh_TW intentionally falls back to the Simplified Chinese
+          // catalogue; the app currently ships no Traditional Chinese
+          // translation.
+          Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
         ],
         theme: theme,
         // Uncomment builder below to enable accessibility checker tool.

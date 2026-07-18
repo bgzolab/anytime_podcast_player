@@ -8,6 +8,7 @@ import 'dart:ui';
 
 import 'package:anytime/entities/episode.dart';
 import 'package:anytime/entities/podcast.dart';
+import 'package:anytime/l10n/L.dart';
 import 'package:anytime/l10n/messages_all_locales.dart';
 import 'package:anytime/services/settings/mobile_settings_service.dart';
 import 'package:anytime/services/settings/settings_service.dart';
@@ -176,31 +177,53 @@ Future<void> shareEpisode({required Episode episode}) async {
 }
 
 Future<String> currentLocale({bool forceReload = false}) async {
-  var currentLocale = Platform.localeName;
+  final cached = _currentLocale;
 
-  if (_currentLocale == null || forceReload) {
-    final List<Locale> systemLocales = PlatformDispatcher.instance.locales;
+  if (!forceReload && cached != null) {
+    // The catalogue must be initialised before callers use Intl.message();
+    // initialising is idempotent and cheap.
+    await initializeMessages(cached);
 
-    // Attempt to get current locale
-    var supportedLocale = await initializeMessages(Platform.localeName);
+    return cached;
+  }
 
-    // If we do not support the default, try all supported locales
+  var currentLocale = normaliseZhLocaleName(Platform.localeName);
+
+  final List<Locale> systemLocales = PlatformDispatcher.instance.locales;
+
+  // Attempt to get current locale
+  var supportedLocale = await initializeMessages(currentLocale);
+
+  // If we do not support the default, try all supported locales
+  if (!supportedLocale) {
+    for (var l in systemLocales) {
+      final name = normaliseZhLocaleName(_localeName(l));
+
+      supportedLocale = await initializeMessages(name);
+      if (supportedLocale) {
+        currentLocale = name;
+        break;
+      }
+    }
+
     if (!supportedLocale) {
-      for (var l in systemLocales) {
-        supportedLocale = await initializeMessages('${l.languageCode}_${l.countryCode}');
-        if (supportedLocale) {
-          currentLocale = '${l.languageCode}_${l.countryCode}';
-          break;
-        }
-      }
-
-      if (!supportedLocale) {
-        // We give up! Default to English
-        currentLocale = 'en';
-        supportedLocale = await initializeMessages(currentLocale);
-      }
+      // We give up! Default to English
+      currentLocale = 'en';
+      supportedLocale = await initializeMessages(currentLocale);
     }
   }
 
+  _currentLocale = currentLocale;
+
   return currentLocale;
+}
+
+/// Builds a locale name from [locale], avoiding the `xx_null` that string
+/// interpolation produces when the country code is absent.
+String _localeName(Locale locale) {
+  final countryCode = locale.countryCode;
+
+  if (countryCode == null || countryCode.isEmpty) return locale.languageCode;
+
+  return '${locale.languageCode}_$countryCode';
 }

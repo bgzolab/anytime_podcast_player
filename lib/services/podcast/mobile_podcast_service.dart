@@ -70,15 +70,23 @@ class MobilePodcastService extends PodcastService {
   /// We can the use these two lists to present the user with a list of genres in the correct
   /// language whilst submitting the English version to the API.
   void _setupGenres(String locale) {
-    var categoryList = '';
+    final messageKey =
+        settingsService.searchProvider == 'itunes' ? 'discovery_categories_itunes' : 'discovery_categories_pindex';
 
     /// Fetch the correct categories for the current local and selected provider.
     if (settingsService.searchProvider == 'itunes') {
       _categories = PodcastService.itunesGenres;
-      categoryList = Intl.message('discovery_categories_itunes', locale: locale);
     } else {
       _categories = PodcastService.podcastIndexGenres;
-      categoryList = Intl.message('discovery_categories_pindex', locale: locale);
+    }
+
+    var categoryList = Intl.message(messageKey, locale: locale);
+
+    // When a catalogue has no translation for [messageKey], the runtime lookup
+    // returns the key itself. Fall back to English so genre search keeps
+    // working instead of exposing the raw key as a single "category".
+    if (categoryList == messageKey || !categoryList.contains(',')) {
+      categoryList = Intl.message(messageKey, locale: 'en');
     }
 
     _intlCategories = categoryList.split(',');

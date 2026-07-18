@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:anytime/bloc/bookmark/bookmark_bloc.dart';
 import 'package:anytime/bloc/podcast/audio_bloc.dart';
+import 'package:anytime/core/bookmark_sound.dart';
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/services/audio/audio_player_service.dart';
 import 'package:anytime/ui/widgets/sleep_selector.dart';
@@ -116,6 +117,9 @@ class _BookmarkButtonState extends State<BookmarkButton> with SingleTickerProvid
       episode: episode,
       positionMs: positionMs,
     ));
+
+    // Play sound effect
+    BookmarkSound.play();
 
     // Show SnackBar feedback
     final timestamp = _formatDuration(positionState.position);

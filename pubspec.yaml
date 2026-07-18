@@ -80,6 +80,9 @@ flutter:
     - assets/images/anytime-logo-s.png
     - assets/images/anytime-placeholder-logo.png
 
+    # Sound effects
+    - assets/notification/water-drop.mp3
+
     # Certificate authorities
     - assets/ca/lets-encrypt-r3.pem
     - assets/ca/globalsign-gcc-r6-alphassl-ca-2023.pem

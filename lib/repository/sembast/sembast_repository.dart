@@ -107,6 +107,16 @@ class SembastRepository extends Repository {
   }
 
   @override
+  Future<List<Podcast>> searchPodcasts(String term) async {
+    final allPodcasts = await subscriptions();
+    final lowerTerm = term.toLowerCase();
+
+    return allPodcasts.where((podcast) {
+      return podcast.title.toLowerCase().contains(lowerTerm);
+    }).toList();
+  }
+
+  @override
   Future<void> deletePodcast(Podcast podcast) async {
     final db = await _db;
 
@@ -188,6 +198,17 @@ class SembastRepository extends Repository {
     }).toList();
 
     return results;
+  }
+
+  @override
+  Future<List<Episode>> searchEpisodes(String term) async {
+    final allEpisodes = await findAllEpisodes();
+    final lowerTerm = term.toLowerCase();
+
+    return allEpisodes.where((episode) {
+      final title = episode.title;
+      return title != null && title.toLowerCase().contains(lowerTerm);
+    }).toList();
   }
 
   @override
@@ -366,6 +387,17 @@ class SembastRepository extends Repository {
     }).toList();
 
     return results;
+  }
+
+  @override
+  Future<List<Episode>> searchDownloads(String term) async {
+    final allDownloads = await findDownloads();
+    final lowerTerm = term.toLowerCase();
+
+    return allDownloads.where((episode) {
+      final title = episode.title;
+      return title != null && title.toLowerCase().contains(lowerTerm);
+    }).toList();
   }
 
   @override
@@ -930,6 +962,22 @@ class SembastRepository extends Repository {
   Future<void> deleteBookmarksByEpisodeGuid(String episodeGuid) async {
     final finder = Finder(filter: Filter.equals('episodeGuid', episodeGuid));
     await _bookmarkStore.delete(await _db, finder: finder);
+  }
+
+  @override
+  Future<List<Bookmark>> searchBookmarks(String term) async {
+    final allBookmarks = await findAllBookmarks();
+    final lowerTerm = term.toLowerCase();
+
+    return allBookmarks.where((bookmark) {
+      final episodeTitle = bookmark.episodeTitle;
+      final podcastName = bookmark.podcastName;
+      final note = bookmark.note;
+
+      return (episodeTitle != null && episodeTitle.toLowerCase().contains(lowerTerm)) ||
+          (podcastName != null && podcastName.toLowerCase().contains(lowerTerm)) ||
+          (note != null && note.toLowerCase().contains(lowerTerm));
+    }).toList();
   }
 
   @override

@@ -25,8 +25,14 @@ abstract class Repository {
 
   Future<List<Podcast>> subscriptions();
 
+  /// Search subscribed podcasts whose title contains [term] (case-insensitive).
+  Future<List<Podcast>> searchPodcasts(String term);
+
   /// Episodes
   Future<List<Episode>> findAllEpisodes();
+
+  /// Search episodes whose title contains [term] (case-insensitive).
+  Future<List<Episode>> searchEpisodes(String term);
 
   /// Returns up to [limit] episodes whose [publicationDate] is strictly before
   /// [beforeDate], sorted newest-first. Used for cursor-based pagination.
@@ -76,6 +82,9 @@ abstract class Repository {
 
   Future<List<Episode>> findDownloads();
 
+  /// Search downloaded episodes whose title contains [term] (case-insensitive).
+  Future<List<Episode>> searchDownloads(String term);
+
   Future<Transcript?> findTranscriptById(int id);
 
   Future<Transcript> saveTranscript(Transcript transcript);
@@ -99,6 +108,10 @@ abstract class Repository {
   Future<void> deleteBookmark(Bookmark bookmark);
 
   Future<void> deleteBookmarksByEpisodeGuid(String episodeGuid);
+
+  /// Search bookmarks where episodeTitle, podcastName, or note contains
+  /// [term] (case-insensitive).
+  Future<List<Bookmark>> searchBookmarks(String term);
 
   /// Event listeners
   late Stream<Podcast> podcastListener;

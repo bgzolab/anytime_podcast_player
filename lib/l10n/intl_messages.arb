@@ -1,5 +1,5 @@
 {
-  "@@last_modified": "2026-09-30T00:24:02.387740",
+  "@@last_modified": "2026-09-30T02:39:24.912774",
   "app_title": "Anytime Podcast Player",
   "@app_title": {
     "description": "Full title for the application",
@@ -223,6 +223,78 @@
   "no_search_results_message": "No podcasts found",
   "@no_search_results_message": {
     "description": "Displayed on the library tab when the user has no subscriptions",
+    "type": "text",
+    "placeholders": {}
+  },
+  "search_episodes_hint": "Search episodes",
+  "@search_episodes_hint": {
+    "description": "Hint displayed on search bar when searching episodes in Timeline tab",
+    "type": "text",
+    "placeholders": {}
+  },
+  "search_podcasts_hint": "Search podcasts",
+  "@search_podcasts_hint": {
+    "description": "Hint displayed on search bar when searching podcasts in Library tab",
+    "type": "text",
+    "placeholders": {}
+  },
+  "search_downloads_hint": "Search downloads",
+  "@search_downloads_hint": {
+    "description": "Hint displayed on search bar when searching downloads in Downloads tab",
+    "type": "text",
+    "placeholders": {}
+  },
+  "search_bookmarks_hint": "Search bookmarks",
+  "@search_bookmarks_hint": {
+    "description": "Hint displayed on search bar when searching bookmarks in Bookmarks tab",
+    "type": "text",
+    "placeholders": {}
+  },
+  "search_episodes_tooltip": "Search episodes",
+  "@search_episodes_tooltip": {
+    "description": "Tooltip for search button on Timeline tab",
+    "type": "text",
+    "placeholders": {}
+  },
+  "search_podcasts_tooltip": "Search podcasts",
+  "@search_podcasts_tooltip": {
+    "description": "Tooltip for search button on Library tab",
+    "type": "text",
+    "placeholders": {}
+  },
+  "search_downloads_tooltip": "Search downloads",
+  "@search_downloads_tooltip": {
+    "description": "Tooltip for search button on Downloads tab",
+    "type": "text",
+    "placeholders": {}
+  },
+  "search_bookmarks_tooltip": "Search bookmarks",
+  "@search_bookmarks_tooltip": {
+    "description": "Tooltip for search button on Bookmarks tab",
+    "type": "text",
+    "placeholders": {}
+  },
+  "no_episodes_found": "No episodes found",
+  "@no_episodes_found": {
+    "description": "Displayed when no episodes match the search query",
+    "type": "text",
+    "placeholders": {}
+  },
+  "no_podcasts_found": "No podcasts found",
+  "@no_podcasts_found": {
+    "description": "Displayed when no podcasts match the search query",
+    "type": "text",
+    "placeholders": {}
+  },
+  "no_downloads_found": "No downloads found",
+  "@no_downloads_found": {
+    "description": "Displayed when no downloads match the search query",
+    "type": "text",
+    "placeholders": {}
+  },
+  "no_bookmarks_found": "No bookmarks found",
+  "@no_bookmarks_found": {
+    "description": "Displayed when no bookmarks match the search query",
     "type": "text",
     "placeholders": {}
   },

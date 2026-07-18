@@ -94,4 +94,8 @@ abstract class SettingsService {
   set lastFeedRefresh(DateTime lastFeedRefresh);
 
   DateTime get lastFeedRefresh;
+
+  set defaultTab(int defaultTab);
+
+  int get defaultTab;
 }

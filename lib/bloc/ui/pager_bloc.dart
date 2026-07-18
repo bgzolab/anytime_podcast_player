@@ -7,7 +7,9 @@ import 'package:rxdart/rxdart.dart';
 /// This BLoC provides a sink and stream to set and listen for the current
 /// page/tab on a bottom navigation bar.
 class PagerBloc {
-  final BehaviorSubject<int> page = BehaviorSubject<int>.seeded(0);
+  final BehaviorSubject<int> page;
+
+  PagerBloc({int initialPage = 0}) : page = BehaviorSubject<int>.seeded(initialPage);
 
   Function(int) get changePage => page.add;
 

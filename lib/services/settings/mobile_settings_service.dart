@@ -272,5 +272,16 @@ class MobileSettingsService extends SettingsService {
   AppSettings? settings;
 
   @override
+  set defaultTab(int defaultTab) {
+    _sharedPreferences.setInt('defaultTab', defaultTab);
+    settingsNotifier.sink.add('defaultTab');
+  }
+
+  @override
+  int get defaultTab {
+    return _sharedPreferences.getInt('defaultTab') ?? 0;
+  }
+
+  @override
   Stream<String> get settingsListener => settingsNotifier.stream;
 }

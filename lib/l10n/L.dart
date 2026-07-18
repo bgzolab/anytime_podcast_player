@@ -1818,6 +1818,16 @@ class L {
         );
   }
 
+  String get settings_default_tab_label {
+    return message('settings_default_tab_label') ??
+        Intl.message(
+          'Default tab',
+          name: 'settings_default_tab_label',
+          desc: 'Label for the default tab setting',
+          locale: localeName,
+        );
+  }
+
   String get settings_continuous_play_option {
     return message('settings_continuous_play_option') ??
         Intl.message(

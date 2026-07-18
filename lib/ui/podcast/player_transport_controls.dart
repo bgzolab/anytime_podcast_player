@@ -43,7 +43,17 @@ class _PlayerTransportControlsState extends State<PlayerTransportControls> {
               mainAxisSize: MainAxisSize.max,
               children: <Widget>[
                 const SleepSelectorWidget(),
-                BookmarkButton(audioState: snapshot.data!),
+                IconButton(
+                  onPressed: () {
+                    return snapshot.data == AudioState.buffering ? null : _rewind(audioBloc);
+                  },
+                  padding: const EdgeInsets.all(0.0),
+                  icon: Icon(
+                    semanticLabel: L.of(context)!.rewind_button_label,
+                    Icons.replay_10,
+                    size: 48.0,
+                  ),
+                ),
                 AnimatedPlayButton(audioState: snapshot.data!),
                 IconButton(
                   onPressed: () {
@@ -56,6 +66,7 @@ class _PlayerTransportControlsState extends State<PlayerTransportControls> {
                     size: 48.0,
                   ),
                 ),
+                BookmarkButton(audioState: snapshot.data!),
                 const SpeedSelectorWidget(),
               ],
             );
@@ -63,13 +74,16 @@ class _PlayerTransportControlsState extends State<PlayerTransportControls> {
     );
   }
 
+  void _rewind(AudioBloc audioBloc) {
+    audioBloc.transitionState(TransitionState.rewind);
+  }
+
   void _fastforward(AudioBloc audioBloc) {
     audioBloc.transitionState(TransitionState.fastforward);
   }
 }
 
-/// A bookmark button that creates a bookmark at the current playback position
-/// on tap, and rewinds 10 seconds on long-press.
+/// A bookmark button that creates a bookmark at the current playback position.
 class BookmarkButton extends StatefulWidget {
   final AudioState audioState;
 
@@ -145,11 +159,6 @@ class _BookmarkButtonState extends State<BookmarkButton> with SingleTickerProvid
     });
   }
 
-  void _rewind() {
-    final audioBloc = Provider.of<AudioBloc>(context, listen: false);
-    audioBloc.transitionState(TransitionState.rewind);
-  }
-
   String _formatDuration(Duration duration) {
     String twoDigits(int n) {
       if (n >= 10) return '$n';
@@ -167,27 +176,24 @@ class _BookmarkButtonState extends State<BookmarkButton> with SingleTickerProvid
     final isPlaying = widget.audioState == AudioState.playing || widget.audioState == AudioState.pausing;
     final isBuffering = widget.audioState == AudioState.buffering;
 
-    return GestureDetector(
-      onLongPress: isPlaying ? _rewind : null,
-      child: Tooltip(
-        message: '${L.of(context)!.bookmark_add_button_label}\n${L.of(context)!.rewind_button_label}',
-        child: IconButton(
-          onPressed: isBuffering
-              ? null
-              : isPlaying
-                  ? _createBookmark
-                  : null,
-          padding: const EdgeInsets.all(0.0),
-          icon: ScaleTransition(
-            scale: Tween<double>(begin: 1.0, end: 1.3).animate(
-              CurvedAnimation(parent: _animController, curve: Curves.easeOutBack),
-            ),
-            child: Icon(
-              semanticLabel: L.of(context)!.bookmark_add_button_label,
-              _justBookmarked ? Icons.bookmark : Icons.bookmark_add_outlined,
-              size: 48.0,
-              color: _justBookmarked ? Theme.of(context).primaryColor : null,
-            ),
+    return Tooltip(
+      message: L.of(context)!.bookmark_add_button_label,
+      child: IconButton(
+        onPressed: isBuffering
+            ? null
+            : isPlaying
+                ? _createBookmark
+                : null,
+        padding: const EdgeInsets.all(0.0),
+        icon: ScaleTransition(
+          scale: Tween<double>(begin: 1.0, end: 1.3).animate(
+            CurvedAnimation(parent: _animController, curve: Curves.easeOutBack),
+          ),
+          child: Icon(
+            semanticLabel: L.of(context)!.bookmark_add_button_label,
+            _justBookmarked ? Icons.bookmark : Icons.bookmark_add_outlined,
+            size: 36.0,
+            color: _justBookmarked ? Theme.of(context).primaryColor : null,
           ),
         ),
       ),

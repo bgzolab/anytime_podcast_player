@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:anytime/api/podcast/mobile_podcast_api.dart';
 import 'package:anytime/api/podcast/podcast_api.dart';
 import 'package:anytime/bloc/discovery/discovery_bloc.dart';
+import 'package:anytime/bloc/bookmark/bookmark_bloc.dart';
 import 'package:anytime/bloc/podcast/audio_bloc.dart';
 import 'package:anytime/bloc/podcast/episode_bloc.dart';
 import 'package:anytime/bloc/podcast/opml_bloc.dart';
@@ -36,6 +37,7 @@ import 'package:anytime/services/podcast/opml_service.dart';
 import 'package:anytime/services/podcast/podcast_service.dart';
 import 'package:anytime/services/settings/mobile_settings_service.dart';
 import 'package:anytime/state/library_state.dart';
+import 'package:anytime/ui/library/bookmarks_page.dart';
 import 'package:anytime/ui/library/discovery.dart';
 import 'package:anytime/ui/library/downloads.dart';
 import 'package:anytime/ui/library/library.dart';
@@ -221,6 +223,12 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
             podcastService: widget.podcastService!,
           ),
           dispose: (_, value) => value.dispose(),
+        ),
+        Provider<BookmarkBloc>(
+          create: (_) => BookmarkBloc(
+            repository: widget.repository,
+          ),
+          dispose: (_, value) => value.dispose(),
         )
       ],
       child: MaterialApp(
@@ -284,6 +292,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
     final podcastBloc = Provider.of<PodcastBloc>(context, listen: false);
     final timelineBloc = Provider.of<TimelineBloc>(context, listen: false);
+    final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
 
     WidgetsBinding.instance.addObserver(this);
 
@@ -291,6 +300,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
     audioBloc.transitionLifecycleState(LifecycleState.resume);
     podcastBloc.transitionLifecycleState(LifecycleState.resume);
     timelineBloc.transitionLifecycleState(LifecycleState.resume);
+    bookmarkBloc.transitionLifecycleState(LifecycleState.resume);
 
     /// Handle deep links
     _setupLinkListener();
@@ -358,10 +368,12 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
     final podcastBloc = Provider.of<PodcastBloc>(context, listen: false);
     final timelineBloc = Provider.of<TimelineBloc>(context, listen: false);
+    final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
 
     audioBloc.transitionLifecycleState(LifecycleState.detach);
     podcastBloc.transitionLifecycleState(LifecycleState.detach);
     timelineBloc.transitionLifecycleState(LifecycleState.detach);
+    bookmarkBloc.transitionLifecycleState(LifecycleState.detach);
 
     deepLinkSubscription?.cancel();
 
@@ -374,6 +386,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
     final podcastBloc = Provider.of<PodcastBloc>(context, listen: false);
     final timelineBloc = Provider.of<TimelineBloc>(context, listen: false);
+    final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
     var settingsBloc = Provider.of<SettingsBloc>(context, listen: false);
 
     switch (state) {
@@ -381,6 +394,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
         audioBloc.transitionLifecycleState(LifecycleState.resume);
         podcastBloc.transitionLifecycleState(LifecycleState.resume);
         timelineBloc.transitionLifecycleState(LifecycleState.resume);
+        bookmarkBloc.transitionLifecycleState(LifecycleState.resume);
         if (context.mounted) {
           SettingsService? settings = await MobileSettingsService.instance();
           settingsBloc.theme(settings!.theme);
@@ -390,6 +404,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
         audioBloc.transitionLifecycleState(LifecycleState.pause);
         podcastBloc.transitionLifecycleState(LifecycleState.pause);
         timelineBloc.transitionLifecycleState(LifecycleState.pause);
+        bookmarkBloc.transitionLifecycleState(LifecycleState.pause);
         break;
       default:
         break;
@@ -501,6 +516,20 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                                         child: Icon(Icons.dashboard, size: 18.0),
                                       ),
                                       Text(L.of(context)!.layout_label),
+                                    ],
+                                  ),
+                                ),
+                                PopupMenuItem<String>(
+                                  textStyle: theme.textTheme.titleMedium,
+                                  value: 'bookmarks',
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      const Padding(
+                                        padding: EdgeInsets.only(right: 8.0),
+                                        child: Icon(Icons.bookmarks_outlined, size: 18.0),
+                                      ),
+                                      Text(L.of(context)!.bookmarks_label),
                                     ],
                                   ),
                                 ),
@@ -689,6 +718,15 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
             ),
           ),
           builder: (context) => const LayoutSelectorWidget(),
+        );
+        break;
+      case 'bookmarks':
+        await Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            settings: const RouteSettings(name: 'bookmarks'),
+            builder: (context) => const BookmarksPage(),
+          ),
         );
         break;
       case 'rss':

@@ -106,6 +106,69 @@ class L {
         );
   }
 
+  /// Bookmarks
+  String get bookmarks_label {
+    return message('bookmarks_label') ??
+        Intl.message(
+          'Bookmarks',
+          name: 'bookmarks_label',
+          desc: 'Bookmarks tab/section label',
+          locale: localeName,
+        );
+  }
+
+  String get bookmark_add_button_label {
+    return message('bookmark_add_button_label') ??
+        Intl.message(
+          'Add bookmark',
+          name: 'bookmark_add_button_label',
+          desc: 'Bookmark button tooltip',
+          locale: localeName,
+        );
+  }
+
+  String bookmark_added_snackbar(String timestamp) {
+    return message('bookmark_added_snackbar') ??
+        Intl.message(
+          'Bookmark added at $timestamp',
+          name: 'bookmark_added_snackbar',
+          desc: 'Snackbar after adding bookmark',
+          args: [timestamp],
+          locale: localeName,
+        );
+  }
+
+  String get no_bookmarks_message {
+    return message('no_bookmarks_message') ??
+        Intl.message(
+          'No bookmarks yet',
+          name: 'no_bookmarks_message',
+          desc: 'Empty state for bookmarks',
+          locale: localeName,
+        );
+  }
+
+  String get bookmark_delete_label {
+    return message('bookmark_delete_label') ??
+        Intl.message(
+          'Delete bookmark',
+          name: 'bookmark_delete_label',
+          desc: 'Accessibility label for delete action',
+          locale: localeName,
+        );
+  }
+
+  String bookmark_seek_label(String timestamp) {
+    return message('bookmark_seek_label') ??
+        Intl.message(
+          'Jump to $timestamp',
+          name: 'bookmark_seek_label',
+          desc: 'Accessibility label for bookmark seek',
+          args: [timestamp],
+          locale: localeName,
+        );
+  }
+
   /// Podcasts
   String get subscribe_button_label {
     return message('subscribe_button_label') ??

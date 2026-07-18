@@ -84,8 +84,11 @@ lib/ui/
 │   ├── queue_page.dart        #   "Up Next" 队列
 │   ├── transcript_view.dart   #   转录文本视图
 │   └── bookmark_view.dart     #   当前单集的书签列表（Now Playing 底部抽屉）
-├── search/                    # 搜索
-│   └── search_page.dart       #   搜索栏 + 结果列表
+├── search/                    # 搜索（按标签页上下文感知）
+│   ├── search.dart            #   搜索页：根据 SearchMode 执行不同搜索逻辑
+│   ├── search_mode.dart       #   SearchMode 枚举（timeline/library/discovery/downloads/bookmarks）
+│   ├── search_bar.dart        #   搜索栏组件（未使用）
+│   └── search_results.dart    #   在线搜索结果列表（Discovery 模式使用）
 ├── settings/                  # 设置
 │   ├── settings_page.dart     #   设置主页面
 │   └── ...                    #   主题/搜索源/刷新周期等子页面
@@ -200,11 +203,13 @@ lib/repository/
 ├── repository.dart            # 抽象 Repository 接口
 │   CRUD: save/find/findAll/delete 按类型（Podcast, Episode 等）
 │   分页查询：findEpisodesBefore() / countEpisodesSince()（时间线使用）
+│   搜索方法：searchEpisodes() / searchPodcasts() / searchDownloads() / searchBookmarks()
 └── sembast/
     ├── sembast_repository.dart      # Sembast (NoSQL) 实现
     │   ├── 上层覆盖了内存播客缓存 → 先查缓存再查 DB
     │   ├── 按 Podcast / Episode / Queue 分类存储
-    │   └── 分页查询基于 Sembast Finder.limit + Filter.lessThan(publicationDate)
+    │   ├── 分页查询基于 Sembast Finder.limit + Filter.lessThan(publicationDate)
+    │   └── 搜索方法：内存过滤（case-insensitive title 匹配）
     └── sembast_database_service.dart # 数据库辅助：版本管理、数据迁移
 ```
 

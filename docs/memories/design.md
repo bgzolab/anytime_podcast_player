@@ -59,6 +59,38 @@ description: 给后续 LLM 提供「可执行、可验证、可迭代」的上�
 
 **数据库结构**：Sembast `bookmark` store，自增 int key。字段：episodeGuid、episodeTitle、podcastName、podcastGuid、positionMs、note、createdAt。按 episodeGuid 查询时按 positionMs 排序，全部查询时按 createdAt 降序。
 
+### 上下文感知搜索功能
+
+**设计决策**：搜索按钮根据当前标签页执行不同的搜索逻辑，而非全局统一搜索。
+
+**SearchMode 枚举**（`lib/ui/search/search_mode.dart`）：
+- `timeline` — 搜索所有本地单集（按标题匹配）
+- `library` — 搜索所有已订阅播客（按名称匹配）
+- `discovery` — 在线搜索（iTunes/PodcastIndex API，保持原有行为）
+- `downloads` — 搜索已下载单集（按标题匹配）
+- `bookmarks` — 搜索书签（按单集标题、播客名称或备注匹配）
+
+**实现方式**：
+- `Search` widget 接收 `SearchMode` 和 `Repository` 参数
+- Discovery 模式：使用 `SearchBloc` 执行在线搜索（原有逻辑不变）
+- 其他模式：直接调用 `Repository.searchXxx(term)` 方法，内存过滤（case-insensitive）
+- 搜索结果复用现有 `EpisodeTile`、`PodcastTile` 组件
+- 书签搜索结果使用自定义 `_BookmarkSearchTile` 组件
+
+**Repository 搜索方法**（`lib/repository/repository.dart`）：
+- `searchEpisodes(String term)` — 按标题过滤单集
+- `searchPodcasts(String term)` — 按标题过滤播客
+- `searchDownloads(String term)` — 按标题过滤已下载单集
+- `searchBookmarks(String term)` — 按 episodeTitle/podcastName/note 过滤书签
+
+**国际化**：12 个新字符串（hint/tooltip/empty state），支持英文和简体中文。
+
+**关键文件**：
+- `lib/ui/search/search.dart` — 搜索页面（支持 5 种模式）
+- `lib/ui/search/search_mode.dart` — SearchMode 枚举
+- `lib/ui/anytime_podcast_app.dart` — 搜索按钮根据标签页传递 SearchMode
+- `lib/repository/sembast/sembast_repository.dart` — 搜索方法实现
+
 ## 状态管理约定
 
 所有 BLoC 遵循统一的状态模式：
@@ -207,7 +239,7 @@ IDLE
 | 添加新的设置选项 | `settings_bloc.dart`, `settings_page.dart`, `app_settings.dart` | 低 |
 | 新增搜索提供商 | `podcast_api.dart`, `mobile_podcast_api.dart` | 中 |
 | 添加播客分类筛选 | `podcast_bloc.dart` | 中 |
-| 剧集搜索功能 | `episode_bloc.dart`, `podcast_page.dart` | 中 |
+| ✅ 上下文感知搜索 | `search.dart`, `search_mode.dart`, `repository.dart` | 已完成 |
 | 批量 OPML 导入优化 | `opml_service.dart` | 中 |
 | 增加更多语言 | `lib/l10n/` 添加 `.arb` 文件 | 低 |
 

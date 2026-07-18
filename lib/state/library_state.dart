@@ -9,3 +9,18 @@ class LibraryRefreshingState extends LibraryState {}
 class LibraryReadyState extends LibraryState {}
 
 class LibraryUpdatedState extends LibraryState {}
+
+/// Progress update emitted during [PodcastService.refreshFeedsWithProgress].
+class RefreshProgress {
+  final int total;
+  final int completed;
+  final String currentSource;
+  final bool finished;
+
+  const RefreshProgress({
+    required this.total,
+    required this.completed,
+    required this.currentSource,
+    this.finished = false,
+  });
+}

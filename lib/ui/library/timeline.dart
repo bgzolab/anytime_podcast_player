@@ -7,6 +7,7 @@ import 'package:anytime/bloc/podcast/queue_bloc.dart';
 import 'package:anytime/entities/episode.dart';
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/state/bloc_state.dart';
+import 'package:anytime/state/library_state.dart';
 import 'package:anytime/state/queue_event_state.dart';
 import 'package:anytime/ui/widgets/episode_tile.dart';
 import 'package:anytime/ui/widgets/platform_progress_indicator.dart';
@@ -339,7 +340,7 @@ class _TimelineState extends State<Timeline> {
             ),
           ),
 
-          // Refresh button
+          // Refresh button — fetches new episodes from RSS feeds
           Semantics(
             button: true,
             child: IconButton(
@@ -348,8 +349,8 @@ class _TimelineState extends State<Timeline> {
                 size: 20.0,
                 color: theme.colorScheme.secondary,
               ),
-              tooltip: 'Refresh timeline',
-              onPressed: () => bloc.event(TimelineEvent.refresh),
+              tooltip: 'Refresh feeds',
+              onPressed: () => _refreshFeeds(context, bloc),
               visualDensity: VisualDensity.compact,
             ),
           ),
@@ -450,5 +451,74 @@ class _TimelineState extends State<Timeline> {
       final target = DateTime(picked.year, picked.month, picked.day);
       bloc.jumpToDate(target);
     }
+  }
+
+  /// Triggers a refresh of all subscribed podcast RSS feeds and shows a
+  /// progress dialog. Each source has a 5-second timeout.
+  void _refreshFeeds(BuildContext context, TimelineBloc bloc) {
+    final stream = bloc.podcastService.refreshFeedsWithProgress();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StreamBuilder<RefreshProgress>(
+          stream: stream,
+          builder: (context, snapshot) {
+            final progress = snapshot.data;
+
+            if (progress == null) {
+              return const AlertDialog(
+                content: Row(
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(width: 16),
+                    Text('Starting refresh…'),
+                  ],
+                ),
+              );
+            }
+
+            if (progress.finished) {
+              // Auto-dismiss and reload timeline.
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Navigator.of(dialogContext).pop();
+                bloc.event(TimelineEvent.refresh);
+              });
+
+              return AlertDialog(
+                content: Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.green),
+                    const SizedBox(width: 16),
+                    Text('Done! Updated ${progress.total} sources'),
+                  ],
+                ),
+              );
+            }
+
+            final value = progress.total > 0 ? progress.completed / progress.total : 0.0;
+
+            return AlertDialog(
+              title: const Text('Refreshing feeds'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${progress.completed + 1} / ${progress.total}: ${progress.currentSource}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 12),
+                  LinearProgressIndicator(value: value),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 }

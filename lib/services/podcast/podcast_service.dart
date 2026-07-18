@@ -242,6 +242,10 @@ abstract class PodcastService {
     background = false,
   });
 
+  /// Refresh all subscribed podcast feeds, emitting per-source progress.
+  /// Each source has a 5-second timeout.
+  Stream<RefreshProgress> refreshFeedsWithProgress();
+
   /// Event listeners
   late Stream<Podcast?> podcastListener;
   late Stream<EpisodeState> episodeListener;

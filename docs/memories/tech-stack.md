@@ -143,6 +143,15 @@ share_plus: ^11.0.0          # 分享功能
 url_launcher: ^6.3.1         # 打开外部链接
 ```
 
+### 音效资源
+
+```
+assets/notification/water-drop.mp3   # 书签创建提示音，由 BookmarkSound 播放
+```
+
+- 使用独立 `AudioPlayer` 实例播放，不干扰播客播放
+- 在 `pubspec.yaml` 的 `assets:` 中声明
+
 ### 设备 & 平台
 
 ```yaml
@@ -168,7 +177,10 @@ flutter_lints: ^4.0.0       # lint 规则
 test/
 ├── unit/
 │   ├── bloc/
-│   │   └── timeline_bloc_test.dart   # 时间线 BLoC：分页、排序、日期筛选、错误处理
+│   │   ├── timeline_bloc_test.dart   # 时间线 BLoC：分页、排序、日期筛选、错误处理
+│   │   └── bookmark_bloc_test.dart   # 书签 BLoC：创建/查询/删除/排序
+│   ├── entities/
+│   │   └── bookmark_test.dart        # Bookmark entity：toMap/fromMap 往返、operator ==
 │   ├── core/environment_test.dart
 │   ├── navigation/navigation_route_observer_test.dart
 │   ├── persistence/sembast_test.dart
@@ -178,7 +190,7 @@ test/
 │       ├── mock_notification_service.dart
 │       ├── mock_path_provider.dart
 │       ├── mock_podcast_api.dart
-│       └── mock_settings_service.dart
+│       └── mock_settings_service.dart  # 包含 bookmarkOnSkipPrevious 字段
 test_resources/
 ├── opml_import_test1.opml  # OPML 测试用例
 └── podcast1.rss            # RSS 测试用例

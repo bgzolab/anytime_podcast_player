@@ -43,6 +43,22 @@ description: 给后续 LLM 提供「可执行、可验证、可迭代」的上�
 - `audio_service` 提供 Android 前台 Service / iOS 远程控制 / 锁屏控件等平台能力
 - 但两者 API 都较底层，中间层 `DefaultAudioPlayerService` 做了封装，暴露简单的 `play`/`pause`/`seek`/`speed`
 
+### Bookmark 功能设计决策
+
+**耳机"上一曲"劫持**：通过 `AudioPlayerService.onSkipToPrevious` 回调实现。`_DefaultAudioPlayerHandler.skipToPrevious()` 优先调用回调，无回调时回退到 `rewind()`。受 `AppSettings.bookmarkOnSkipPrevious` 设置控制。
+
+**Bookmark 按钮位置**：放在播放控制栏 Speed 旁边（右侧），始终可见可用。Rewind 按钮保持原位。设置只控制耳机行为，不影响 UI。
+
+**Bookmark 数据模型**：独立 Entity（`Bookmark`），不嵌入 Episode。独立 Sembast store（`bookmark`）。BLoC 通过 `PublishSubject<BookmarkEvent>` + `BehaviorSubject<BlocState<List<Bookmark>>>` 管理状态。
+
+**两个 Bookmark 视图**：
+- `BookmarkView`（Now Playing 底部抽屉 tab）：只显示**当前播放单集**的书签，平铺列表
+- `BookmarksPage`（底部导航栏 tab）：显示**所有单集**的书签，按播客→单集分组，使用 `SliverList` 实现（因为嵌入 `CustomScrollView`）
+
+**书签创建音效**：`BookmarkSound.play()` 使用独立 `AudioPlayer` 实例播放 `assets/notification/water-drop.mp3`，不干扰播客播放。
+
+**数据库结构**：Sembast `bookmark` store，自增 int key。字段：episodeGuid、episodeTitle、podcastName、podcastGuid、positionMs、note、createdAt。按 episodeGuid 查询时按 positionMs 排序，全部查询时按 createdAt 降序。
+
 ## 状态管理约定
 
 所有 BLoC 遵循统一的状态模式：
@@ -119,6 +135,12 @@ AnytimePodcastApp (StatefulWidget)
             │    ├── 无限滚动：滚到底自动加载更多
             │    ├── 日期筛选：点击日期头 → showDatePicker → 只显示当天剧集
             │    └── Empty/Loading/Error 状态
+            ├── BookmarksPage (Tab 4)
+            │    ├── SliverList 实现（嵌入父 CustomScrollView）
+            │    ├── 按播客→单集分组（播客标题行 → 单集行 → 书签行）
+            │    ├── 书签行：HH:MM:SS 时间点 + 备注 + 日期 + 播放按钮
+            │    ├── 左滑删除书签
+            │    └── Empty/Loading/Error 状态
             └── MiniPlayer (浮动底部条)
                  ├── 播客封面缩略图 + 标题
                  ├── 播放/暂停按钮
@@ -138,12 +160,13 @@ PodcastPage (播客详情)
   ↓ 点击剧集或 MiniPlayer
 NowPlayingPage (全屏播放器)
   ├── 大封面 + 标题/播客名
-  ├── TransportControls (上一首/播放暂停/下一首)
+  ├── TransportControls (倒退/播放暂停/快进/书签/速度)
   ├── SeekBar (进度条 + 时间显示)
   ├── SpeedSelector (0.5x ~ 3.0x)
   ├── SleepSelector (定时关闭)
   ├── ChapterSelector
-  └── TranscriptView
+  ├── TranscriptView
+  └── BookmarkView (当前单集书签列表)
 ```
 
 ## 音频播放状态机

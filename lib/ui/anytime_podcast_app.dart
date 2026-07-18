@@ -258,7 +258,10 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
         theme: theme,
         // Uncomment builder below to enable accessibility checker tool.
         // builder: (context, child) => AccessibilityTools(child: child),
-        home: const AnytimeHomePage(title: 'Anytime Podcast Player'),
+        home: AnytimeHomePage(
+          title: 'Anytime Podcast Player',
+          audioPlayerService: widget.audioPlayerService,
+        ),
       ),
     );
   }
@@ -267,11 +270,13 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
 class AnytimeHomePage extends StatefulWidget {
   final String? title;
   final bool topBarVisible;
+  final AudioPlayerService? audioPlayerService;
 
   const AnytimeHomePage({
     super.key,
     this.title,
     this.topBarVisible = true,
+    this.audioPlayerService,
   });
 
   @override
@@ -302,6 +307,15 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
     podcastBloc.transitionLifecycleState(LifecycleState.resume);
     timelineBloc.transitionLifecycleState(LifecycleState.resume);
     bookmarkBloc.transitionLifecycleState(LifecycleState.resume);
+
+    /// Wire headphone "previous track" button to create a bookmark.
+    widget.audioPlayerService?.onSkipToPrevious = () {
+      final episode = widget.audioPlayerService?.nowPlaying;
+      final positionMs = widget.audioPlayerService?.playPosition?.value.position.inMilliseconds;
+      if (episode != null && positionMs != null) {
+        bookmarkBloc.event(BookmarkCreateEvent(episode: episode, positionMs: positionMs));
+      }
+    };
 
     /// Handle deep links
     _setupLinkListener();
@@ -519,7 +533,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                                         child: Icon(Icons.dashboard, size: 18.0),
                                       ),
                                       Text(L.of(context)!.layout_label),
-cc                                    ],
+                                    ],
                                   ),
                                 ),
                                 PopupMenuItem<String>(

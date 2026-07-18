@@ -17,18 +17,12 @@ enum TimelineEvent {
   /// Load the next page of older episodes (cursor-based pagination).
   loadMore,
 
-  /// Sort episodes with newest first (descending by publicationDate).
-  sortNewestFirst,
-
-  /// Sort episodes with oldest first (ascending by publicationDate).
-  sortOldestFirst,
-
   /// Toggle whether played episodes are shown or hidden.
   toggleShowPlayed,
 }
 
 /// The BLoC provides cursor-paginated access to all episodes from subscribed
-/// podcasts, grouped by date, with a toggle between newest-first and oldest-first.
+/// podcasts, grouped by date, always sorted newest-first.
 ///
 /// ## Pagination
 ///
@@ -39,7 +33,6 @@ enum TimelineEvent {
 ///   than the cursor (`_cursor`, the oldest [publicationDate] seen so far).
 /// - **Date jump**: calling [jumpToDate] queries the offset of the given date
 ///   and loads all pages up to that point, then emits the accumulated list.
-/// - **Sort toggle**: sort is applied in-memory on the already-loaded list.
 ///
 /// Output uses [BehaviorSubject] so subscribers always receive the last emitted
 /// state, even when subscribing late (e.g. after a tab switch).
@@ -51,7 +44,6 @@ class TimelineBloc extends Bloc {
   final PublishSubject<DateTime> _dateJumpInput = PublishSubject<DateTime>();
   final BehaviorSubject<BlocState<List<Episode>>> _stateOutput = BehaviorSubject<BlocState<List<Episode>>>();
 
-  bool _sortDescending = true;
   bool _isLoadingMore = false;
   bool _showPlayed = false;
 
@@ -101,9 +93,6 @@ class TimelineBloc extends Bloc {
   /// always get the last emitted state (no blank screen).
   Stream<BlocState<List<Episode>>> get state => _stateOutput.stream;
 
-  /// Whether the current sort is newest-first (true) or oldest-first (false).
-  bool get sortDescending => _sortDescending;
-
   /// Whether played episodes are currently shown (true) or hidden (false).
   bool get showPlayed => _showPlayed;
 
@@ -147,19 +136,13 @@ class TimelineBloc extends Bloc {
   // ---------------------------------------------------------------------------
 
   void _init() {
-    // Regular events (refresh / loadMore / sort)
+    // Regular events (refresh / loadMore / toggleShowPlayed)
     _eventInput.switchMap<BlocState<List<Episode>>>((TimelineEvent event) {
       switch (event) {
         case TimelineEvent.refresh:
           return _refresh();
         case TimelineEvent.loadMore:
           return _loadMore();
-        case TimelineEvent.sortNewestFirst:
-          _sortDescending = true;
-          return _emitFromCache();
-        case TimelineEvent.sortOldestFirst:
-          _sortDescending = false;
-          return _emitFromCache();
         case TimelineEvent.toggleShowPlayed:
           _showPlayed = !_showPlayed;
           return _emitFromCache();
@@ -314,7 +297,7 @@ class TimelineBloc extends Bloc {
     sorted.sort((a, b) {
       final da = a.publicationDate ?? DateTime.now();
       final db = b.publicationDate ?? DateTime.now();
-      return _sortDescending ? db.compareTo(da) : da.compareTo(db);
+      return db.compareTo(da); // Always newest-first
     });
     return sorted;
   }

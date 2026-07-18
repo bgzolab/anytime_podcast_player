@@ -104,63 +104,6 @@ void main() {
       expect(last.results, isEmpty);
     });
 
-    test('sortOldestFirst reverses episode order', () async {
-      final episodes = [
-        Episode(
-          guid: 'ep-3',
-          podcast: 'Test Podcast',
-          title: 'Episode 3',
-          publicationDate: DateTime(2026, 7, 20),
-          duration: 900000,
-        ),
-        Episode(
-          guid: 'ep-1',
-          podcast: 'Test Podcast',
-          title: 'Episode 1',
-          publicationDate: DateTime(2026, 7, 15),
-          duration: 1800000,
-        ),
-        Episode(
-          guid: 'ep-2',
-          podcast: 'Test Podcast',
-          title: 'Episode 2',
-          publicationDate: DateTime(2026, 7, 10),
-          duration: 1200000,
-        ),
-      ];
-
-      final service = FakePodcastService(
-        loadBefore: (_, __) async => episodes,
-        countSince: (_) async => 3,
-      );
-      final bloc = TimelineBloc(podcastService: service);
-      addTearDown(() => bloc.dispose());
-
-      final states = <BlocState>[];
-      bloc.state.listen((state) {
-        states.add(state);
-      });
-
-      // Load episodes
-      bloc.event(TimelineEvent.refresh);
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      // Default: newest-first → ep-3, ep-1, ep-2
-      var loaded = states.last as BlocPopulatedState<List<Episode>>;
-      expect(loaded.results![0].guid, 'ep-3');
-      expect(loaded.results![1].guid, 'ep-1');
-      expect(loaded.results![2].guid, 'ep-2');
-
-      // Toggle to oldest-first
-      bloc.event(TimelineEvent.sortOldestFirst);
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      loaded = states.last as BlocPopulatedState<List<Episode>>;
-      expect(loaded.results![0].guid, 'ep-2');
-      expect(loaded.results![1].guid, 'ep-1');
-      expect(loaded.results![2].guid, 'ep-3');
-    });
-
     test('loadMore appends next page and updates cursor', () async {
       int callCount = 0;
       final page1 = [

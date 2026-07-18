@@ -38,7 +38,6 @@ class _TimelineItem {
 ///
 /// - **Infinite scroll**: loads more episodes when the user scrolls near the
 ///   bottom of the list.
-/// - **Sort toggle**: newest-first (default) / oldest-first.
 /// - **Date jump**: tap any date header to open a date picker and jump the
 ///   timeline to that day.
 /// - **Manual refresh**: tap the refresh button in the toolbar.
@@ -302,10 +301,9 @@ class _TimelineState extends State<Timeline> {
     );
   }
 
-  /// Builds the toolbar row with refresh button, show-played toggle and sort toggle.
+  /// Builds the toolbar row with refresh button and show-played toggle.
   Widget _buildToolbar(BuildContext context, TimelineBloc bloc, bool isLoadingMore) {
     final theme = Theme.of(context);
-    final isDescending = bloc.sortDescending;
     final showPlayed = bloc.showPlayed;
 
     return Padding(
@@ -353,40 +351,6 @@ class _TimelineState extends State<Timeline> {
               tooltip: 'Refresh timeline',
               onPressed: () => bloc.event(TimelineEvent.refresh),
               visualDensity: VisualDensity.compact,
-            ),
-          ),
-
-          // Sort toggle
-          Semantics(
-            button: true,
-            child: InkWell(
-              onTap: () {
-                bloc.event(
-                  isDescending ? TimelineEvent.sortOldestFirst : TimelineEvent.sortNewestFirst,
-                );
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Icon(
-                      isDescending ? Icons.arrow_downward : Icons.arrow_upward,
-                      size: 16.0,
-                      color: theme.colorScheme.secondary,
-                    ),
-                    const SizedBox(width: 4.0),
-                    Text(
-                      isDescending
-                          ? L.of(context)!.episode_sort_latest_first_label
-                          : L.of(context)!.episode_sort_earliest_first_label,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.secondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
           ),
         ],

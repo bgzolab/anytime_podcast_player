@@ -2493,6 +2493,129 @@ class L {
           locale: localeName,
         );
   }
+
+  /// Timeline
+  String get timeline_failed_to_load {
+    return message('timeline_failed_to_load') ??
+        Intl.message(
+          'Failed to load timeline',
+          name: 'timeline_failed_to_load',
+          desc: 'Error message when timeline fails to load',
+          locale: localeName,
+        );
+  }
+
+  String get retry_button_label {
+    return message('retry_button_label') ??
+        Intl.message(
+          'Retry',
+          name: 'retry_button_label',
+          desc: 'Retry button label',
+          locale: localeName,
+        );
+  }
+
+  String get timeline_all_played_message {
+    return message('timeline_all_played_message') ??
+        Intl.message(
+          'All episodes are played. Tap the visibility icon above to show them.',
+          name: 'timeline_all_played_message',
+          desc: 'Displayed when all timeline episodes have been played',
+          locale: localeName,
+        );
+  }
+
+  String timeline_showing_date(String dateStr) {
+    return message('timeline_showing_date') ??
+        Intl.message(
+          'Showing $dateStr',
+          args: [dateStr],
+          name: 'timeline_showing_date',
+          desc: 'Shown when timeline is filtered to a specific date',
+          locale: localeName,
+        );
+  }
+
+  String get clear_button_label {
+    return message('clear_button_label') ??
+        Intl.message(
+          'Clear',
+          name: 'clear_button_label',
+          desc: 'Clear button label',
+          locale: localeName,
+        );
+  }
+
+  String get hide_played_episodes_tooltip {
+    return message('hide_played_episodes_tooltip') ??
+        Intl.message(
+          'Hide played episodes',
+          name: 'hide_played_episodes_tooltip',
+          desc: 'Tooltip for hiding played episodes',
+          locale: localeName,
+        );
+  }
+
+  String get show_played_episodes_tooltip {
+    return message('show_played_episodes_tooltip') ??
+        Intl.message(
+          'Show played episodes',
+          name: 'show_played_episodes_tooltip',
+          desc: 'Tooltip for showing played episodes',
+          locale: localeName,
+        );
+  }
+
+  String get refresh_feeds_tooltip {
+    return message('refresh_feeds_tooltip') ??
+        Intl.message(
+          'Refresh feeds',
+          name: 'refresh_feeds_tooltip',
+          desc: 'Tooltip for refresh feeds button',
+          locale: localeName,
+        );
+  }
+
+  String get jump_to_date_tooltip {
+    return message('jump_to_date_tooltip') ??
+        Intl.message(
+          'Jump to date in timeline',
+          name: 'jump_to_date_tooltip',
+          desc: 'Help text for date picker in timeline',
+          locale: localeName,
+        );
+  }
+
+  String get starting_refresh {
+    return message('starting_refresh') ??
+        Intl.message(
+          'Starting refresh…',
+          name: 'starting_refresh',
+          desc: 'Shown while refresh is starting',
+          locale: localeName,
+        );
+  }
+
+  String refresh_done(int total) {
+    return message('refresh_done') ??
+        Intl.message(
+          'Done! Updated $total sources',
+          args: [total],
+          name: 'refresh_done',
+          desc: 'Shown when refresh completes',
+          locale: localeName,
+        );
+  }
+
+  String get refreshing_feeds_title {
+    return message('refreshing_feeds_title') ??
+        Intl.message(
+          'Refreshing feeds',
+          name: 'refreshing_feeds_title',
+          desc: 'Title of refresh progress dialog',
+          locale: localeName,
+        );
+  }
 }
 
 class AnytimeLocalisationsDelegate extends LocalizationsDelegate<L> {

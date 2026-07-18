@@ -124,13 +124,13 @@ class _TimelineState extends State<Timeline> {
                     Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
                     const SizedBox(height: 16),
                     Text(
-                      'Failed to load timeline',
+                      L.of(context)!.timeline_failed_to_load,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () => bloc.event(TimelineEvent.refresh),
-                      child: const Text('Retry'),
+                      child: Text(L.of(context)!.retry_button_label),
                     ),
                   ],
                 ),
@@ -177,7 +177,7 @@ class _TimelineState extends State<Timeline> {
               const Padding(padding: EdgeInsets.only(top: 16.0)),
               Text(
                 hasHidden
-                    ? 'All episodes are played. Tap the visibility icon above to show them.'
+                    ? L.of(context)!.timeline_all_played_message
                     : L.of(context)!.no_episodes_message,
                 style: Theme.of(context).textTheme.titleLarge,
                 textAlign: TextAlign.center,
@@ -281,7 +281,7 @@ class _TimelineState extends State<Timeline> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Showing $dateStr',
+              L.of(context)!.timeline_showing_date(dateStr),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.primary,
               ),
@@ -290,7 +290,7 @@ class _TimelineState extends State<Timeline> {
           TextButton.icon(
             onPressed: () => bloc.clearDateFilter(),
             icon: const Icon(Icons.close, size: 16),
-            label: const Text('Clear'),
+            label: Text(L.of(context)!.clear_button_label),
             style: TextButton.styleFrom(
               foregroundColor: theme.colorScheme.primary,
               padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -334,7 +334,7 @@ class _TimelineState extends State<Timeline> {
                     ? theme.colorScheme.primary
                     : theme.colorScheme.secondary,
               ),
-              tooltip: showPlayed ? 'Hide played episodes' : 'Show played episodes',
+              tooltip: showPlayed ? L.of(context)!.hide_played_episodes_tooltip : L.of(context)!.show_played_episodes_tooltip,
               onPressed: () => bloc.event(TimelineEvent.toggleShowPlayed),
               visualDensity: VisualDensity.compact,
             ),
@@ -349,7 +349,7 @@ class _TimelineState extends State<Timeline> {
                 size: 20.0,
                 color: theme.colorScheme.secondary,
               ),
-              tooltip: 'Refresh feeds',
+              tooltip: L.of(context)!.refresh_feeds_tooltip,
               onPressed: () => _refreshFeeds(context, bloc),
               visualDensity: VisualDensity.compact,
             ),
@@ -442,7 +442,7 @@ class _TimelineState extends State<Timeline> {
       initialDate: now,
       firstDate: DateTime(2000),
       lastDate: now,
-      helpText: 'Jump to date in timeline',
+      helpText: L.of(context)!.jump_to_date_tooltip,
     );
 
     if (picked != null && context.mounted) {
@@ -468,12 +468,12 @@ class _TimelineState extends State<Timeline> {
             final progress = snapshot.data;
 
             if (progress == null) {
-              return const AlertDialog(
+              return AlertDialog(
                 content: Row(
                   children: [
-                    CircularProgressIndicator(),
-                    SizedBox(width: 16),
-                    Text('Starting refresh…'),
+                    const CircularProgressIndicator(),
+                    const SizedBox(width: 16),
+                    Text(L.of(context)!.starting_refresh),
                   ],
                 ),
               );
@@ -491,7 +491,7 @@ class _TimelineState extends State<Timeline> {
                   children: [
                     const Icon(Icons.check_circle, color: Colors.green),
                     const SizedBox(width: 16),
-                    Text('Done! Updated ${progress.total} sources'),
+                    Text(L.of(context)!.refresh_done(progress.total)),
                   ],
                 ),
               );
@@ -500,7 +500,7 @@ class _TimelineState extends State<Timeline> {
             final value = progress.total > 0 ? progress.completed / progress.total : 0.0;
 
             return AlertDialog(
-              title: const Text('Refreshing feeds'),
+              title: Text(L.of(context)!.refreshing_feeds_title),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,

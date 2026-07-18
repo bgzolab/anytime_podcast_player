@@ -35,6 +35,7 @@ import 'package:anytime/services/podcast/mobile_podcast_service.dart';
 import 'package:anytime/services/podcast/opml_service.dart';
 import 'package:anytime/services/podcast/podcast_service.dart';
 import 'package:anytime/services/settings/mobile_settings_service.dart';
+import 'package:anytime/state/bloc_state.dart';
 import 'package:anytime/state/library_state.dart';
 import 'package:anytime/ui/library/discovery.dart';
 import 'package:anytime/ui/library/downloads.dart';
@@ -410,7 +411,16 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
         body: Column(
           children: <Widget>[
             Expanded(
-              child: CustomScrollView(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  if (pager.page.value != 0) return;
+                  final bloc = Provider.of<TimelineBloc>(context, listen: false);
+                  bloc.event(TimelineEvent.refresh);
+                  await bloc.state.firstWhere(
+                    (s) => s is BlocPopulatedState || s is BlocErrorState,
+                  );
+                },
+                child: CustomScrollView(
                 slivers: <Widget>[
                   SliverVisibility(
                     visible: widget.topBarVisible,
@@ -564,6 +574,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                         return _fragment(snapshot.data, searchBloc);
                       }),
                 ],
+              ),
               ),
             ),
             const MiniPlayer(),

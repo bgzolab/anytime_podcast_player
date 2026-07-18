@@ -143,6 +143,16 @@ class _SettingsState extends State<Settings> {
                   ),
                 ),
               ),
+              MergeSemantics(
+                child: ListTile(
+                  title: Text(L.of(context)!.settings_bookmark_on_skip_previous),
+                  subtitle: Text(L.of(context)!.settings_bookmark_on_skip_previous_subtitle),
+                  trailing: Switch.adaptive(
+                    value: snapshot.data!.bookmarkOnSkipPrevious,
+                    onChanged: (value) => setState(() => settingsBloc.setBookmarkOnSkipPrevious(value)),
+                  ),
+                ),
+              ),
               SettingsDividerLabel(label: L.of(context)!.settings_podcast_management_divider_label),
               const EpisodeRefreshWidget(),
               MergeSemantics(

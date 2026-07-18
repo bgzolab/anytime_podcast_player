@@ -71,6 +71,10 @@ class AppSettings {
   /// The default tab shown on app start (0=Timeline, 1=Library, 2=Discover, 3=Downloads).
   final int defaultTab;
 
+  /// If true, the headphone "previous track" button creates a bookmark
+  /// instead of rewinding.
+  final bool bookmarkOnSkipPrevious;
+
   AppSettings({
     required this.theme,
     required this.markDeletedEpisodesAsPlayed,
@@ -94,6 +98,7 @@ class AppSettings {
     required this.backgroundUpdateMobileData,
     required this.updatesNotification,
     required this.defaultTab,
+    required this.bookmarkOnSkipPrevious,
   });
 
   AppSettings.sensibleDefaults()
@@ -118,7 +123,8 @@ class AppSettings {
         backgroundUpdate = false,
         backgroundUpdateMobileData = false,
         updatesNotification = false,
-        defaultTab = 0;
+        defaultTab = 0,
+        bookmarkOnSkipPrevious = true;
 
   AppSettings copyWith({
     String? theme,
@@ -144,6 +150,7 @@ class AppSettings {
     bool? backgroundUpdateMobileData,
     bool? updatesNotification,
     int? defaultTab,
+    bool? bookmarkOnSkipPrevious,
   }) =>
       AppSettings(
         theme: theme ?? this.theme,
@@ -168,5 +175,6 @@ class AppSettings {
         backgroundUpdateMobileData: backgroundUpdateMobileData ?? this.backgroundUpdateMobileData,
         updatesNotification: updatesNotification ?? this.updatesNotification,
         defaultTab: defaultTab ?? this.defaultTab,
+        bookmarkOnSkipPrevious: bookmarkOnSkipPrevious ?? this.bookmarkOnSkipPrevious,
       );
 }

@@ -37,6 +37,7 @@ class SettingsBloc extends Bloc {
   final BehaviorSubject<bool> _backgroundUpdateMobileData = BehaviorSubject<bool>();
   final BehaviorSubject<bool> _updateNotification = BehaviorSubject<bool>();
   final BehaviorSubject<int> _defaultTab = BehaviorSubject<int>();
+  final BehaviorSubject<bool> _bookmarkOnSkipPrevious = BehaviorSubject<bool>();
 
   var _currentSettings = AppSettings.sensibleDefaults();
 
@@ -79,6 +80,7 @@ class SettingsBloc extends Bloc {
       backgroundUpdateMobileData: settingsService.backgroundUpdateMobileData,
       updatesNotification: settingsService.updateNotification,
       defaultTab: settingsService.defaultTab,
+      bookmarkOnSkipPrevious: settingsService.bookmarkOnSkipPrevious,
     );
 
     _settings.add(_currentSettings);
@@ -211,6 +213,12 @@ class SettingsBloc extends Bloc {
       settingsService.defaultTab = tab;
     });
 
+    _bookmarkOnSkipPrevious.listen((bool value) {
+      _currentSettings = _currentSettings.copyWith(bookmarkOnSkipPrevious: value);
+      _settings.add(_currentSettings);
+      settingsService.bookmarkOnSkipPrevious = value;
+    });
+
     _updateNotification.listen((updateNotification) {
       _currentSettings = _currentSettings.copyWith(updatesNotification: updateNotification);
       _settings.add(_currentSettings);
@@ -276,6 +284,8 @@ class SettingsBloc extends Bloc {
 
   void Function(int) get setDefaultTab => _defaultTab.add;
 
+  void Function(bool) get setBookmarkOnSkipPrevious => _bookmarkOnSkipPrevious.add;
+
   AppSettings get currentSettings => _settings.value;
 
   @override
@@ -299,6 +309,7 @@ class SettingsBloc extends Bloc {
     _backgroundUpdate.close();
     _updateNotification.close();
     _defaultTab.close();
+    _bookmarkOnSkipPrevious.close();
     _settings.close();
   }
 }

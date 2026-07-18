@@ -98,4 +98,8 @@ abstract class SettingsService {
   set defaultTab(int defaultTab);
 
   int get defaultTab;
+
+  set bookmarkOnSkipPrevious(bool value);
+
+  bool get bookmarkOnSkipPrevious;
 }

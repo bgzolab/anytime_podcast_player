@@ -169,6 +169,26 @@ class L {
         );
   }
 
+  String get settings_bookmark_on_skip_previous {
+    return message('settings_bookmark_on_skip_previous') ??
+        Intl.message(
+          'Headphone previous button creates bookmark',
+          name: 'settings_bookmark_on_skip_previous',
+          desc: 'Setting to control headphone previous button behavior',
+          locale: localeName,
+        );
+  }
+
+  String get settings_bookmark_on_skip_previous_subtitle {
+    return message('settings_bookmark_on_skip_previous_subtitle') ??
+        Intl.message(
+          'When off, the headphone previous button rewinds instead',
+          name: 'settings_bookmark_on_skip_previous_subtitle',
+          desc: 'Subtitle for headphone previous button setting',
+          locale: localeName,
+        );
+  }
+
   /// Podcasts
   String get subscribe_button_label {
     return message('subscribe_button_label') ??

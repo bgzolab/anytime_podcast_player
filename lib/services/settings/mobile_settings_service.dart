@@ -283,5 +283,14 @@ class MobileSettingsService extends SettingsService {
   }
 
   @override
+  bool get bookmarkOnSkipPrevious => _sharedPreferences.getBool('bookmarkOnSkipPrevious') ?? true;
+
+  @override
+  set bookmarkOnSkipPrevious(bool value) {
+    _sharedPreferences.setBool('bookmarkOnSkipPrevious', value);
+    settingsNotifier.sink.add('bookmarkOnSkipPrevious');
+  }
+
+  @override
   Stream<String> get settingsListener => settingsNotifier.stream;
 }

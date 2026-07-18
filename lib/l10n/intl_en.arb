@@ -1537,5 +1537,17 @@
       "timestamp": {}
     }
   },
+  "settings_bookmark_on_skip_previous": "Headphone previous button creates bookmark",
+  "@settings_bookmark_on_skip_previous": {
+    "description": "Setting to control headphone previous button behavior",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_bookmark_on_skip_previous_subtitle": "When off, the headphone previous button rewinds instead",
+  "@settings_bookmark_on_skip_previous_subtitle": {
+    "description": "Subtitle for headphone previous button setting",
+    "type": "text",
+    "placeholders": {}
+  },
   "@@locale": "en"
 }

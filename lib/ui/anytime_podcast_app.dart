@@ -310,7 +310,13 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
     bookmarkBloc.transitionLifecycleState(LifecycleState.resume);
 
     /// Wire headphone "previous track" button to create a bookmark.
+    final settingsBloc = Provider.of<SettingsBloc>(context, listen: false);
     widget.audioPlayerService?.onSkipToPrevious = () {
+      if (!settingsBloc.currentSettings.bookmarkOnSkipPrevious) {
+        // Setting is off — fall back to default rewind behavior.
+        widget.audioPlayerService?.rewind();
+        return;
+      }
       final episode = widget.audioPlayerService?.nowPlaying;
       final positionMs = widget.audioPlayerService?.playPosition?.value.position.inMilliseconds;
       if (episode != null && positionMs != null) {

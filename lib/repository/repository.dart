@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:anytime/entities/bookmark.dart';
 import 'package:anytime/entities/episode.dart';
 import 'package:anytime/entities/podcast.dart';
 import 'package:anytime/entities/transcript.dart';
@@ -87,6 +88,17 @@ abstract class Repository {
   Future<void> saveQueue(List<Episode> episodes);
 
   Future<List<Episode>> loadQueue();
+
+  /// Bookmarks
+  Future<List<Bookmark>> findAllBookmarks();
+
+  Future<List<Bookmark>> findBookmarksByEpisodeGuid(String episodeGuid);
+
+  Future<Bookmark> saveBookmark(Bookmark bookmark);
+
+  Future<void> deleteBookmark(Bookmark bookmark);
+
+  Future<void> deleteBookmarksByEpisodeGuid(String episodeGuid);
 
   /// Event listeners
   late Stream<Podcast> podcastListener;

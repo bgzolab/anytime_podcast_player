@@ -4,6 +4,7 @@
 
 import 'package:anytime/bloc/podcast/queue_bloc.dart';
 import 'package:anytime/l10n/L.dart';
+import 'package:anytime/ui/podcast/bookmark_view.dart';
 import 'package:anytime/state/queue_event_state.dart';
 import 'package:anytime/ui/podcast/transcript_view.dart';
 import 'package:anytime/ui/podcast/up_next_view.dart';
@@ -60,7 +61,7 @@ class _NowPlayingOptionsSelectorState extends State<NowPlayingOptionsSelector> {
           animationDuration: !draggableController!.isAttached || draggableController!.size <= minSize
               ? const Duration(seconds: 0)
               : kTabScrollDuration,
-          length: 2,
+          length: 3,
           child: LayoutBuilder(builder: (BuildContext ctx, BoxConstraints constraints) {
             return SingleChildScrollView(
               controller: scrollController,
@@ -162,11 +163,15 @@ class _NowPlayingOptionsSelectorState extends State<NowPlayingOptionsSelector> {
                                           )
                                         : Text(
                                             L.of(context)!.transcript_label.toUpperCase(),
-                                            style: theme
-                                                .textTheme
-                                                .labelLarge!
-                                                .copyWith(color: theme.disabledColor),
+                                            style: theme.textTheme.labelLarge!.copyWith(color: theme.disabledColor),
                                           ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                                    child: Text(
+                                      L.of(context)!.bookmarks_label.toUpperCase(),
+                                      style: theme.textTheme.labelLarge,
+                                    ),
                                   ),
                                 ],
                               );
@@ -178,6 +183,7 @@ class _NowPlayingOptionsSelectorState extends State<NowPlayingOptionsSelector> {
                           children: [
                             UpNextView(),
                             TranscriptView(),
+                            BookmarkView(),
                           ],
                         ),
                       ),
@@ -238,7 +244,7 @@ class _NowPlayingOptionsSelectorWideState extends State<NowPlayingOptionsSelecto
     final scrollController = ScrollController();
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: LayoutBuilder(builder: (BuildContext ctx, BoxConstraints constraints) {
         return SingleChildScrollView(
           controller: scrollController,
@@ -285,11 +291,15 @@ class _NowPlayingOptionsSelectorWideState extends State<NowPlayingOptionsSelecto
                                       )
                                     : Text(
                                         L.of(context)!.transcript_label.toUpperCase(),
-                                        style: theme
-                                            .textTheme
-                                            .labelLarge!
-                                            .copyWith(color: theme.disabledColor),
+                                        style: theme.textTheme.labelLarge!.copyWith(color: theme.disabledColor),
                                       ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 16.0, bottom: 16.0),
+                                child: Text(
+                                  L.of(context)!.bookmarks_label.toUpperCase(),
+                                  style: theme.textTheme.labelLarge,
+                                ),
                               ),
                             ],
                           );
@@ -300,6 +310,7 @@ class _NowPlayingOptionsSelectorWideState extends State<NowPlayingOptionsSelecto
                       children: [
                         UpNextView(),
                         TranscriptView(),
+                        BookmarkView(),
                       ],
                     ),
                   ),

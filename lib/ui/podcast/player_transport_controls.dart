@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:anytime/bloc/bookmark/bookmark_bloc.dart';
 import 'package:anytime/bloc/podcast/audio_bloc.dart';
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/services/audio/audio_player_service.dart';
@@ -13,7 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
 
-/// Builds a transport control bar for rewind, play and fast-forward.
+/// Builds a transport control bar for bookmark, play and fast-forward.
 /// See [NowPlaying].
 class PlayerTransportControls extends StatefulWidget {
   const PlayerTransportControls({
@@ -41,17 +42,7 @@ class _PlayerTransportControlsState extends State<PlayerTransportControls> {
               mainAxisSize: MainAxisSize.max,
               children: <Widget>[
                 const SleepSelectorWidget(),
-                IconButton(
-                  onPressed: () {
-                    return snapshot.data == AudioState.buffering ? null : _rewind(audioBloc);
-                  },
-                  padding: const EdgeInsets.all(0.0),
-                  icon: Icon(
-                    semanticLabel: L.of(context)!.rewind_button_label,
-                    Icons.replay_10,
-                    size: 48.0,
-                  ),
-                ),
+                BookmarkButton(audioState: snapshot.data!),
                 AnimatedPlayButton(audioState: snapshot.data!),
                 IconButton(
                   onPressed: () {
@@ -71,12 +62,132 @@ class _PlayerTransportControlsState extends State<PlayerTransportControls> {
     );
   }
 
-  void _rewind(AudioBloc audioBloc) {
+  void _fastforward(AudioBloc audioBloc) {
+    audioBloc.transitionState(TransitionState.fastforward);
+  }
+}
+
+/// A bookmark button that creates a bookmark at the current playback position
+/// on tap, and rewinds 10 seconds on long-press.
+class BookmarkButton extends StatefulWidget {
+  final AudioState audioState;
+
+  const BookmarkButton({
+    super.key,
+    required this.audioState,
+  });
+
+  @override
+  State<BookmarkButton> createState() => _BookmarkButtonState();
+}
+
+class _BookmarkButtonState extends State<BookmarkButton> with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  bool _justBookmarked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+      reverseDuration: const Duration(milliseconds: 300),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  void _createBookmark() {
+    final audioBloc = Provider.of<AudioBloc>(context, listen: false);
+    final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
+
+    final positionState = audioBloc.playPosition?.value;
+    final episode = audioBloc.nowPlaying?.value;
+
+    if (positionState == null || episode == null) return;
+
+    final positionMs = positionState.position.inMilliseconds;
+
+    bookmarkBloc.event(BookmarkCreateEvent(
+      episode: episode,
+      positionMs: positionMs,
+    ));
+
+    // Show SnackBar feedback
+    final timestamp = _formatDuration(positionState.position);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(L.of(context)!.bookmark_added_snackbar(timestamp)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    // Animate icon
+    setState(() => _justBookmarked = true);
+    _animController.forward().then((_) {
+      Future.delayed(const Duration(milliseconds: 700), () {
+        if (mounted) {
+          _animController.reverse().then((_) {
+            if (mounted) {
+              setState(() => _justBookmarked = false);
+            }
+          });
+        }
+      });
+    });
+  }
+
+  void _rewind() {
+    final audioBloc = Provider.of<AudioBloc>(context, listen: false);
     audioBloc.transitionState(TransitionState.rewind);
   }
 
-  void _fastforward(AudioBloc audioBloc) {
-    audioBloc.transitionState(TransitionState.fastforward);
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) {
+      if (n >= 10) return '$n';
+      return '0$n';
+    }
+
+    var twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60).toInt());
+    var twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60).toInt());
+
+    return '$twoDigitMinutes:$twoDigitSeconds';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isPlaying = widget.audioState == AudioState.playing || widget.audioState == AudioState.pausing;
+    final isBuffering = widget.audioState == AudioState.buffering;
+
+    return GestureDetector(
+      onLongPress: isPlaying ? _rewind : null,
+      child: Tooltip(
+        message: '${L.of(context)!.bookmark_add_button_label}\n${L.of(context)!.rewind_button_label}',
+        child: IconButton(
+          onPressed: isBuffering
+              ? null
+              : isPlaying
+                  ? _createBookmark
+                  : null,
+          padding: const EdgeInsets.all(0.0),
+          icon: ScaleTransition(
+            scale: Tween<double>(begin: 1.0, end: 1.3).animate(
+              CurvedAnimation(parent: _animController, curve: Curves.easeOutBack),
+            ),
+            child: Icon(
+              semanticLabel: L.of(context)!.bookmark_add_button_label,
+              _justBookmarked ? Icons.bookmark : Icons.bookmark_add_outlined,
+              size: 48.0,
+              color: _justBookmarked ? Theme.of(context).primaryColor : null,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

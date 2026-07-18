@@ -1497,5 +1497,45 @@
     "type": "text",
     "placeholders": {}
   },
+  "bookmarks_label": "Bookmarks",
+  "@bookmarks_label": {
+    "description": "Bookmarks tab/section label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmark_add_button_label": "Add bookmark",
+  "@bookmark_add_button_label": {
+    "description": "Bookmark button tooltip",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmark_added_snackbar": "Bookmark added at {timestamp}",
+  "@bookmark_added_snackbar": {
+    "description": "Snackbar after adding bookmark",
+    "type": "text",
+    "placeholders": {
+      "timestamp": {}
+    }
+  },
+  "no_bookmarks_message": "No bookmarks yet",
+  "@no_bookmarks_message": {
+    "description": "Empty state for bookmarks",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmark_delete_label": "Delete bookmark",
+  "@bookmark_delete_label": {
+    "description": "Accessibility label for delete action",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmark_seek_label": "Jump to {timestamp}",
+  "@bookmark_seek_label": {
+    "description": "Accessibility label for bookmark seek",
+    "type": "text",
+    "placeholders": {
+      "timestamp": {}
+    }
+  },
   "@@locale": "en"
 }

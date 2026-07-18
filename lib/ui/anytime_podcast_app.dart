@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:anytime/api/podcast/mobile_podcast_api.dart';
 import 'package:anytime/api/podcast/podcast_api.dart';
+import 'package:anytime/bloc/bookmark/bookmark_bloc.dart';
 import 'package:anytime/bloc/discovery/discovery_bloc.dart';
 import 'package:anytime/bloc/podcast/audio_bloc.dart';
 import 'package:anytime/bloc/podcast/episode_bloc.dart';
@@ -37,6 +38,7 @@ import 'package:anytime/services/podcast/podcast_service.dart';
 import 'package:anytime/services/settings/mobile_settings_service.dart';
 import 'package:anytime/state/bloc_state.dart';
 import 'package:anytime/state/library_state.dart';
+import 'package:anytime/ui/library/bookmarks_page.dart';
 import 'package:anytime/ui/library/discovery.dart';
 import 'package:anytime/ui/library/downloads.dart';
 import 'package:anytime/ui/library/library.dart';
@@ -222,6 +224,12 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
             podcastService: widget.podcastService!,
           ),
           dispose: (_, value) => value.dispose(),
+        ),
+        Provider<BookmarkBloc>(
+          create: (_) => BookmarkBloc(
+            repository: widget.repository,
+          ),
+          dispose: (_, value) => value.dispose(),
         )
       ],
       child: MaterialApp(
@@ -285,6 +293,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
     final podcastBloc = Provider.of<PodcastBloc>(context, listen: false);
     final timelineBloc = Provider.of<TimelineBloc>(context, listen: false);
+    final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
 
     WidgetsBinding.instance.addObserver(this);
 
@@ -292,6 +301,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
     audioBloc.transitionLifecycleState(LifecycleState.resume);
     podcastBloc.transitionLifecycleState(LifecycleState.resume);
     timelineBloc.transitionLifecycleState(LifecycleState.resume);
+    bookmarkBloc.transitionLifecycleState(LifecycleState.resume);
 
     /// Handle deep links
     _setupLinkListener();
@@ -359,10 +369,12 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
     final podcastBloc = Provider.of<PodcastBloc>(context, listen: false);
     final timelineBloc = Provider.of<TimelineBloc>(context, listen: false);
+    final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
 
     audioBloc.transitionLifecycleState(LifecycleState.detach);
     podcastBloc.transitionLifecycleState(LifecycleState.detach);
     timelineBloc.transitionLifecycleState(LifecycleState.detach);
+    bookmarkBloc.transitionLifecycleState(LifecycleState.detach);
 
     deepLinkSubscription?.cancel();
 
@@ -375,6 +387,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
     final podcastBloc = Provider.of<PodcastBloc>(context, listen: false);
     final timelineBloc = Provider.of<TimelineBloc>(context, listen: false);
+    final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
     var settingsBloc = Provider.of<SettingsBloc>(context, listen: false);
 
     switch (state) {
@@ -382,6 +395,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
         audioBloc.transitionLifecycleState(LifecycleState.resume);
         podcastBloc.transitionLifecycleState(LifecycleState.resume);
         timelineBloc.transitionLifecycleState(LifecycleState.resume);
+        bookmarkBloc.transitionLifecycleState(LifecycleState.resume);
         if (context.mounted) {
           SettingsService? settings = await MobileSettingsService.instance();
           settingsBloc.theme(settings!.theme);
@@ -391,6 +405,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
         audioBloc.transitionLifecycleState(LifecycleState.pause);
         podcastBloc.transitionLifecycleState(LifecycleState.pause);
         timelineBloc.transitionLifecycleState(LifecycleState.pause);
+        bookmarkBloc.transitionLifecycleState(LifecycleState.pause);
         break;
       default:
         break;
@@ -421,160 +436,174 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                   );
                 },
                 child: CustomScrollView(
-                slivers: <Widget>[
-                  SliverVisibility(
-                    visible: widget.topBarVisible,
-                    sliver: SliverAppBar(
-                      title: ExcludeSemantics(
-                        child: TitleWidget(),
-                      ),
-                      backgroundColor: backgroundColour,
-                      floating: false,
-                      pinned: true,
-                      snap: false,
-                      actions: <Widget>[
-                        IconButton(
-                          icon: Icon(
-                            Icons.search,
-                            semanticLabel: L.of(context)!.search_for_podcasts_hint,
-                          ),
-                          onPressed: () async {
-                            await Navigator.push(
-                              context,
-                              defaultTargetPlatform == TargetPlatform.iOS
-                                  ? MaterialPageRoute<void>(
-                                      fullscreenDialog: false,
-                                      settings: const RouteSettings(name: 'search'),
-                                      builder: (context) => const Search())
-                                  : SlideRightRoute(
-                                      widget: const Search(),
-                                      settings: const RouteSettings(name: 'search'),
-                                    ),
-                            );
-                          },
+                  slivers: <Widget>[
+                    SliverVisibility(
+                      visible: widget.topBarVisible,
+                      sliver: SliverAppBar(
+                        title: ExcludeSemantics(
+                          child: TitleWidget(),
                         ),
-                        IconButton(
-                          icon: Icon(
-                            Icons.featured_play_list_outlined,
-                            semanticLabel: L.of(context)!.open_up_next_hint,
+                        backgroundColor: backgroundColour,
+                        floating: false,
+                        pinned: true,
+                        snap: false,
+                        actions: <Widget>[
+                          IconButton(
+                            icon: Icon(
+                              Icons.search,
+                              semanticLabel: L.of(context)!.search_for_podcasts_hint,
+                            ),
+                            onPressed: () async {
+                              await Navigator.push(
+                                context,
+                                defaultTargetPlatform == TargetPlatform.iOS
+                                    ? MaterialPageRoute<void>(
+                                        fullscreenDialog: false,
+                                        settings: const RouteSettings(name: 'search'),
+                                        builder: (context) => const Search())
+                                    : SlideRightRoute(
+                                        widget: const Search(),
+                                        settings: const RouteSettings(name: 'search'),
+                                      ),
+                              );
+                            },
                           ),
-                          onPressed: () async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute<void>(
-                                fullscreenDialog: false,
-                                settings: const RouteSettings(name: 'queue'),
-                                builder: (context) => const UpNextPage(),
-                              ),
-                            );
-                          },
-                        ),
-                        PopupMenuButton<String>(
-                          onSelected: _menuSelect,
-                          icon: const Icon(
-                            Icons.more_vert,
+                          IconButton(
+                            icon: Icon(
+                              Icons.featured_play_list_outlined,
+                              semanticLabel: L.of(context)!.open_up_next_hint,
+                            ),
+                            onPressed: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute<void>(
+                                  fullscreenDialog: false,
+                                  settings: const RouteSettings(name: 'queue'),
+                                  builder: (context) => const UpNextPage(),
+                                ),
+                              );
+                            },
                           ),
-                          itemBuilder: (BuildContext context) {
-                            return <PopupMenuEntry<String>>[
-                              if (feedbackUrl.isNotEmpty)
-                                PopupMenuItem<String>(
-                                  textStyle: theme.textTheme.titleMedium,
-                                  value: 'feedback',
-                                  child: Focus(
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: [
-                                        const Padding(
-                                          padding: EdgeInsets.only(right: 8.0),
-                                          child: Icon(Icons.feedback_outlined, size: 18.0),
-                                        ),
-                                        Text(L.of(context)!.feedback_menu_item_label),
-                                      ],
+                          PopupMenuButton<String>(
+                            onSelected: _menuSelect,
+                            icon: const Icon(
+                              Icons.more_vert,
+                            ),
+                            itemBuilder: (BuildContext context) {
+                              return <PopupMenuEntry<String>>[
+                                if (feedbackUrl.isNotEmpty)
+                                  PopupMenuItem<String>(
+                                    textStyle: theme.textTheme.titleMedium,
+                                    value: 'feedback',
+                                    child: Focus(
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: [
+                                          const Padding(
+                                            padding: EdgeInsets.only(right: 8.0),
+                                            child: Icon(Icons.feedback_outlined, size: 18.0),
+                                          ),
+                                          Text(L.of(context)!.feedback_menu_item_label),
+                                        ],
+                                      ),
                                     ),
                                   ),
+                                PopupMenuItem<String>(
+                                  textStyle: theme.textTheme.titleMedium,
+                                  value: 'layout',
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      const Padding(
+                                        padding: EdgeInsets.only(right: 8.0),
+                                        child: Icon(Icons.dashboard, size: 18.0),
+                                      ),
+                                      Text(L.of(context)!.layout_label),
+                                    ],
+                                  ),
                                 ),
-                              PopupMenuItem<String>(
-                                textStyle: theme.textTheme.titleMedium,
-                                value: 'layout',
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    const Padding(
-                                      padding: EdgeInsets.only(right: 8.0),
-                                      child: Icon(Icons.dashboard, size: 18.0),
-                                    ),
-                                    Text(L.of(context)!.layout_label),
-                                  ],
+                                PopupMenuItem<String>(
+                                  textStyle: theme.textTheme.titleMedium,
+                                  value: 'bookmarks',
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      const Padding(
+                                        padding: EdgeInsets.only(right: 8.0),
+                                        child: Icon(Icons.bookmarks_outlined, size: 18.0),
+                                      ),
+                                      Text(L.of(context)!.bookmarks_label),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              PopupMenuItem<String>(
-                                textStyle: theme.textTheme.titleMedium,
-                                value: 'rss',
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    const Padding(
-                                      padding: EdgeInsets.only(right: 8.0),
-                                      child: Icon(Icons.rss_feed, size: 18.0),
-                                    ),
-                                    Text(L.of(context)!.add_rss_feed_option),
-                                  ],
+                                PopupMenuItem<String>(
+                                  textStyle: theme.textTheme.titleMedium,
+                                  value: 'rss',
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      const Padding(
+                                        padding: EdgeInsets.only(right: 8.0),
+                                        child: Icon(Icons.rss_feed, size: 18.0),
+                                      ),
+                                      Text(L.of(context)!.add_rss_feed_option),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              PopupMenuItem<String>(
-                                textStyle: theme.textTheme.titleMedium,
-                                value: 'library',
-                                enabled: !libraryRefreshing,
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    const Padding(
-                                      padding: EdgeInsets.only(right: 8.0),
-                                      child: Icon(Icons.refresh, size: 18.0),
-                                    ),
-                                    Text(L.of(context)!.update_library_option),
-                                  ],
+                                PopupMenuItem<String>(
+                                  textStyle: theme.textTheme.titleMedium,
+                                  value: 'library',
+                                  enabled: !libraryRefreshing,
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      const Padding(
+                                        padding: EdgeInsets.only(right: 8.0),
+                                        child: Icon(Icons.refresh, size: 18.0),
+                                      ),
+                                      Text(L.of(context)!.update_library_option),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              PopupMenuItem<String>(
-                                textStyle: theme.textTheme.titleMedium,
-                                value: 'settings',
-                                child: Row(
-                                  children: [
-                                    const Padding(
-                                      padding: EdgeInsets.only(right: 8.0),
-                                      child: Icon(Icons.settings, size: 18.0),
-                                    ),
-                                    Text(L.of(context)!.settings_label),
-                                  ],
+                                PopupMenuItem<String>(
+                                  textStyle: theme.textTheme.titleMedium,
+                                  value: 'settings',
+                                  child: Row(
+                                    children: [
+                                      const Padding(
+                                        padding: EdgeInsets.only(right: 8.0),
+                                        child: Icon(Icons.settings, size: 18.0),
+                                      ),
+                                      Text(L.of(context)!.settings_label),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              PopupMenuItem<String>(
-                                textStyle: theme.textTheme.titleMedium,
-                                value: 'about',
-                                child: Row(
-                                  children: [
-                                    const Padding(
-                                      padding: EdgeInsets.only(right: 8.0),
-                                      child: Icon(Icons.info_outline, size: 18.0),
-                                    ),
-                                    Text(L.of(context)!.about_label),
-                                  ],
+                                PopupMenuItem<String>(
+                                  textStyle: theme.textTheme.titleMedium,
+                                  value: 'about',
+                                  child: Row(
+                                    children: [
+                                      const Padding(
+                                        padding: EdgeInsets.only(right: 8.0),
+                                        child: Icon(Icons.info_outline, size: 18.0),
+                                      ),
+                                      Text(L.of(context)!.about_label),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ];
-                          },
-                        ),
-                      ],
+                              ];
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  StreamBuilder<int>(
-                      stream: pager.currentPage,
-                      builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
-                        return _fragment(snapshot.data, searchBloc);
-                      }),
-                ],
-              ),
+                    StreamBuilder<int>(
+                        stream: pager.currentPage,
+                        builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
+                          return _fragment(snapshot.data, searchBloc);
+                        }),
+                  ],
+                ),
               ),
             ),
             const MiniPlayer(),
@@ -593,8 +622,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                 selectedItemColor: theme.iconTheme.color,
                 selectedFontSize: 11.0,
                 unselectedFontSize: 11.0,
-                unselectedItemColor:
-                    HSLColor.fromColor(theme.bottomAppBarTheme.color!).withLightness(0.8).toColor(),
+                unselectedItemColor: HSLColor.fromColor(theme.bottomAppBarTheme.color!).withLightness(0.8).toColor(),
                 currentIndex: index,
                 onTap: pager.changePage,
                 items: <BottomNavigationBarItem>[
@@ -614,10 +642,6 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                     icon: index == 3 ? const Icon(Icons.download) : const Icon(Icons.download_outlined),
                     label: L.of(context)!.downloads,
                   ),
-                  BottomNavigationBarItem(
-                    icon: index == 3 ? const Icon(Icons.timeline) : const Icon(Icons.timeline_outlined),
-                    label: L.of(context)!.timeline,
-                  ),
                 ],
               );
             }),
@@ -634,7 +658,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
       return const Discovery(
         categories: true,
       );
-    } else if (index == 2) {
+    } else if (index == 3) {
       return const Downloads();
     } else {
       return const Timeline();
@@ -699,6 +723,15 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
             ),
           ),
           builder: (context) => const LayoutSelectorWidget(),
+        );
+        break;
+      case 'bookmarks':
+        await Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            settings: const RouteSettings(name: 'bookmarks'),
+            builder: (context) => const BookmarksPage(),
+          ),
         );
         break;
       case 'rss':

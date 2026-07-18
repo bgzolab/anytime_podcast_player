@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'package:anytime/core/extensions.dart';
+import 'package:anytime/entities/bookmark.dart';
 import 'package:anytime/entities/episode.dart';
 import 'package:anytime/entities/podcast.dart';
 import 'package:anytime/entities/queue.dart';
@@ -27,6 +28,7 @@ class SembastRepository extends Repository {
   final _episodeStore = intMapStoreFactory.store('episode');
   final _queueStore = intMapStoreFactory.store('queue');
   final _transcriptStore = intMapStoreFactory.store('transcript');
+  final _bookmarkStore = intMapStoreFactory.store('bookmark');
 
   final _queueGuids = <String>[];
 
@@ -201,9 +203,7 @@ class SembastRepository extends Repository {
     final List<RecordSnapshot<int, Map<String, Object?>>> recordSnapshots =
         await _episodeStore.find(await _db, finder: finder);
 
-    return recordSnapshots
-        .map((snapshot) => Episode.fromMap(snapshot.key, snapshot.value))
-        .toList();
+    return recordSnapshots.map((snapshot) => Episode.fromMap(snapshot.key, snapshot.value)).toList();
   }
 
   @override
@@ -872,6 +872,63 @@ class SembastRepository extends Repository {
         _log.fine('Could not find any episodes for ${podcast.title}');
       }
     }
+  }
+
+  @override
+  Future<List<Bookmark>> findAllBookmarks() async {
+    final finder = Finder(sortOrders: [SortOrder('createdAt', false)]);
+    final List<RecordSnapshot<int, Map<String, Object?>>> snapshots = await _bookmarkStore.find(
+      await _db,
+      finder: finder,
+    );
+
+    return snapshots.map((snapshot) => Bookmark.fromMap(snapshot.key, snapshot.value)).toList();
+  }
+
+  @override
+  Future<List<Bookmark>> findBookmarksByEpisodeGuid(String episodeGuid) async {
+    final finder = Finder(
+      filter: Filter.equals('episodeGuid', episodeGuid),
+      sortOrders: [SortOrder('positionMs', true)],
+    );
+    final List<RecordSnapshot<int, Map<String, Object?>>> snapshots = await _bookmarkStore.find(
+      await _db,
+      finder: finder,
+    );
+
+    return snapshots.map((snapshot) => Bookmark.fromMap(snapshot.key, snapshot.value)).toList();
+  }
+
+  @override
+  Future<Bookmark> saveBookmark(Bookmark bookmark) async {
+    final finder = bookmark.id == null
+        ? Finder(filter: Filter.equals('episodeGuid', bookmark.episodeGuid))
+        : Finder(filter: Filter.byKey(bookmark.id));
+
+    final RecordSnapshot<int, Map<String, Object?>>? snapshot =
+        await _bookmarkStore.findFirst(await _db, finder: finder);
+
+    if (snapshot == null || bookmark.id == null) {
+      bookmark.id = await _bookmarkStore.add(await _db, bookmark.toMap());
+    } else {
+      await _bookmarkStore.update(await _db, bookmark.toMap(), finder: finder);
+    }
+
+    return bookmark;
+  }
+
+  @override
+  Future<void> deleteBookmark(Bookmark bookmark) async {
+    if (bookmark.id != null) {
+      final finder = Finder(filter: Filter.byKey(bookmark.id));
+      await _bookmarkStore.delete(await _db, finder: finder);
+    }
+  }
+
+  @override
+  Future<void> deleteBookmarksByEpisodeGuid(String episodeGuid) async {
+    final finder = Finder(filter: Filter.equals('episodeGuid', episodeGuid));
+    await _bookmarkStore.delete(await _db, finder: finder);
   }
 
   @override

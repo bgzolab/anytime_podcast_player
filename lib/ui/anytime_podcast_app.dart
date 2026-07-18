@@ -254,7 +254,7 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
           Locale('ru', ''),
           Locale('tr', ''),
           Locale('vi', ''),
-          Locale('zh_Hans', ''),
+          Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
         ],
         theme: theme,
         // Uncomment builder below to enable accessibility checker tool.

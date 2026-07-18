@@ -2499,10 +2499,24 @@ class AnytimeLocalisationsDelegate extends LocalizationsDelegate<L> {
   const AnytimeLocalisationsDelegate();
 
   @override
-  bool isSupported(Locale locale) => ['en', 'es', 'de', 'gl', 'it', 'nl', 'ru', 'tr', 'vi', 'zh_Hans'].contains(locale.languageCode);
+  bool isSupported(Locale locale) {
+    final lc = locale.languageCode;
+    if (['en', 'es', 'de', 'gl', 'it', 'nl', 'ru', 'tr', 'vi', 'zh_Hans'].contains(lc)) {
+      return true;
+    }
+    // Flutter resolves zh_CN/zh_Hans to Locale('zh', 'Hans') where languageCode is 'zh'.
+    if (lc == 'zh') {
+      return true;
+    }
+    return false;
+  }
 
   @override
-  Future<L> load(Locale locale) => L.load(locale, const {});
+  Future<L> load(Locale locale) {
+    // Normalise zh variants so Intl.canonicalizedLocale and _deferredLibraries agree.
+    final normalised = locale.languageCode == 'zh' ? Locale('zh_Hans', '') : locale;
+    return L.load(normalised, const {});
+  }
 
   @override
   bool shouldReload(AnytimeLocalisationsDelegate old) => false;
@@ -2522,10 +2536,22 @@ class EmbeddedLocalisationsDelegate extends LocalizationsDelegate<L> {
   EmbeddedLocalisationsDelegate({@required this.messages = const {}});
 
   @override
-  bool isSupported(Locale locale) => ['en', 'es', 'de', 'gl', 'it', 'nl', 'ru', 'tr', 'vi', 'zh_Hans'].contains(locale.languageCode);
+  bool isSupported(Locale locale) {
+    final lc = locale.languageCode;
+    if (['en', 'es', 'de', 'gl', 'it', 'nl', 'ru', 'tr', 'vi', 'zh_Hans'].contains(lc)) {
+      return true;
+    }
+    if (lc == 'zh') {
+      return true;
+    }
+    return false;
+  }
 
   @override
-  Future<L> load(Locale locale) => L.load(locale, messages);
+  Future<L> load(Locale locale) {
+    final normalised = locale.languageCode == 'zh' ? Locale('zh_Hans', '') : locale;
+    return L.load(normalised, messages);
+  }
 
   @override
   bool shouldReload(EmbeddedLocalisationsDelegate old) => false;

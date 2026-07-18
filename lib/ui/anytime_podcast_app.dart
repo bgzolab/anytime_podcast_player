@@ -519,21 +519,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                                         child: Icon(Icons.dashboard, size: 18.0),
                                       ),
                                       Text(L.of(context)!.layout_label),
-                                    ],
-                                  ),
-                                ),
-                                PopupMenuItem<String>(
-                                  textStyle: theme.textTheme.titleMedium,
-                                  value: 'bookmarks',
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      const Padding(
-                                        padding: EdgeInsets.only(right: 8.0),
-                                        child: Icon(Icons.bookmarks_outlined, size: 18.0),
-                                      ),
-                                      Text(L.of(context)!.bookmarks_label),
-                                    ],
+cc                                    ],
                                   ),
                                 ),
                                 PopupMenuItem<String>(
@@ -642,6 +628,10 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                     icon: index == 3 ? const Icon(Icons.download) : const Icon(Icons.download_outlined),
                     label: L.of(context)!.downloads,
                   ),
+                  BottomNavigationBarItem(
+                    icon: index == 4 ? const Icon(Icons.bookmarks) : const Icon(Icons.bookmarks_outlined),
+                    label: L.of(context)!.bookmarks_label,
+                  ),
                 ],
               );
             }),
@@ -660,6 +650,8 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
       );
     } else if (index == 3) {
       return const Downloads();
+    } else if (index == 4) {
+      return const BookmarksPage();
     } else {
       return const Timeline();
     }
@@ -723,15 +715,6 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
             ),
           ),
           builder: (context) => const LayoutSelectorWidget(),
-        );
-        break;
-      case 'bookmarks':
-        await Navigator.push(
-          context,
-          MaterialPageRoute<void>(
-            settings: const RouteSettings(name: 'bookmarks'),
-            builder: (context) => const BookmarksPage(),
-          ),
         );
         break;
       case 'rss':

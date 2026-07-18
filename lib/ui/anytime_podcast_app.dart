@@ -48,6 +48,7 @@ import 'package:anytime/ui/podcast/mini_player.dart';
 import 'package:anytime/ui/podcast/podcast_details.dart';
 import 'package:anytime/ui/podcast/up_next_view.dart';
 import 'package:anytime/ui/search/search.dart';
+import 'package:anytime/ui/search/search_mode.dart';
 import 'package:anytime/ui/settings/settings.dart';
 import 'package:anytime/ui/themes.dart';
 import 'package:anytime/ui/widgets/action_text.dart';
@@ -262,6 +263,7 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
         home: AnytimeHomePage(
           title: 'Anytime Podcast Player',
           audioPlayerService: widget.audioPlayerService,
+          repository: widget.repository,
         ),
       ),
     );
@@ -272,12 +274,14 @@ class AnytimeHomePage extends StatefulWidget {
   final String? title;
   final bool topBarVisible;
   final AudioPlayerService? audioPlayerService;
+  final Repository? repository;
 
   const AnytimeHomePage({
     super.key,
     this.title,
     this.topBarVisible = true,
     this.audioPlayerService,
+    this.repository,
   });
 
   @override
@@ -473,18 +477,20 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                           IconButton(
                             icon: Icon(
                               Icons.search,
-                              semanticLabel: L.of(context)!.search_for_podcasts_hint,
+                              semanticLabel: _getSearchTooltip(context, pager.page.value),
                             ),
                             onPressed: () async {
+                              final mode = _getSearchMode(pager.page.value);
                               await Navigator.push(
                                 context,
                                 defaultTargetPlatform == TargetPlatform.iOS
                                     ? MaterialPageRoute<void>(
                                         fullscreenDialog: false,
                                         settings: const RouteSettings(name: 'search'),
-                                        builder: (context) => const Search())
+                                        builder: (context) => Search(
+                                            mode: mode, repository: widget.repository))
                                     : SlideRightRoute(
-                                        widget: const Search(),
+                                        widget: Search(mode: mode, repository: widget.repository),
                                         settings: const RouteSettings(name: 'search'),
                                       ),
                               );
@@ -676,6 +682,40 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
       return const BookmarksPage();
     } else {
       return const Timeline();
+    }
+  }
+
+  SearchMode _getSearchMode(int? pageIndex) {
+    switch (pageIndex) {
+      case 0:
+        return SearchMode.timeline;
+      case 1:
+        return SearchMode.library;
+      case 2:
+        return SearchMode.discovery;
+      case 3:
+        return SearchMode.downloads;
+      case 4:
+        return SearchMode.bookmarks;
+      default:
+        return SearchMode.discovery;
+    }
+  }
+
+  String _getSearchTooltip(BuildContext context, int? pageIndex) {
+    switch (pageIndex) {
+      case 0:
+        return L.of(context)!.search_episodes_tooltip;
+      case 1:
+        return L.of(context)!.search_podcasts_tooltip;
+      case 2:
+        return L.of(context)!.search_for_podcasts_hint;
+      case 3:
+        return L.of(context)!.search_downloads_tooltip;
+      case 4:
+        return L.of(context)!.search_bookmarks_tooltip;
+      default:
+        return L.of(context)!.search_for_podcasts_hint;
     }
   }
 

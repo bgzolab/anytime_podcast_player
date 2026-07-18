@@ -1,5 +1,5 @@
 {
-  "@@last_modified": "2025-11-04T08:37:41.903832",
+  "@@last_modified": "2026-07-18T23:52:22.568548",
   "app_title": "Anytime Podcast Player",
   "@app_title": {
     "description": "Full title for the application",
@@ -27,6 +27,70 @@
   "downloads": "Downloads",
   "@downloads": {
     "description": "Downloads tab label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline": "Timeline",
+  "@timeline": {
+    "description": "Timeline tab label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "no_episodes_message": "No episodes yet",
+  "@no_episodes_message": {
+    "description": "Displayed when the timeline has no episodes",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmarks_label": "Bookmarks",
+  "@bookmarks_label": {
+    "description": "Bookmarks tab/section label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmark_add_button_label": "Add bookmark",
+  "@bookmark_add_button_label": {
+    "description": "Bookmark button tooltip",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmark_added_snackbar": "Bookmark added at {timestamp}",
+  "@bookmark_added_snackbar": {
+    "description": "Snackbar after adding bookmark",
+    "type": "text",
+    "placeholders": {
+      "timestamp": {}
+    }
+  },
+  "no_bookmarks_message": "No bookmarks yet",
+  "@no_bookmarks_message": {
+    "description": "Empty state for bookmarks",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmark_delete_label": "Delete bookmark",
+  "@bookmark_delete_label": {
+    "description": "Accessibility label for delete action",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmark_seek_label": "Jump to {timestamp}",
+  "@bookmark_seek_label": {
+    "description": "Accessibility label for bookmark seek",
+    "type": "text",
+    "placeholders": {
+      "timestamp": {}
+    }
+  },
+  "settings_bookmark_on_skip_previous": "Headphone previous button creates bookmark",
+  "@settings_bookmark_on_skip_previous": {
+    "description": "Setting to control headphone previous button behavior",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_bookmark_on_skip_previous_subtitle": "When off, the headphone previous button rewinds instead",
+  "@settings_bookmark_on_skip_previous_subtitle": {
+    "description": "Subtitle for headphone previous button setting",
     "type": "text",
     "placeholders": {}
   },
@@ -135,6 +199,78 @@
   "no_search_results_message": "No podcasts found",
   "@no_search_results_message": {
     "description": "Displayed on the library tab when the user has no subscriptions",
+    "type": "text",
+    "placeholders": {}
+  },
+  "search_episodes_hint": "Search episodes",
+  "@search_episodes_hint": {
+    "description": "Hint displayed on search bar when searching episodes in Timeline tab",
+    "type": "text",
+    "placeholders": {}
+  },
+  "search_podcasts_hint": "Search podcasts",
+  "@search_podcasts_hint": {
+    "description": "Hint displayed on search bar when searching podcasts in Library tab",
+    "type": "text",
+    "placeholders": {}
+  },
+  "search_downloads_hint": "Search downloads",
+  "@search_downloads_hint": {
+    "description": "Hint displayed on search bar when searching downloads in Downloads tab",
+    "type": "text",
+    "placeholders": {}
+  },
+  "search_bookmarks_hint": "Search bookmarks",
+  "@search_bookmarks_hint": {
+    "description": "Hint displayed on search bar when searching bookmarks in Bookmarks tab",
+    "type": "text",
+    "placeholders": {}
+  },
+  "search_episodes_tooltip": "Search episodes",
+  "@search_episodes_tooltip": {
+    "description": "Tooltip for search button on Timeline tab",
+    "type": "text",
+    "placeholders": {}
+  },
+  "search_podcasts_tooltip": "Search podcasts",
+  "@search_podcasts_tooltip": {
+    "description": "Tooltip for search button on Library tab",
+    "type": "text",
+    "placeholders": {}
+  },
+  "search_downloads_tooltip": "Search downloads",
+  "@search_downloads_tooltip": {
+    "description": "Tooltip for search button on Downloads tab",
+    "type": "text",
+    "placeholders": {}
+  },
+  "search_bookmarks_tooltip": "Search bookmarks",
+  "@search_bookmarks_tooltip": {
+    "description": "Tooltip for search button on Bookmarks tab",
+    "type": "text",
+    "placeholders": {}
+  },
+  "no_episodes_found": "No episodes found",
+  "@no_episodes_found": {
+    "description": "Displayed when no episodes match the search query",
+    "type": "text",
+    "placeholders": {}
+  },
+  "no_podcasts_found": "No podcasts found",
+  "@no_podcasts_found": {
+    "description": "Displayed when no podcasts match the search query",
+    "type": "text",
+    "placeholders": {}
+  },
+  "no_downloads_found": "No downloads found",
+  "@no_downloads_found": {
+    "description": "Displayed when no downloads match the search query",
+    "type": "text",
+    "placeholders": {}
+  },
+  "no_bookmarks_found": "No bookmarks found",
+  "@no_bookmarks_found": {
+    "description": "Displayed when no bookmarks match the search query",
     "type": "text",
     "placeholders": {}
   },
@@ -1058,6 +1194,12 @@
     "type": "text",
     "placeholders": {}
   },
+  "settings_default_tab_label": "Default tab",
+  "@settings_default_tab_label": {
+    "description": "Label for the default tab setting",
+    "type": "text",
+    "placeholders": {}
+  },
   "settings_continuous_play_option": "Continuous play",
   "@settings_continuous_play_option": {
     "description": "Continuous play toggle switch label",
@@ -1427,6 +1569,82 @@
   "settings_background_refresh_mobile_data_option_subtitle": "Allow the library to be refreshed when on mobile data",
   "@settings_background_refresh_mobile_data_option_subtitle": {
     "description": "Background episode update toggle when on mobile switch subtitle",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_failed_to_load": "Failed to load timeline",
+  "@timeline_failed_to_load": {
+    "description": "Error message when timeline fails to load",
+    "type": "text",
+    "placeholders": {}
+  },
+  "retry_button_label": "Retry",
+  "@retry_button_label": {
+    "description": "Retry button label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_all_played_message": "All episodes are played. Tap the visibility icon above to show them.",
+  "@timeline_all_played_message": {
+    "description": "Displayed when all timeline episodes have been played",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_showing_date": "Showing {dateStr}",
+  "@timeline_showing_date": {
+    "description": "Shown when timeline is filtered to a specific date",
+    "type": "text",
+    "placeholders": {
+      "dateStr": {}
+    }
+  },
+  "clear_button_label": "Clear",
+  "@clear_button_label": {
+    "description": "Clear button label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "hide_played_episodes_tooltip": "Hide played episodes",
+  "@hide_played_episodes_tooltip": {
+    "description": "Tooltip for hiding played episodes",
+    "type": "text",
+    "placeholders": {}
+  },
+  "show_played_episodes_tooltip": "Show played episodes",
+  "@show_played_episodes_tooltip": {
+    "description": "Tooltip for showing played episodes",
+    "type": "text",
+    "placeholders": {}
+  },
+  "refresh_feeds_tooltip": "Refresh feeds",
+  "@refresh_feeds_tooltip": {
+    "description": "Tooltip for refresh feeds button",
+    "type": "text",
+    "placeholders": {}
+  },
+  "jump_to_date_tooltip": "Jump to date in timeline",
+  "@jump_to_date_tooltip": {
+    "description": "Help text for date picker in timeline",
+    "type": "text",
+    "placeholders": {}
+  },
+  "starting_refresh": "Starting refresh…",
+  "@starting_refresh": {
+    "description": "Shown while refresh is starting",
+    "type": "text",
+    "placeholders": {}
+  },
+  "refresh_done": "Done! Updated {total} sources",
+  "@refresh_done": {
+    "description": "Shown when refresh completes",
+    "type": "text",
+    "placeholders": {
+      "total": {}
+    }
+  },
+  "refreshing_feeds_title": "Refreshing feeds",
+  "@refreshing_feeds_title": {
+    "description": "Title of refresh progress dialog",
     "type": "text",
     "placeholders": {}
   }

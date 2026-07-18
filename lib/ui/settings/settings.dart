@@ -60,6 +60,26 @@ class _SettingsState extends State<Settings> {
             children: [
               SettingsDividerLabel(label: L.of(context)!.settings_personalisation_divider_label),
               const ThemeSelectWidget(),
+              MergeSemantics(
+                child: ListTile(
+                  title: Text(L.of(context)!.settings_default_tab_label),
+                  trailing: DropdownButton<int>(
+                    value: snapshot.data!.defaultTab,
+                    underline: const SizedBox(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => settingsBloc.setDefaultTab(value));
+                      }
+                    },
+                    items: const [
+                      DropdownMenuItem(value: 0, child: Text('Timeline')),
+                      DropdownMenuItem(value: 1, child: Text('Library')),
+                      DropdownMenuItem(value: 2, child: Text('Discover')),
+                      DropdownMenuItem(value: 3, child: Text('Downloads')),
+                    ],
+                  ),
+                ),
+              ),
               SettingsDividerLabel(label: L.of(context)!.settings_episodes_divider_label),
               MergeSemantics(
                 child: ListTile(

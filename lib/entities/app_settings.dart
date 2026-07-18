@@ -68,6 +68,9 @@ class AppSettings {
   /// True if showing a status icon in the notification bar during fetch is enabled
   final bool updatesNotification;
 
+  /// The default tab shown on app start (0=Timeline, 1=Library, 2=Discover, 3=Downloads).
+  final int defaultTab;
+
   AppSettings({
     required this.theme,
     required this.markDeletedEpisodesAsPlayed,
@@ -90,6 +93,7 @@ class AppSettings {
     required this.backgroundUpdate,
     required this.backgroundUpdateMobileData,
     required this.updatesNotification,
+    required this.defaultTab,
   });
 
   AppSettings.sensibleDefaults()
@@ -113,7 +117,8 @@ class AppSettings {
         autoPlay = false,
         backgroundUpdate = false,
         backgroundUpdateMobileData = false,
-        updatesNotification = false;
+        updatesNotification = false,
+        defaultTab = 0;
 
   AppSettings copyWith({
     String? theme,
@@ -138,6 +143,7 @@ class AppSettings {
     bool? backgroundUpdate,
     bool? backgroundUpdateMobileData,
     bool? updatesNotification,
+    int? defaultTab,
   }) =>
       AppSettings(
         theme: theme ?? this.theme,
@@ -161,5 +167,6 @@ class AppSettings {
         backgroundUpdate: backgroundUpdate ?? this.backgroundUpdate,
         backgroundUpdateMobileData: backgroundUpdateMobileData ?? this.backgroundUpdateMobileData,
         updatesNotification: updatesNotification ?? this.updatesNotification,
+        defaultTab: defaultTab ?? this.defaultTab,
       );
 }

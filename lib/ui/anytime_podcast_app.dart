@@ -189,17 +189,21 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
               settingsService: widget.mobileSettingsService),
           dispose: (_, value) => value.dispose(),
         ),
+        Provider<SettingsBloc?>(
+          create: (_) => widget.settingsBloc,
+          dispose: (_, value) => value!.dispose(),
+        ),
         Provider<PagerBloc>(
-          create: (_) => PagerBloc(),
+          create: (context) {
+            final settingsBloc = Provider.of<SettingsBloc?>(context, listen: false);
+            final defaultTab = settingsBloc?.currentSettings.defaultTab ?? 0;
+            return PagerBloc(initialPage: defaultTab);
+          },
           dispose: (_, value) => value.dispose(),
         ),
         Provider<AudioBloc>(
           create: (_) => AudioBloc(audioPlayerService: widget.audioPlayerService),
           dispose: (_, value) => value.dispose(),
-        ),
-        Provider<SettingsBloc?>(
-          create: (_) => widget.settingsBloc,
-          dispose: (_, value) => value!.dispose(),
         ),
         Provider<OPMLBloc>(
           create: (_) => OPMLBloc(opmlService: widget.opmlService),
@@ -584,25 +588,20 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                 onTap: pager.changePage,
                 items: <BottomNavigationBarItem>[
                   BottomNavigationBarItem(
-                    icon: index == 0 ? const Icon(Icons.library_music) : const Icon(Icons.library_music_outlined),
+                    icon: index == 0 ? const Icon(Icons.timeline) : const Icon(Icons.timeline_outlined),
+                    label: L.of(context)!.timeline,
+                  ),
+                  BottomNavigationBarItem(
+                    icon: index == 1 ? const Icon(Icons.library_music) : const Icon(Icons.library_music_outlined),
                     label: L.of(context)!.library,
                   ),
-                  // To be fleshed out later.
-                  // BottomNavigationBarItem(
-                  //   icon: index == 0 ? Icon(Icons.article_rounded) : Icon(Icons.article_outlined),
-                  //   label: 'Episodes',
-                  // ),
                   BottomNavigationBarItem(
-                    icon: index == 1 ? const Icon(Icons.explore) : const Icon(Icons.explore_outlined),
+                    icon: index == 2 ? const Icon(Icons.explore) : const Icon(Icons.explore_outlined),
                     label: L.of(context)!.discover,
                   ),
                   BottomNavigationBarItem(
-                    icon: index == 2 ? const Icon(Icons.download) : const Icon(Icons.download_outlined),
+                    icon: index == 3 ? const Icon(Icons.download) : const Icon(Icons.download_outlined),
                     label: L.of(context)!.downloads,
-                  ),
-                  BottomNavigationBarItem(
-                    icon: index == 3 ? const Icon(Icons.timeline) : const Icon(Icons.timeline_outlined),
-                    label: L.of(context)!.timeline,
                   ),
                 ],
               );
@@ -613,15 +612,15 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
 
   Widget _fragment(int? index, EpisodeBloc searchBloc) {
     if (index == 0) {
-      return const Library();
+      return const Timeline();
     } else if (index == 1) {
+      return const Library();
+    } else if (index == 2) {
       return const Discovery(
         categories: true,
       );
-    } else if (index == 2) {
-      return const Downloads();
     } else {
-      return const Timeline();
+      return const Downloads();
     }
   }
 

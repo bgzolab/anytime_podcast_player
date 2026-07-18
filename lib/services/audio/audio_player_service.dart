@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:flutter/foundation.dart';
 import 'package:anytime/entities/episode.dart';
 import 'package:anytime/entities/podcast.dart';
 import 'package:anytime/entities/sleep.dart';
@@ -113,6 +114,10 @@ abstract class AudioPlayerService {
   void sleep(Sleep sleep);
 
   Episode? nowPlaying;
+
+  /// Called when the user presses the "previous track" button (e.g. headphone
+  /// double-press). If null, the default rewind behaviour is used.
+  VoidCallback? onSkipToPrevious;
 
   /// Event listeners
   Stream<AudioState>? playingState;

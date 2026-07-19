@@ -136,7 +136,7 @@ class AccessibleSliverList extends StatelessWidget {
             delegate: SliverChildBuilderDelegate(
               itemBuilder,
               childCount: itemCount,
-              addAutomaticKeepAlives: false,
+              addAutomaticKeepAlives: true,
             ),
           );
   }

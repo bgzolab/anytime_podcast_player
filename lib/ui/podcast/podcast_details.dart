@@ -53,9 +53,12 @@ class _PodcastDetailsState extends State<PodcastDetails> {
   final log = Logger('PodcastDetails');
   final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
   final ScrollController _sliverScrollController = ScrollController();
+  final ValueNotifier<bool> _toolbarCollapsed = ValueNotifier(false);
   var brightness = Brightness.dark;
-  bool toolbarCollapsed = false;
   SystemUiOverlayStyle? _systemOverlayStyle;
+
+  /// Cached header image widget to avoid rebuilding on every setState.
+  late final Widget _headerImage;
 
   @override
   void initState() {
@@ -70,24 +73,27 @@ class _PodcastDetailsState extends State<PodcastDetails> {
       errorSilently: true,
     ));
 
-    // We only want to display the podcast title when the toolbar is in a
-    // collapsed state. Add a listener and set toollbarCollapsed variable
-    // as required. The text display property is then based on this boolean.
+    // Cache the header image widget once — it never depends on mutable state.
+    final placeholderBuilder = PlaceholderBuilder.of(context);
+    _headerImage = Hero(
+      key: Key('detailhero${widget.podcast.imageUrl}:${widget.podcast.link}'),
+      tag: '${widget.podcast.imageUrl}:${widget.podcast.link}',
+      child: ExcludeSemantics(
+        child: PodcastHeaderImage(
+          podcast: widget.podcast,
+          placeholderBuilder: placeholderBuilder,
+        ),
+      ),
+    );
+
+    // Update toolbar collapse state without triggering a full page rebuild.
     _sliverScrollController.addListener(() {
-      if (!toolbarCollapsed &&
-          _sliverScrollController.hasClients &&
-          _sliverScrollController.offset > (300 - kToolbarHeight)) {
-        setState(() {
-          toolbarCollapsed = true;
-          _updateSystemOverlayStyle();
-        });
-      } else if (toolbarCollapsed &&
-          _sliverScrollController.hasClients &&
-          _sliverScrollController.offset < (300 - kToolbarHeight)) {
-        setState(() {
-          toolbarCollapsed = false;
-          _updateSystemOverlayStyle();
-        });
+      final shouldCollapse = _sliverScrollController.hasClients &&
+          _sliverScrollController.offset > (300 - kToolbarHeight);
+
+      if (_toolbarCollapsed.value != shouldCollapse) {
+        _toolbarCollapsed.value = shouldCollapse;
+        _updateSystemOverlayStyle();
       }
     });
 
@@ -120,7 +126,7 @@ class _PodcastDetailsState extends State<PodcastDetails> {
   void didChangeDependencies() {
     _systemOverlayStyle = SystemUiOverlayStyle(
       statusBarIconBrightness: Theme.of(context).brightness == Brightness.light ? Brightness.dark : Brightness.light,
-      statusBarColor: Theme.of(context).appBarTheme.backgroundColor!.withValues(alpha: toolbarCollapsed ? 1.0 : 0.5),
+      statusBarColor: Theme.of(context).appBarTheme.backgroundColor!.withValues(alpha: _toolbarCollapsed.value ? 1.0 : 0.5),
     );
     super.didChangeDependencies();
   }
@@ -128,7 +134,7 @@ class _PodcastDetailsState extends State<PodcastDetails> {
   @override
   void dispose() {
     _sliverScrollController.dispose();
-
+    _toolbarCollapsed.dispose();
     super.dispose();
   }
 
@@ -151,20 +157,16 @@ class _PodcastDetailsState extends State<PodcastDetails> {
   }
 
   void _updateSystemOverlayStyle() {
-    setState(() {
-      _systemOverlayStyle = SystemUiOverlayStyle(
-        statusBarIconBrightness: Theme.of(context).brightness == Brightness.light ? Brightness.dark : Brightness.light,
-        statusBarColor: Theme.of(context).appBarTheme.backgroundColor!.withValues(alpha: toolbarCollapsed ? 1.0 : 0.5),
-      );
-    });
+    _systemOverlayStyle = SystemUiOverlayStyle(
+      statusBarIconBrightness: Theme.of(context).brightness == Brightness.light ? Brightness.dark : Brightness.light,
+      statusBarColor: Theme.of(context).appBarTheme.backgroundColor!.withValues(alpha: _toolbarCollapsed.value ? 1.0 : 0.5),
+    );
   }
 
-  /// TODO: This really needs a refactor. There are too many nested streams on this now and it needs simplifying.
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final podcastBloc = Provider.of<PodcastBloc>(context, listen: false);
-    final placeholderBuilder = PlaceholderBuilder.of(context);
 
     return Semantics(
       header: false,
@@ -186,60 +188,45 @@ class _PodcastDetailsState extends State<PodcastDetails> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 controller: _sliverScrollController,
                 slivers: <Widget>[
-                  SliverAppBar(
-                      systemOverlayStyle: _systemOverlayStyle,
-                      title: AnimatedOpacity(
-                          opacity: toolbarCollapsed ? 1.0 : 0.0,
+                  // Toolbar collapse state only rebuilds the title/leading widgets.
+                  ValueListenableBuilder<bool>(
+                    valueListenable: _toolbarCollapsed,
+                    builder: (context, collapsed, _) {
+                      return SliverAppBar(
+                        systemOverlayStyle: _systemOverlayStyle,
+                        title: AnimatedOpacity(
+                          opacity: collapsed ? 1.0 : 0.0,
                           duration: const Duration(milliseconds: 500),
-                          child: Text(widget.podcast.title)),
-                      leading: PlatformBackButton(
-                        iconColour: toolbarCollapsed && theme.brightness == Brightness.light
-                            ? (theme.appBarTheme.foregroundColor ?? theme.colorScheme.onSurface)
-                            : Colors.white,
-                        decorationColour: toolbarCollapsed ? const Color(0x00000000) : const Color(0x22000000),
-                        onPressed: () {
-                          _resetSystemOverlayStyle();
-                          Navigator.pop(context);
-                        },
-                      ),
-                      expandedHeight: 300.0,
-                      floating: false,
-                      pinned: true,
-                      snap: false,
-                      flexibleSpace: FlexibleSpaceBar(
-                        background: Hero(
-                          key: Key('detailhero${widget.podcast.imageUrl}:${widget.podcast.link}'),
-                          tag: '${widget.podcast.imageUrl}:${widget.podcast.link}',
-                          child: ExcludeSemantics(
-                            child: StreamBuilder<BlocState<Podcast>>(
-                                initialData: BlocEmptyState<Podcast>(),
-                                stream: podcastBloc.details,
-                                builder: (context, snapshot) {
-                                  final state = snapshot.data;
-                                  Podcast? podcast = widget.podcast;
-
-                                  if (state is BlocLoadingState<Podcast>) {
-                                    podcast = state.data;
-                                  }
-
-                                  if (state is BlocPopulatedState<Podcast>) {
-                                    podcast = state.results;
-                                  }
-
-                                  return PodcastHeaderImage(
-                                    podcast: podcast!,
-                                    placeholderBuilder: placeholderBuilder,
-                                  );
-                                }),
-                          ),
+                          child: Text(widget.podcast.title),
                         ),
-                      )),
+                        leading: PlatformBackButton(
+                          iconColour: collapsed && theme.brightness == Brightness.light
+                              ? (theme.appBarTheme.foregroundColor ?? theme.colorScheme.onSurface)
+                              : Colors.white,
+                          decorationColour: collapsed ? const Color(0x00000000) : const Color(0x22000000),
+                          onPressed: () {
+                            _resetSystemOverlayStyle();
+                            Navigator.pop(context);
+                          },
+                        ),
+                        expandedHeight: 300.0,
+                        floating: false,
+                        pinned: true,
+                        snap: false,
+                        flexibleSpace: FlexibleSpaceBar(
+                          background: _headerImage,
+                        ),
+                      );
+                    },
+                  ),
+                  // Optimized: Single StreamBuilder for all content
                   StreamBuilder<BlocState<Podcast>>(
                       initialData: BlocEmptyState<Podcast>(),
                       stream: podcastBloc.details,
                       builder: (context, snapshot) {
                         final state = snapshot.data;
 
+                        // Loading state
                         if (state is BlocLoadingState) {
                           return const SliverToBoxAdapter(
                             child: Padding(
@@ -253,6 +240,7 @@ class _PodcastDetailsState extends State<PodcastDetails> {
                           );
                         }
 
+                        // Error state
                         if (state is BlocErrorState) {
                           return SliverFillRemaining(
                             hasScrollBody: false,
@@ -277,17 +265,19 @@ class _PodcastDetailsState extends State<PodcastDetails> {
                           );
                         }
 
+                        // Populated state - podcast loaded
                         if (state is BlocPopulatedState<Podcast>) {
                           return SliverToBoxAdapter(
-                              child: PlaybackErrorListener(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                PodcastTitle(state.results!),
-                                const Divider(),
-                              ],
+                            child: PlaybackErrorListener(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  PodcastTitle(state.results!),
+                                  const Divider(),
+                                ],
+                              ),
                             ),
-                          ));
+                          );
                         }
 
                         return const SliverToBoxAdapter(
@@ -297,39 +287,24 @@ class _PodcastDetailsState extends State<PodcastDetails> {
                           ),
                         );
                       }),
-                  StreamBuilder<BlocState<Podcast>>(
-                      initialData: BlocEmptyState<Podcast>(),
-                      stream: podcastBloc.details,
-                      builder: (context1, snapshot1) {
-                        final state = snapshot1.data;
-
-                        if (state is BlocPopulatedState<Podcast>) {
-                          return StreamBuilder<List<Episode?>?>(
-                              stream: podcastBloc.episodes,
-                              builder: (context, snapshot) {
-                                if (snapshot.hasData) {
-                                  return snapshot.data!.isNotEmpty
-                                      ? PodcastEpisodeList(
-                                          episodes: snapshot.data!,
-                                          play: true,
-                                          download: true,
-                                        )
-                                      : const SliverToBoxAdapter(child: NoEpisodesFound());
-                                } else {
-                                  return const SliverToBoxAdapter(
-                                      child: SizedBox(
-                                    height: 200,
-                                    width: 200,
-                                  ));
-                                }
-                              });
-                        } else {
-                          return const SliverToBoxAdapter(
-                              child: SizedBox(
-                            height: 200,
-                            width: 200,
-                          ));
+                  // Episodes list - only rebuild when episodes change
+                  StreamBuilder<List<Episode?>?>(
+                      stream: podcastBloc.episodes,
+                      builder: (context, snapshot) {
+                        // Show episodes if available
+                        if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                          return PodcastEpisodeList(
+                            episodes: snapshot.data!,
+                            play: true,
+                            download: true,
+                          );
                         }
+                        // Show loading placeholder while waiting for data
+                        return const SliverToBoxAdapter(
+                            child: SizedBox(
+                          height: 200,
+                          width: 200,
+                        ));
                       }),
                 ],
               ),

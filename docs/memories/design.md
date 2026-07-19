@@ -36,6 +36,12 @@ description: 给后续 LLM 提供「可执行、可验证、可迭代」的上�
 - SQLite 使用 B-tree 索引，打开仅需读取文件头（<200ms），查询使用索引而非全表扫描
 - 迁移于 2026-07-19 完成，详见 [[sqlite-migration]]
 
+### 为什么迁移到 Material 3？
+
+- Flutter 3.41.5 中 M2 API 大量弃用（`primaryColor`、`indicatorColor`、`surfaceVariant` 等）
+- M3 支持 Android 12+ Material You 动态取色，颜色统一从 `colorScheme` 派生
+- 迁移于 2026-07-19 完成，详见 [[material3-migration]]
+
 ### 为什么用 audio_service + just_audio？
 
 - `just_audio` 是目前 Flutter 生态中最活跃的音频播放引擎

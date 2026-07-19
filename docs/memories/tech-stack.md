@@ -132,6 +132,7 @@ permission_handler: ^12.0.0+1  # 存储权限
 ### 用户界面
 
 ```yaml
+dynamic_color: ^1.7.0        # Material You 动态取色（Android 12+）
 flutter_html: ^3.0.0         # 显示笔记 HTML 渲染
 extended_image: ^9.1.0       # 图片缓存、缩放、圆角
 auto_size_text: ^3.0.0       # 自动调整字号

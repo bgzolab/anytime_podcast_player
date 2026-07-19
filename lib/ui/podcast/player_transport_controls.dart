@@ -193,7 +193,7 @@ class _BookmarkButtonState extends State<BookmarkButton> with SingleTickerProvid
             semanticLabel: L.of(context)!.bookmark_add_button_label,
             _justBookmarked ? Icons.bookmark : Icons.bookmark_add_outlined,
             size: 36.0,
-            color: _justBookmarked ? Theme.of(context).primaryColor : null,
+            color: _justBookmarked ? Theme.of(context).colorScheme.primary : null,
           ),
         ),
       ),
@@ -278,13 +278,15 @@ class _AnimatedPlayButtonState extends State<AnimatedPlayButton> with SingleTick
     final playing = widget.audioState == AudioState.playing;
     final buffering = widget.audioState == AudioState.buffering;
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Stack(
       alignment: AlignmentDirectional.center,
       children: [
         if (buffering)
           SpinKitRing(
             lineWidth: 4.0,
-            color: Theme.of(context).primaryColor,
+            color: colorScheme.primary,
             size: 84,
           ),
         if (!buffering)
@@ -296,9 +298,9 @@ class _AnimatedPlayButtonState extends State<AnimatedPlayButton> with SingleTick
           message: playing ? L.of(context)!.pause_button_label : L.of(context)!.play_button_label,
           child: TextButton(
             style: TextButton.styleFrom(
-              shape: CircleBorder(side: BorderSide(color: Theme.of(context).highlightColor, width: 0.0)),
-              backgroundColor: Theme.of(context).brightness == Brightness.light ? Colors.orange : Colors.grey[800],
-              foregroundColor: Theme.of(context).brightness == Brightness.light ? Colors.orange : Colors.grey[800],
+              shape: CircleBorder(side: BorderSide(color: colorScheme.surface, width: 0.0)),
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
               padding: const EdgeInsets.all(6.0),
             ),
             onPressed: () {
@@ -312,7 +314,7 @@ class _AnimatedPlayButtonState extends State<AnimatedPlayButton> with SingleTick
               size: 60.0,
               semanticLabel: playing ? L.of(context)!.pause_button_label : L.of(context)!.play_button_label,
               icon: AnimatedIcons.play_pause,
-              color: Colors.white,
+              color: colorScheme.onPrimary,
               progress: _playPauseController,
             ),
           ),

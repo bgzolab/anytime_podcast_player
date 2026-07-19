@@ -104,7 +104,7 @@ class _CategorySelectorWidgetState extends State<CategorySelectorWidget> {
 
     return Container(
       width: double.infinity,
-      color: Theme.of(context).canvasColor,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: StreamBuilder<List<String>>(
           stream: widget.discoveryBloc.genres,
           initialData: const [],

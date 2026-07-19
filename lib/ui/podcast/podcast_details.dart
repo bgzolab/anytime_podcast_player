@@ -194,7 +194,7 @@ class _PodcastDetailsState extends State<PodcastDetails> {
                           child: Text(widget.podcast.title)),
                       leading: PlatformBackButton(
                         iconColour: toolbarCollapsed && theme.brightness == Brightness.light
-                            ? theme.appBarTheme.foregroundColor!
+                            ? (theme.appBarTheme.foregroundColor ?? theme.colorScheme.onSurface)
                             : Colors.white,
                         decorationColour: toolbarCollapsed ? const Color(0x00000000) : const Color(0x22000000),
                         onPressed: () {

@@ -30,12 +30,11 @@ description: 给后续 LLM 提供「可执行、可验证、可迭代」的上�
 - `MultiProvider` 注入所有 BLoC，UI 通过 `Provider.of<T>()` 或 `context.watch<T>()` 获取
 - 优点是简单、Flutter 内置支持；缺点是编译期无类型检查、难以与路由参数结合
 
-### 为什么用 Sembast 而不是 SQLite / Hive？
+### 为什么从 Sembast 迁移到 SQLite？
 
-- 不需要关系查询，文档型存储足以承载 Podcast/Episode 数据
-- Sembast 支持 JSON 直接序列化，与 Dart 的 `toMap()`/`fromMap()` 模式自然契合
-- 不需要 native 依赖（相比 sqflite），在 Flutter 生态中更便携
-- 上层覆盖内存缓存，减少频繁的磁盘读取
+- Sembast 是 append-only JSON 日志，数据库增长到 190MB 时打开需 8 秒（全量读入内存）
+- SQLite 使用 B-tree 索引，打开仅需读取文件头（<200ms），查询使用索引而非全表扫描
+- 迁移于 2026-07-19 完成，详见 [[sqlite-migration]]
 
 ### 为什么用 audio_service + just_audio？
 
@@ -49,7 +48,7 @@ description: 给后续 LLM 提供「可执行、可验证、可迭代」的上�
 
 **Bookmark 按钮位置**：放在播放控制栏 Speed 旁边（右侧），始终可见可用。Rewind 按钮保持原位。设置只控制耳机行为，不影响 UI。
 
-**Bookmark 数据模型**：独立 Entity（`Bookmark`），不嵌入 Episode。独立 Sembast store（`bookmark`）。BLoC 通过 `PublishSubject<BookmarkEvent>` + `BehaviorSubject<BlocState<List<Bookmark>>>` 管理状态。
+**Bookmark 数据模型**：独立 Entity（`Bookmark`），不嵌入 Episode。独立 SQLite `bookmark` 表。BLoC 通过 `PublishSubject<BookmarkEvent>` + `BehaviorSubject<BlocState<List<Bookmark>>>` 管理状态。
 
 **两个 Bookmark 视图**：
 - `BookmarkView`（Now Playing 底部抽屉 tab）：只显示**当前播放单集**的书签，平铺列表
@@ -57,7 +56,7 @@ description: 给后续 LLM 提供「可执行、可验证、可迭代」的上�
 
 **书签创建音效**：`BookmarkSound.play()` 使用独立 `AudioPlayer` 实例播放 `assets/notification/water-drop.mp3`，不干扰播客播放。
 
-**数据库结构**：Sembast `bookmark` store，自增 int key。字段：episodeGuid、episodeTitle、podcastName、podcastGuid、positionMs、note、createdAt。按 episodeGuid 查询时按 positionMs 排序，全部查询时按 createdAt 降序。
+**数据库结构**：SQLite `bookmark` 表，自增 int id。字段：episodeGuid、episodeTitle、podcastName、podcastGuid、positionMs、note、createdAt。按 episodeGuid 查询时按 positionMs 排序（`idx_bookmark_episode` 索引），全部查询时按 createdAt 降序（`idx_bookmark_created` 索引）。
 
 ### 上下文感知搜索功能
 
@@ -89,7 +88,7 @@ description: 给后续 LLM 提供「可执行、可验证、可迭代」的上�
 - `lib/ui/search/search.dart` — 搜索页面（支持 5 种模式）
 - `lib/ui/search/search_mode.dart` — SearchMode 枚举
 - `lib/ui/anytime_podcast_app.dart` — 搜索按钮根据标签页传递 SearchMode
-- `lib/repository/sembast/sembast_repository.dart` — 搜索方法实现
+- `lib/repository/sqlite/sqlite_repository.dart` — 搜索方法实现（SQL LIKE 查询）
 
 ## 状态管理约定
 

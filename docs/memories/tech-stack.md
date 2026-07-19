@@ -16,7 +16,7 @@ description: 项目使用最简单、最健壮的技术栈。实施过程中可�
 | 响应式流 | **RxDart** | `^0.28.0` | BehaviorSubject / PublishSubject |
 | 音频引擎 | **just_audio** | `^0.10.4` | 核心音频播放 |
 | 后台播放 | **audio_service** | `^0.18.18` | Android Service / iOS 远程控制 |
-| 本地数据库 | **sembast** | `^3.8.3` | NoSQL 文档数据库 |
+| 本地数据库 | **sqflite** | `^2.4.2` | SQLite 关系数据库（2026-07 迁移自 Sembast） |
 | 键值存储 | **shared_preferences** | `^2.3.4` | 简单设置存储 |
 | 播客搜索 | **podcast_search** | `^0.7.15` | iTunes + PodcastIndex |
 | 通知 | **awesome_notifications** | `^0.10.0` | 本地通知 |
@@ -108,16 +108,16 @@ audio_session: ^0.2.3      # 音频焦点管理（来电暂停等）
 3. `audio_session` 处理音频焦点冲突
 4. `DefaultAudioPlayerService` 封装三层，对外暴露简单接口
 
-### 数据持久化（`lib/repository/sembast/`）
+### 数据持久化（`lib/repository/sqlite/`）
 
 ```yaml
-sembast: ^3.8.3            # NoSQL 数据库
-path_provider: ^2.1.4      # 获取应用文档目录
+sqflite: ^2.4.2              # SQLite 数据库
+path_provider: ^2.1.4        # 获取应用文档目录
 ```
 
 - 数据模型实现 `Persistable` 接口（`toMap()` / `fromMap()`）
 - `@Transient()` 注解标记不持久化的字段
-- 上层 `SembastRepository` 维护 `Map<String, Podcast>` 等内存缓存
+- `SqliteRepository` 使用 SQL 索引查询，无需内存缓存（2026-07 迁移自 Sembast，详见 [[sqlite-migration]]）
 
 ### 下载（`lib/services/download/`）
 
@@ -183,7 +183,7 @@ test/
 │   │   └── bookmark_test.dart        # Bookmark entity：toMap/fromMap 往返、operator ==
 │   ├── core/environment_test.dart
 │   ├── navigation/navigation_route_observer_test.dart
-│   ├── persistence/sembast_test.dart
+│   ├── persistence/sqlite_test.dart
 │   ├── opml/opml_service_test.dart
 │   └── services/settings_test.dart
 │   └── mocks/

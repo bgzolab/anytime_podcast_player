@@ -31,8 +31,8 @@ Anytime 是一个移动端播客播放器（Android & iOS），使用 **Dart/Flu
 └──────┬──────────┬────────┘
        ↓          ↓
 ┌──────────┐ ┌──────────────┐
-│ API 层   │ │ Repository   │  ← Sembast NoSQL
-│ 播客搜索  │ │ 持久化存储    │     内存缓存 + 数据库
+│ API 层   │ │ Repository   │  ← SQLite
+│ 播客搜索  │ │ 持久化存储    │     SQL 索引查询
 │ iTunes / │ │ Podcast,     │
 │ Podcast  │ │ Episode,     │
 │ Index    │ │ Queue, 等    │
@@ -204,26 +204,26 @@ lib/repository/
 │   CRUD: save/find/findAll/delete 按类型（Podcast, Episode 等）
 │   分页查询：findEpisodesBefore() / countEpisodesSince()（时间线使用）
 │   搜索方法：searchEpisodes() / searchPodcasts() / searchDownloads() / searchBookmarks()
-└── sembast/
-    ├── sembast_repository.dart      # Sembast (NoSQL) 实现
-    │   ├── 上层覆盖了内存播客缓存 → 先查缓存再查 DB
-    │   ├── 按 Podcast / Episode / Queue 分类存储
-    │   ├── 分页查询基于 Sembast Finder.limit + Filter.lessThan(publicationDate)
-    │   └── 搜索方法：内存过滤（case-insensitive title 匹配）
-    └── sembast_database_service.dart # 数据库辅助：版本管理、数据迁移
+└── sqlite/
+    ├── sqlite_repository.dart       # SQLite 实现
+    │   ├── SQL 索引查询，无需内存缓存
+    │   ├── 分页查询基于 WHERE publicationDate < ? ORDER BY publicationDate DESC LIMIT ?
+    │   ├── 搜索方法：SQL LIKE 查询（case-insensitive）
+    │   └── 类型转换：_rowFromSqlite() 处理 SQLite 原生类型与 Entity fromMap() 的差异
+    └── sqlite_database_service.dart # 数据库服务：表创建、索引、WAL 模式
 ```
 
-**数据库结构（Sembast Store 映射）：**
+**数据库结构（SQLite 表）：**
 
-| Store | 存储内容 | Key |
+| 表 | 存储内容 | 关键索引 |
 |---|---|---|
-| `podcasts` | `Podcast` 对象，JSON 序列化 | `podcast.feedUrl` |
-| `episodes` | `Episode` 对象，JSON 序列化 | `episode.link` |
-| `queue` | `Queue` 对象（剧集顺序列表） | 固定 key |
-| `transcripts` | `Transcript` 对象 | `transcript.url` |
-| `bookmark` | `Bookmark` 对象，JSON 序列化 | 自增 int ID |
+| `podcast` | `Podcast` 对象 | `idx_podcast_guid(guid)` |
+| `episode` | `Episode` 对象 | `idx_episode_pubdate(publicationDate)`, `idx_episode_pguid(pguid)`, `idx_episode_guid(guid)` |
+| `transcript` | `Transcript` 对象 | — |
+| `bookmark` | `Bookmark` 对象 | `idx_bookmark_episode(episodeGuid)`, `idx_bookmark_created(createdAt)` |
+| `queue` | 播放队列（JSON guid 列表） | 固定 id=1 |
 
-**内存缓存策略：** 所有 `Podcast` / `Episode` 读取先走内存 `Map`，miss 再查 Sembast，查到的写入缓存。
+**查询优化：** 使用 SQL 索引和 WHERE 条件过滤，不再需要全表扫描和内存缓存。详见 [[sqlite-migration]]。
 
 ### `lib/entities/` — 数据模型
 

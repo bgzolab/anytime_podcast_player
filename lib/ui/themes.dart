@@ -3,153 +3,280 @@
 // found in the LICENSE file.
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 final ThemeData _lightTheme = _buildLightTheme();
 final ThemeData _darkTheme = _buildDarkTheme();
 
 ThemeData _buildLightTheme() {
-  final base = ThemeData.light(useMaterial3: false);
+  const colorScheme = ColorScheme.light(
+    primary: Color(0xFFFF9800),
+    onPrimary: Color(0xFFFFFFFF),
+    primaryContainer: Color(0xFFFFE0B2),
+    onPrimaryContainer: Color(0xFF3E2700),
+    secondary: Color(0xFFFB8C00),
+    onSecondary: Color(0xFFFFFFFF),
+    surface: Color(0xFFFFFBFE),
+    onSurface: Color(0xFF1C1B1F),
+    surfaceContainerHighest: Color(0xFFF5F5F5),
+    onSurfaceVariant: Color(0xFF49454F),
+    outline: Color(0xFFE0E0E0),
+    outlineVariant: Color(0xFFCAC4D0),
+    error: Color(0xFFD32F2F),
+    onError: Color(0xFFFFFFFF),
+    surfaceContainerLow: Color(0xFFF7F2FA),
+    surfaceContainerHigh: Color(0xFFECE6F0),
+  );
 
-  return base.copyWith(
-    colorScheme: const ColorScheme.light(
-      primary: Color(0xffff9800),
-      secondary: Color(0xfffb8c00),
-      surface: Color(0xffffffff),
-      error: Color(0xffd32f2f),
-      onSurface: Color(0xfffb8c00),
-    ),
-    bottomAppBarTheme: const BottomAppBarThemeData().copyWith(
-      color: const Color(0xffffffff),
-    ),
-    cardTheme: const CardThemeData().copyWith(
-      color: const Color(0xffffa900),
-      shadowColor: const Color(0xfff57c00),
-    ),
+  final textTheme =
+      Typography.material2021(platform: TargetPlatform.android).black.apply(fontFamily: 'MontserratRegular');
+
+  return ThemeData.light(useMaterial3: true).copyWith(
+    colorScheme: colorScheme,
     brightness: Brightness.light,
-    primaryColor: const Color(0xffff9800),
-    primaryColorLight: const Color(0xffffe0b2),
-    primaryColorDark: const Color(0xfff57c00),
-    canvasColor: const Color(0xffffffff),
-    scaffoldBackgroundColor: const Color(0xffffffff),
-    cardColor: const Color(0xffffffff),
-    dividerColor: const Color(0x1f000000),
-    highlightColor: const Color(0x66bcbcbc),
-    splashColor: const Color(0x66c8c8c8),
-    unselectedWidgetColor: const Color(0x8a000000),
-    disabledColor: const Color(0x61000000),
-    secondaryHeaderColor: const Color(0xffffffff),
-    dialogBackgroundColor: const Color(0xffffffff),
-    indicatorColor: Colors.blueAccent,
-    hintColor: const Color(0x8a000000),
-    primaryTextTheme: Typography.material2021(platform: TargetPlatform.android).black,
-    textTheme: Typography.material2021(
-      platform: TargetPlatform.android,
-    ).black,
-    primaryIconTheme: IconThemeData(color: Colors.grey[800]),
-    buttonTheme: base.buttonTheme.copyWith(
-      buttonColor: Colors.orange,
+    scaffoldBackgroundColor: colorScheme.surface,
+    dividerColor: colorScheme.outline,
+    textTheme: textTheme,
+    primaryTextTheme: textTheme,
+    iconTheme: IconThemeData(color: colorScheme.onSurface),
+    primaryIconTheme: IconThemeData(color: colorScheme.onSurfaceVariant),
+    appBarTheme: AppBarTheme(
+      backgroundColor: colorScheme.surface,
+      foregroundColor: colorScheme.onSurface,
+      elevation: 0,
+      scrolledUnderElevation: 3,
+      surfaceTintColor: Colors.transparent,
     ),
-    iconTheme: base.iconTheme.copyWith(
-      color: Colors.orange,
+    bottomAppBarTheme: BottomAppBarThemeData(
+      color: colorScheme.surface,
+      elevation: 0,
     ),
-    sliderTheme: const SliderThemeData().copyWith(
-      valueIndicatorColor: Colors.orange,
+    cardTheme: CardThemeData(
+      color: colorScheme.surface,
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    ),
+    dialogTheme: DialogThemeData(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: colorScheme.surface,
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      showDragHandle: true,
+      backgroundColor: colorScheme.surface,
+    ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    ),
+    chipTheme: ChipThemeData(
+      backgroundColor: colorScheme.surfaceContainerHighest,
+      selectedColor: colorScheme.primaryContainer,
+      labelStyle: textTheme.labelLarge,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: colorScheme.surfaceContainerHigh,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(28),
+        borderSide: BorderSide.none,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) return colorScheme.primary;
+        return colorScheme.outline;
+      }),
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) return colorScheme.primaryContainer;
+        return colorScheme.surfaceContainerHighest;
+      }),
+    ),
+    sliderTheme: SliderThemeData(
+      activeTrackColor: colorScheme.primary,
+      inactiveTrackColor: colorScheme.surfaceContainerHighest,
+      thumbColor: colorScheme.primary,
+      valueIndicatorColor: colorScheme.primary,
       trackHeight: 2.0,
       thumbShape: const RoundSliderThumbShape(
         enabledThumbRadius: 6.0,
         disabledThumbRadius: 6.0,
       ),
     ),
-    appBarTheme: base.appBarTheme.copyWith(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        systemOverlayStyle: SystemUiOverlayStyle.light.copyWith(
-          systemNavigationBarIconBrightness: Brightness.dark,
-          systemNavigationBarColor: Colors.white,
-          statusBarIconBrightness: Brightness.dark,
-        )),
-    snackBarTheme: base.snackBarTheme.copyWith(
-      actionTextColor: Colors.white,
+    tabBarTheme: TabBarThemeData(
+      indicatorColor: colorScheme.primary,
+      labelColor: colorScheme.primary,
+      unselectedLabelColor: colorScheme.onSurfaceVariant,
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: colorScheme.surface,
+      indicatorColor: colorScheme.primaryContainer,
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+      iconTheme: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return IconThemeData(color: colorScheme.onPrimaryContainer);
+        }
+        return IconThemeData(color: colorScheme.onSurfaceVariant);
+      }),
+      labelTextStyle: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return textTheme.labelMedium?.copyWith(color: colorScheme.onSurface);
+        }
+        return textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant);
+      }),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(foregroundColor: Colors.grey[800]),
+      style: OutlinedButton.styleFrom(foregroundColor: colorScheme.onSurface),
+    ),
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      },
     ),
   );
 }
 
 ThemeData _buildDarkTheme() {
-  final base = ThemeData.dark(useMaterial3: false);
+  const colorScheme = ColorScheme.dark(
+    primary: Color(0xFFFFCC80),
+    onPrimary: Color(0xFF3E2700),
+    primaryContainer: Color(0xFF5D3F00),
+    onPrimaryContainer: Color(0xFFFFE0B2),
+    secondary: Color(0xFFFFCC80),
+    onSecondary: Color(0xFF3E2700),
+    surface: Color(0xFF1C1B1F),
+    onSurface: Color(0xFFE6E1E5),
+    surfaceContainerHighest: Color(0xFF2D2D2D),
+    onSurfaceVariant: Color(0xFFCAC4D0),
+    outline: Color(0xFF444444),
+    outlineVariant: Color(0xFF49454F),
+    error: Color(0xFFF2B8B5),
+    onError: Color(0xFF601410),
+    surfaceContainerLow: Color(0xFF25232A),
+    surfaceContainerHigh: Color(0xFF36343B),
+  );
 
-  return base.copyWith(
-    colorScheme: const ColorScheme.dark(
-      primary: Color(0xffffffff),
-      secondary: Color(0xfffb8c00),
-      surface: Color(0xff222222),
-      error: Color(0xffd32f2f),
-      onSurface: Color(0xffffffff),
-    ),
-    bottomAppBarTheme: const BottomAppBarThemeData().copyWith(
-      color: const Color(0xff222222),
-    ),
-    cardTheme: const CardThemeData().copyWith(
-      color: const Color(0xff444444),
-      shadowColor: const Color(0x77ffffff),
-    ),
+  final textTheme =
+      Typography.material2021(platform: TargetPlatform.android).white.apply(fontFamily: 'MontserratRegular');
+
+  return ThemeData.dark(useMaterial3: true).copyWith(
+    colorScheme: colorScheme,
     brightness: Brightness.dark,
-    primaryColor: const Color(0xffffffff),
-    primaryColorLight: const Color(0xffffe0b2),
-    primaryColorDark: const Color(0xfff57c00),
-    canvasColor: const Color(0xff000000),
-    scaffoldBackgroundColor: const Color(0xff000000),
-    cardColor: const Color(0xff0F0F0F),
-    dividerColor: const Color(0xff444444),
-    highlightColor: const Color(0xff222222),
-    splashColor: const Color(0x66c8c8c8),
-    unselectedWidgetColor: Colors.white,
-    disabledColor: const Color(0x77ffffff),
-    secondaryHeaderColor: const Color(0xff222222),
-    dialogBackgroundColor: const Color(0xff222222),
-    indicatorColor: Colors.orange,
-    hintColor: const Color(0x80ffffff),
-    primaryTextTheme: Typography.material2021(platform: TargetPlatform.android).white,
-    textTheme: Typography.material2021(platform: TargetPlatform.android).white,
-    primaryIconTheme: const IconThemeData(color: Colors.white),
-    iconTheme: base.iconTheme.copyWith(
-      color: Colors.white,
+    scaffoldBackgroundColor: colorScheme.surface,
+    dividerColor: colorScheme.outline,
+    textTheme: textTheme,
+    primaryTextTheme: textTheme,
+    iconTheme: IconThemeData(color: colorScheme.onSurface),
+    primaryIconTheme: IconThemeData(color: colorScheme.onSurfaceVariant),
+    appBarTheme: AppBarTheme(
+      backgroundColor: colorScheme.surface,
+      foregroundColor: colorScheme.onSurface,
+      elevation: 0,
+      scrolledUnderElevation: 3,
+      surfaceTintColor: Colors.transparent,
     ),
-    dividerTheme: base.dividerTheme.copyWith(
-      color: const Color(0xff444444),
+    bottomAppBarTheme: BottomAppBarThemeData(
+      color: colorScheme.surface,
+      elevation: 0,
     ),
-    sliderTheme: const SliderThemeData().copyWith(
-      valueIndicatorColor: Colors.white,
+    cardTheme: CardThemeData(
+      color: colorScheme.surfaceContainerHighest,
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    ),
+    dialogTheme: DialogThemeData(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: colorScheme.surfaceContainerHighest,
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      showDragHandle: true,
+      backgroundColor: colorScheme.surfaceContainerHighest,
+    ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    ),
+    chipTheme: ChipThemeData(
+      backgroundColor: colorScheme.surfaceContainerHighest,
+      selectedColor: colorScheme.primaryContainer,
+      labelStyle: textTheme.labelLarge,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: colorScheme.surfaceContainerHigh,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(28),
+        borderSide: BorderSide.none,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) return colorScheme.primary;
+        return colorScheme.outline;
+      }),
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) return colorScheme.primaryContainer;
+        return colorScheme.surfaceContainerHighest;
+      }),
+    ),
+    sliderTheme: SliderThemeData(
+      activeTrackColor: colorScheme.primary,
+      inactiveTrackColor: colorScheme.surfaceContainerHighest,
+      thumbColor: colorScheme.primary,
+      valueIndicatorColor: colorScheme.primary,
       trackHeight: 2.0,
       thumbShape: const RoundSliderThumbShape(
         enabledThumbRadius: 6.0,
         disabledThumbRadius: 6.0,
       ),
     ),
-    appBarTheme: base.appBarTheme.copyWith(
-        backgroundColor: const Color(0xff222222),
-        foregroundColor: Colors.white,
-        shadowColor: const Color(0xff222222),
-        elevation: 1.0,
-        systemOverlayStyle: SystemUiOverlayStyle.light.copyWith(
-          systemNavigationBarIconBrightness: Brightness.light,
-          systemNavigationBarColor: const Color(0xff222222),
-          statusBarIconBrightness: Brightness.light,
-        )),
-    snackBarTheme: base.snackBarTheme.copyWith(
-      actionTextColor: Colors.orange,
+    tabBarTheme: TabBarThemeData(
+      indicatorColor: colorScheme.primary,
+      labelColor: colorScheme.primary,
+      unselectedLabelColor: colorScheme.onSurfaceVariant,
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: colorScheme.surface,
+      indicatorColor: colorScheme.primaryContainer,
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+      iconTheme: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return IconThemeData(color: colorScheme.onPrimaryContainer);
+        }
+        return IconThemeData(color: colorScheme.onSurfaceVariant);
+      }),
+      labelTextStyle: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return textTheme.labelMedium?.copyWith(color: colorScheme.onSurface);
+        }
+        return textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant);
+      }),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: const Color(0xffffffff),
-        side: const BorderSide(
-          color: Color(0xffffffff),
-          style: BorderStyle.solid,
-        ),
+        foregroundColor: colorScheme.onSurface,
+        side: BorderSide(color: colorScheme.outline),
       ),
+    ),
+    dividerTheme: DividerThemeData(
+      color: colorScheme.outline,
+    ),
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      },
     ),
   );
 }

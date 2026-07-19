@@ -116,10 +116,9 @@ class _MiniPlayerBuilderState extends State<_MiniPlayerBuilder> with SingleTicke
           child: Container(
             height: 66,
             decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
+                color: theme.colorScheme.surfaceContainerLow,
                 border: Border(
-                  top: Divider.createBorderSide(context, width: 1.0, color: theme.dividerColor),
-                  bottom: Divider.createBorderSide(context, width: 0.0, color: theme.dividerColor),
+                  top: BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
                 )),
             child: Padding(
               padding: const EdgeInsets.only(left: 4.0, right: 4.0),
@@ -151,7 +150,7 @@ class _MiniPlayerBuilderState extends State<_MiniPlayerBuilder> with SingleTicke
                                                 url: snapshot.data!.imageUrl!,
                                                 width: 58.0,
                                                 height: 58.0,
-                                                borderRadius: 4.0,
+                                                borderRadius: 8.0,
                                                 placeholder: placeholderBuilder != null
                                                     ? placeholderBuilder.builder()(context)
                                                     : const Image(
@@ -253,10 +252,13 @@ class _MiniPlayerBuilderState extends State<_MiniPlayerBuilder> with SingleTicke
                           cw = width / pc;
                         }
 
-                        return Container(
-                          width: cw,
-                          height: 1.0,
-                          color: theme.primaryColor,
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(1),
+                          child: Container(
+                            width: cw,
+                            height: 2.0,
+                            color: theme.colorScheme.primary,
+                          ),
                         );
                       }),
                 ],

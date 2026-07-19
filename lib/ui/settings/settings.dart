@@ -249,7 +249,13 @@ class _SettingsState extends State<Settings> {
 
   Widget _buildAndroid(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: Theme.of(context).appBarTheme.systemOverlayStyle!,
+      value: SystemUiOverlayStyle(
+        systemNavigationBarColor: Theme.of(context).colorScheme.surface,
+        systemNavigationBarIconBrightness:
+            Theme.of(context).brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+        statusBarIconBrightness:
+            Theme.of(context).brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+      ),
       child: Scaffold(
         appBar: AppBar(
           elevation: 0.0,

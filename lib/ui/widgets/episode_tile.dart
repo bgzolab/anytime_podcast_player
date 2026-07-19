@@ -82,8 +82,6 @@ class EpisodeTile extends StatelessWidget {
 ///
 /// It can then be expanded to present addition information about the episode and further
 /// controls.
-///
-/// TODO: Replace [Opacity] with [Container] with a transparent colour.
 class ExpandableEpisodeTile extends StatefulWidget {
   final Episode episode;
   final bool download;
@@ -114,29 +112,33 @@ class _ExpandableEpisodeTileState extends State<ExpandableEpisodeTile> {
     final episodeBloc = Provider.of<EpisodeBloc>(context);
     final queueBloc = Provider.of<QueueBloc>(context);
 
+    final playedMuted = widget.episode.played;
+    final mutedTextColor = playedMuted ? theme.colorScheme.onSurface.withValues(alpha: 0.6) : null;
+
     return ExpansionTile(
       tilePadding: const EdgeInsets.fromLTRB(16.0, 0.0, 8.0, 0.0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       key: Key('PT${widget.episode.guid}'),
       onExpansionChanged: (isExpanded) {
         setState(() {
           expanded = isExpanded;
         });
       },
-      trailing: Opacity(
-        opacity: widget.episode.played ? 0.5 : 1.0,
-        child: EpisodeTransportControls(
-          episode: widget.episode,
-          download: widget.download,
-          play: widget.play,
-        ),
+      trailing: EpisodeTransportControls(
+        episode: widget.episode,
+        download: widget.download,
+        play: widget.play,
       ),
       leading: ExcludeSemantics(
         child: Stack(
           alignment: Alignment.bottomLeft,
           fit: StackFit.passthrough,
           children: <Widget>[
-            Opacity(
-              opacity: widget.episode.played ? 0.5 : 1.0,
+            ColorFiltered(
+              colorFilter: playedMuted
+                  ? const ColorFilter.mode(Color(0x99FFFFFF), BlendMode.lighten)
+                  : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
               child: TileImage(
                 url: widget.episode.thumbImageUrl ?? widget.episode.imageUrl!,
                 size: 56.0,
@@ -147,25 +149,19 @@ class _ExpandableEpisodeTileState extends State<ExpandableEpisodeTile> {
               height: 5.0,
               width: 56.0 * (widget.episode.percentagePlayed / 100),
               child: Container(
-                color: Theme.of(context).primaryColor,
+                color: theme.colorScheme.primary,
               ),
             ),
           ],
         ),
       ),
-      subtitle: Opacity(
-        opacity: widget.episode.played ? 0.5 : 1.0,
-        child: EpisodeSubtitle(widget.episode),
-      ),
-      title: Opacity(
-        opacity: widget.episode.played ? 0.5 : 1.0,
-        child: Text(
-          widget.episode.title!,
-          overflow: TextOverflow.ellipsis,
-          maxLines: 2,
-          softWrap: false,
-          style: textTheme.bodyMedium,
-        ),
+      subtitle: EpisodeSubtitle(widget.episode),
+      title: Text(
+        widget.episode.title!,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 2,
+        softWrap: false,
+        style: textTheme.bodyMedium?.copyWith(color: mutedTextColor),
       ),
       children: <Widget>[
         Align(
@@ -438,8 +434,10 @@ class _CupertinoAccessibleEpisodeTileState extends State<_CupertinoAccessibleEpi
                   alignment: Alignment.bottomLeft,
                   fit: StackFit.passthrough,
                   children: <Widget>[
-                    Opacity(
-                      opacity: widget.episode.played ? 0.5 : 1.0,
+                    ColorFiltered(
+                      colorFilter: widget.episode.played
+                          ? const ColorFilter.mode(Color(0x99FFFFFF), BlendMode.lighten)
+                          : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
                       child: TileImage(
                         url: widget.episode.thumbImageUrl ?? widget.episode.imageUrl!,
                         size: 56.0,
@@ -450,24 +448,20 @@ class _CupertinoAccessibleEpisodeTileState extends State<_CupertinoAccessibleEpi
                       height: 5.0,
                       width: 56.0 * (widget.episode.percentagePlayed / 100),
                       child: Container(
-                        color: Theme.of(context).primaryColor,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                   ],
                 ),
               ),
-              subtitle: Opacity(
-                opacity: widget.episode.played ? 0.5 : 1.0,
-                child: EpisodeSubtitle(widget.episode),
-              ),
-              title: Opacity(
-                opacity: widget.episode.played ? 0.5 : 1.0,
-                child: Text(
-                  widget.episode.title!,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 2,
-                  softWrap: false,
-                  style: textTheme.bodyMedium,
+              subtitle: EpisodeSubtitle(widget.episode),
+              title: Text(
+                widget.episode.title!,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
+                softWrap: false,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: widget.episode.played ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6) : null,
                 ),
               ),
               onTap: () {
@@ -823,8 +817,10 @@ class _AndroidAccessibleEpisodeTileState extends State<_AndroidAccessibleEpisode
                 alignment: Alignment.bottomLeft,
                 fit: StackFit.passthrough,
                 children: <Widget>[
-                  Opacity(
-                    opacity: widget.episode.played ? 0.5 : 1.0,
+                  ColorFiltered(
+                    colorFilter: widget.episode.played
+                        ? const ColorFilter.mode(Color(0x99FFFFFF), BlendMode.lighten)
+                        : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
                     child: TileImage(
                       url: widget.episode.thumbImageUrl ?? widget.episode.imageUrl!,
                       size: 56.0,
@@ -835,24 +831,20 @@ class _AndroidAccessibleEpisodeTileState extends State<_AndroidAccessibleEpisode
                     height: 5.0,
                     width: 56.0 * (widget.episode.percentagePlayed / 100),
                     child: Container(
-                      color: Theme.of(context).primaryColor,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                 ],
               ),
             ),
-            subtitle: Opacity(
-              opacity: widget.episode.played ? 0.5 : 1.0,
-              child: EpisodeSubtitle(widget.episode),
-            ),
-            title: Opacity(
-              opacity: widget.episode.played ? 0.5 : 1.0,
-              child: Text(
-                widget.episode.title!,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 2,
-                softWrap: false,
-                style: textTheme.bodyMedium,
+            subtitle: EpisodeSubtitle(widget.episode),
+            title: Text(
+              widget.episode.title!,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+              softWrap: false,
+              style: textTheme.bodyMedium?.copyWith(
+                color: widget.episode.played ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6) : null,
               ),
             ),
           );

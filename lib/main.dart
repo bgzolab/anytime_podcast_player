@@ -10,12 +10,22 @@ import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:logging/logging.dart';
 
 // ignore_for_file: avoid_print
 void main() async {
   List<int> certificateAuthorityBytes = [];
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (Platform.isAndroid) {
+    try {
+      await FlutterDisplayMode.setHighRefreshRate();
+    } catch (e) {
+      debugPrint('Failed to set high refresh rate: $e');
+    }
+  }
+
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
 
   Logger.root.level = Level.FINE;

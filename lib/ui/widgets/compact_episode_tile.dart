@@ -27,6 +27,10 @@ import 'package:rxdart/rxdart.dart';
 /// parameter controls whether the podcast name subtitle is displayed —
 /// Timeline shows it (episodes come from many sources), while
 /// PodcastEpisodeList hides it (already inside that podcast's context).
+///
+/// Tap behaviors:
+/// - Tap thumbnail → start playing the episode
+/// - Tap text content area → expand/collapse episode description
 class CompactEpisodeTile extends StatelessWidget {
   final Episode episode;
   final bool download;
@@ -50,6 +54,8 @@ class CompactEpisodeTile extends StatelessWidget {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
+    final audioBloc = Provider.of<AudioBloc>(context, listen: false);
+    final settings = Provider.of<SettingsBloc>(context, listen: false).currentSettings;
     final episodeBloc = Provider.of<EpisodeBloc>(context);
     final queueBloc = Provider.of<QueueBloc>(context);
 
@@ -65,56 +71,72 @@ class CompactEpisodeTile extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              // Thumbnail with progress bar
-              ExcludeSemantics(
-                child: Stack(
-                  alignment: Alignment.bottomLeft,
-                  fit: StackFit.passthrough,
-                  children: <Widget>[
-                    ColorFiltered(
-                      colorFilter: playedMuted
-                          ? const ColorFilter.mode(Color(0x99FFFFFF), BlendMode.lighten)
-                          : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
-                      child: TileImage(
-                        url: episode.thumbImageUrl ?? episode.imageUrl!,
-                        size: 80.0,
-                        highlight: episode.highlight,
+              // Thumbnail with progress bar — tap to play
+              GestureDetector(
+                onTap: () {
+                  audioBloc.play(episode);
+                  _optionalShowNowPlaying(context, settings);
+                },
+                child: ExcludeSemantics(
+                  child: Stack(
+                    alignment: Alignment.bottomLeft,
+                    fit: StackFit.passthrough,
+                    children: <Widget>[
+                      ColorFiltered(
+                        colorFilter: playedMuted
+                            ? const ColorFilter.mode(Color(0x99FFFFFF), BlendMode.lighten)
+                            : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
+                        child: TileImage(
+                          url: episode.thumbImageUrl ?? episode.imageUrl!,
+                          size: 80.0,
+                          highlight: episode.highlight,
+                        ),
                       ),
-                    ),
-                    SizedBox(
-                      height: 5.0,
-                      width: 80.0 * (episode.percentagePlayed / 100),
-                      child: Container(
-                        color: colorScheme.primary,
+                      SizedBox(
+                        height: 5.0,
+                        width: 80.0 * (episode.percentagePlayed / 100),
+                        child: Container(
+                          color: colorScheme.primary,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(width: 16.0),
-              // Content
+              // Content — tap to open episode details bottom sheet
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      episode.title!,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.titleSmall?.copyWith(color: mutedTextColor),
-                    ),
-                    if (showPodcastName) ...<Widget>[
-                      const SizedBox(height: 2.0),
+                child: GestureDetector(
+                  onTap: () {
+                    showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (context) => EpisodeDetails(episode: episode),
+                    );
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
                       Text(
-                        episode.podcast ?? '',
-                        maxLines: 1,
+                        episode.title!,
+                        maxLines: 3,
                         overflow: TextOverflow.ellipsis,
-                        style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                        style: textTheme.titleSmall?.copyWith(color: mutedTextColor),
                       ),
+                      if (showPodcastName) ...<Widget>[
+                        const SizedBox(height: 2.0),
+                        Text(
+                          episode.podcast ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                        ),
+                      ],
+                      const SizedBox(height: 2.0),
+                      EpisodeSubtitle(episode),
                     ],
-                    const SizedBox(height: 2.0),
-                    EpisodeSubtitle(episode),
-                  ],
+                  ),
                 ),
               ),
             ],
@@ -198,6 +220,19 @@ class CompactEpisodeTile extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _optionalShowNowPlaying(BuildContext context, AppSettings settings) {
+    if (settings.autoOpenNowPlaying) {
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(
+          builder: (context) => const NowPlaying(),
+          settings: const RouteSettings(name: 'nowplaying'),
+          fullscreenDialog: false,
+        ),
+      );
+    }
   }
 }
 

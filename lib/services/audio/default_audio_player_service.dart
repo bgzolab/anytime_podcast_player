@@ -569,8 +569,16 @@ class DefaultAudioPlayerService extends AudioPlayerService {
     }).listen((PlaybackState state) {
       switch (state.processingState) {
         case AudioProcessingState.idle:
-          _playingState.add(AudioState.none);
-          _stopPositionTicker();
+          // If we still have a current episode, treat idle as "paused" so the
+          // mini player stays visible and headphone controls can resume.
+          // Only emit none when there is truly nothing loaded.
+          if (_currentEpisode != null) {
+            _stopPositionTicker();
+            _playingState.add(AudioState.pausing);
+          } else {
+            _playingState.add(AudioState.none);
+            _stopPositionTicker();
+          }
           break;
         case AudioProcessingState.loading:
           _playingState.add(AudioState.buffering);

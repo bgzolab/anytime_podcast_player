@@ -237,7 +237,7 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
       ],
       child: DynamicColorBuilder(
         builder: (lightColorScheme, darkColorScheme) {
-          final currentTheme = theme as ThemeData;
+          final currentTheme = theme ?? Themes.darkTheme().themeData;
           final isDark = currentTheme.brightness == Brightness.dark;
           final dynamicScheme = isDark ? darkColorScheme : lightColorScheme;
           final effectiveTheme =

@@ -9,7 +9,7 @@ import 'package:anytime/l10n/L.dart';
 import 'package:anytime/state/bloc_state.dart';
 import 'package:anytime/state/library_state.dart';
 import 'package:anytime/state/queue_event_state.dart';
-import 'package:anytime/ui/widgets/episode_tile.dart';
+import 'package:anytime/ui/widgets/compact_episode_tile.dart';
 import 'package:anytime/ui/widgets/platform_progress_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
@@ -176,9 +176,7 @@ class _TimelineState extends State<Timeline> {
               ),
               const Padding(padding: EdgeInsets.only(top: 16.0)),
               Text(
-                hasHidden
-                    ? L.of(context)!.timeline_all_played_message
-                    : L.of(context)!.no_episodes_message,
+                hasHidden ? L.of(context)!.timeline_all_played_message : L.of(context)!.no_episodes_message,
                 style: Theme.of(context).textTheme.titleLarge,
                 textAlign: TextAlign.center,
               ),
@@ -235,11 +233,12 @@ class _TimelineState extends State<Timeline> {
                 queued = snapshot.data!.queue.any((element) => element.guid == episode.guid);
               }
 
-              return EpisodeTile(
+              return CompactEpisodeTile(
                 episode: episode,
                 download: true,
                 play: true,
                 queued: queued,
+                showPodcastName: true,
               );
             },
             childCount: (hasFilter ? 1 : 0) + 1 + items.length + (bloc.hasMore ? 1 : 0),
@@ -330,11 +329,11 @@ class _TimelineState extends State<Timeline> {
               icon: Icon(
                 showPlayed ? Icons.visibility : Icons.visibility_off,
                 size: 20.0,
-                color: showPlayed
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.secondary,
+                color: showPlayed ? theme.colorScheme.primary : theme.colorScheme.secondary,
               ),
-              tooltip: showPlayed ? L.of(context)!.hide_played_episodes_tooltip : L.of(context)!.show_played_episodes_tooltip,
+              tooltip: showPlayed
+                  ? L.of(context)!.hide_played_episodes_tooltip
+                  : L.of(context)!.show_played_episodes_tooltip,
               onPressed: () => bloc.event(TimelineEvent.toggleShowPlayed),
               visualDensity: VisualDensity.compact,
             ),

@@ -172,7 +172,7 @@ class _TimelineState extends State<Timeline> {
               Icon(
                 hasHidden ? Icons.visibility_off : Icons.timeline,
                 size: 75,
-                color: Theme.of(context).primaryColor,
+                color: Theme.of(context).colorScheme.primary,
               ),
               const Padding(padding: EdgeInsets.only(top: 16.0)),
               Text(

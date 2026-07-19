@@ -124,7 +124,7 @@ class _BookmarkViewState extends State<BookmarkView> {
             child: const Icon(Icons.delete, color: Colors.white),
           ),
           child: ListTile(
-            leading: Icon(Icons.bookmark, color: Theme.of(context).primaryColor),
+            leading: Icon(Icons.bookmark, color: Theme.of(context).colorScheme.primary),
             title: Text(
               _formatPosition(bookmark.positionMs),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(

@@ -99,6 +99,7 @@ class _MiniPlayerBuilderState extends State<_MiniPlayerBuilder> with SingleTicke
               context: context,
               routeSettings: const RouteSettings(name: 'nowplaying'),
               isScrollControlled: true,
+              showDragHandle: false,
               builder: (BuildContext modalContext) {
                 return Padding(
                   padding: EdgeInsets.only(top: padding.top),

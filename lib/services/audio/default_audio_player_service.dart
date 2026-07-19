@@ -427,8 +427,9 @@ class DefaultAudioPlayerService extends AudioPlayerService {
 
       // If we have no state we'll have to assume we stopped whilst suspended.
       if (basicState == AudioProcessingState.idle) {
-        /// We will have to assume we have stopped.
-        _playingState.add(AudioState.stopped);
+        // We have a current episode but the player is idle (stopped to save
+        // data). Treat as paused so the mini player stays visible.
+        _playingState.add(AudioState.pausing);
       } else if (basicState == AudioProcessingState.ready) {
         _startPositionTicker();
       }

@@ -5,7 +5,7 @@
 import 'dart:io';
 
 import 'package:anytime/repository/repository.dart';
-import 'package:anytime/repository/sembast/sembast_repository.dart';
+import 'package:anytime/repository/sqlite/sqlite_repository.dart';
 import 'package:anytime/services/notifications/notification_service.dart';
 import 'package:anytime/services/podcast/mobile_opml_service.dart';
 import 'package:anytime/services/podcast/mobile_podcast_service.dart';
@@ -21,18 +21,22 @@ import '../mocks/mock_podcast_api.dart';
 import '../mocks/mock_settings_service.dart';
 
 void main() {
+  // sqflite needs native SQLite — skip on desktop test runners.
+  final bool skipTests = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+
   final api = MockPodcastApi();
   final mockPath = MockPathProvder();
   const dbName = 'anytime-opml.db';
   late OPMLService opmlService;
   late PodcastService podcastService;
   late NotificationService notificationService;
-  Repository repository;
+  late Repository repository;
 
   setUp(() async {
+    if (skipTests) return;
     TestWidgetsFlutterBinding.ensureInitialized();
     PathProviderPlatform.instance = mockPath;
-    repository = SembastRepository(databaseName: dbName);
+    repository = SqliteRepository(databaseName: dbName);
     notificationService = MockNotificationService();
 
     podcastService = MobilePodcastService(
@@ -46,6 +50,10 @@ void main() {
   });
 
   tearDown(() async {
+    if (!skipTests) {
+      await repository.close();
+    }
+
     var f = File('${Directory.systemTemp.path}/$dbName');
 
     if (f.existsSync()) {
@@ -69,5 +77,5 @@ void main() {
     expect(subs.length, 1);
     expect(subs[0].title, 'Podcast Load Test 1');
     expect(subs[0].url, 'test_resources/podcast1.rss');
-  });
+  }, skip: skipTests);
 }

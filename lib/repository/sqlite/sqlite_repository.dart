@@ -9,7 +9,6 @@ import 'package:anytime/entities/episode.dart';
 import 'package:anytime/entities/podcast.dart';
 import 'package:anytime/entities/transcript.dart';
 import 'package:anytime/repository/repository.dart';
-import 'package:anytime/repository/sqlite/migration_service.dart';
 import 'package:anytime/repository/sqlite/sqlite_database_service.dart';
 import 'package:anytime/state/episode_state.dart';
 import 'package:flutter/foundation.dart';
@@ -31,18 +30,12 @@ class SqliteRepository extends Repository {
 
   final SqliteDatabaseService _databaseService;
   final _queueGuids = <String>[];
-  bool _migrationChecked = false;
 
   SqliteRepository({String databaseName = 'anytime.sqlite'})
       : _databaseService = SqliteDatabaseService(databaseName: databaseName);
 
   Future<Database> get _db async {
-    final db = await _databaseService.database;
-    if (!_migrationChecked) {
-      _migrationChecked = true;
-      await MigrationService.migrate(sqliteDb: db);
-    }
-    return db;
+    return _databaseService.database;
   }
 
   // ---------------------------------------------------------------------------

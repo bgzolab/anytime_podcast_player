@@ -8,9 +8,11 @@ import 'package:anytime/bloc/podcast/audio_bloc.dart';
 import 'package:anytime/entities/episode.dart';
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/services/audio/audio_player_service.dart';
+import 'package:anytime/ui/podcast/bookmark_view.dart';
 import 'package:anytime/ui/podcast/chapter_selector.dart';
 import 'package:anytime/ui/podcast/now_playing_floating_player.dart';
 import 'package:anytime/ui/podcast/now_playing_options.dart';
+import 'package:anytime/ui/podcast/transcript_view.dart';
 import 'package:anytime/ui/podcast/person_avatar.dart';
 import 'package:anytime/ui/podcast/playback_error_listener.dart';
 import 'package:anytime/ui/podcast/player_position_controls.dart';
@@ -477,7 +479,7 @@ class _NowPlayingTabsState extends State<NowPlayingTabs> with TickerProviderStat
     startedWithChapters = widget.episode.hasChapters;
 
     tabController = TabController(
-        length: widget.episode.hasChapters ? 3 : 2, initialIndex: widget.episode.hasChapters ? 1 : 0, vsync: this);
+        length: widget.episode.hasChapters ? 5 : 4, initialIndex: widget.episode.hasChapters ? 1 : 0, vsync: this);
   }
 
   @override
@@ -555,7 +557,7 @@ class _NowPlayingTabsState extends State<NowPlayingTabs> with TickerProviderStat
 
       setState(() {
         tabController =
-            TabController(length: widget.episode.hasChapters ? 3 : 2, initialIndex: currentIndex + 1, vsync: this);
+            TabController(length: widget.episode.hasChapters ? 5 : 4, initialIndex: currentIndex + 2, vsync: this);
 
         startedWithChapters = widget.episode.hasChapters;
       });
@@ -620,6 +622,18 @@ class _EpisodeTabBarState extends State<EpisodeTabBar> {
             child: Text(L.of(context)!.show_notes_label),
           ),
         ),
+        Tab(
+          child: Align(
+            alignment: Alignment.center,
+            child: Text(L.of(context)!.bookmarks_label),
+          ),
+        ),
+        Tab(
+          child: Align(
+            alignment: Alignment.center,
+            child: Text(L.of(context)!.transcript_label),
+          ),
+        ),
       ],
     );
   }
@@ -670,6 +684,8 @@ class EpisodeTabBarView extends StatelessWidget {
           key: const PageStorageKey('episodenotes'),
           episode: episode,
         ),
+        const BookmarkView(),
+        const TranscriptView(),
       ],
     );
   }

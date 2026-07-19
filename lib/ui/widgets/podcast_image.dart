@@ -136,7 +136,7 @@ class _PodcastImageState extends State<PodcastImage> with TickerProviderStateMix
                         height: 10.0,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Theme.of(context).indicatorColor,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ),

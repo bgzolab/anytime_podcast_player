@@ -28,6 +28,7 @@ class DownloadButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var progress = percent.toDouble() / 100;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Semantics(
       label: '$label $title',
@@ -36,8 +37,8 @@ class DownloadButton extends StatelessWidget {
         child: CircularPercentIndicator(
           radius: 19.0,
           lineWidth: 1.5,
-          backgroundColor: Theme.of(context).primaryColor,
-          progressColor: Theme.of(context).indicatorColor,
+          backgroundColor: colorScheme.primary,
+          progressColor: colorScheme.primaryContainer,
           animation: true,
           animateFromLastPercent: true,
           percent: progress,
@@ -51,9 +52,7 @@ class DownloadButton extends StatelessWidget {
               : Icon(
                   icon,
                   size: 22.0,
-
-                  /// Why is this not picking up the theme like other widgets?!?!?!
-                  color: Theme.of(context).primaryColor,
+                  color: colorScheme.primary,
                 ),
         ),
       ),

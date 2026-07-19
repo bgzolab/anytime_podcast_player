@@ -50,6 +50,7 @@ import 'package:anytime/ui/search/search.dart';
 import 'package:anytime/ui/search/search_mode.dart';
 import 'package:anytime/ui/settings/settings.dart';
 import 'package:anytime/ui/themes.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:anytime/ui/widgets/action_text.dart';
 import 'package:anytime/ui/widgets/layout_selector.dart';
 import 'package:anytime/ui/widgets/search_slide_route.dart';
@@ -66,7 +67,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../services/settings/settings_service.dart';
 
-var theme = Themes.lightTheme().themeData;
+ThemeData theme = Themes.lightTheme().themeData;
 
 /// Anytime is a Podcast player. You can search and subscribe to podcasts,
 /// download and stream episodes and view the latest podcast charts.
@@ -234,40 +235,50 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
           dispose: (_, value) => value.dispose(),
         )
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        showSemanticsDebugger: false,
-        title: 'Anytime Podcast Player',
-        navigatorObservers: [NavigationRouteObserver()],
-        localizationsDelegates: const <LocalizationsDelegate<Object>>[
-          AnytimeLocalisationsDelegate(),
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: const [
-          Locale('en', ''),
-          Locale('es', ''),
-          Locale('de', ''),
-          Locale('gl', ''),
-          Locale('it', ''),
-          Locale('nl', ''),
-          Locale('ru', ''),
-          Locale('tr', ''),
-          Locale('vi', ''),
-          // zh_Hant / zh_TW intentionally falls back to the Simplified Chinese
-          // catalogue; the app currently ships no Traditional Chinese
-          // translation.
-          Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
-        ],
-        theme: theme,
-        // Uncomment builder below to enable accessibility checker tool.
-        // builder: (context, child) => AccessibilityTools(child: child),
-        home: AnytimeHomePage(
-          title: 'Anytime Podcast Player',
-          audioPlayerService: widget.audioPlayerService,
-          repository: widget.repository,
-        ),
+      child: DynamicColorBuilder(
+        builder: (lightColorScheme, darkColorScheme) {
+          final currentTheme = theme as ThemeData;
+          final isDark = currentTheme.brightness == Brightness.dark;
+          final dynamicScheme = isDark ? darkColorScheme : lightColorScheme;
+          final effectiveTheme =
+              dynamicScheme != null ? currentTheme.copyWith(colorScheme: dynamicScheme) : currentTheme;
+
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            showSemanticsDebugger: false,
+            title: 'Anytime Podcast Player',
+            navigatorObservers: [NavigationRouteObserver()],
+            localizationsDelegates: const <LocalizationsDelegate<Object>>[
+              AnytimeLocalisationsDelegate(),
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('en', ''),
+              Locale('es', ''),
+              Locale('de', ''),
+              Locale('gl', ''),
+              Locale('it', ''),
+              Locale('nl', ''),
+              Locale('ru', ''),
+              Locale('tr', ''),
+              Locale('vi', ''),
+              // zh_Hant / zh_TW intentionally falls back to the Simplified Chinese
+              // catalogue; the app currently ships no Traditional Chinese
+              // translation.
+              Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
+            ],
+            theme: effectiveTheme,
+            // Uncomment builder below to enable accessibility checker tool.
+            // builder: (context, child) => AccessibilityTools(child: child),
+            home: AnytimeHomePage(
+              title: 'Anytime Podcast Player',
+              audioPlayerService: widget.audioPlayerService,
+              repository: widget.repository,
+            ),
+          );
+        },
       ),
     );
   }
@@ -481,7 +492,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                     SliverVisibility(
                       visible: widget.topBarVisible,
                       sliver: SliverAppBar(
-                        title: ExcludeSemantics(
+                        title: const ExcludeSemantics(
                           child: TitleWidget(),
                         ),
                         backgroundColor: backgroundColour,
@@ -882,44 +893,32 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
 }
 
 class TitleWidget extends StatelessWidget {
-  final TextStyle _titleTheme1 = theme.textTheme.bodyMedium!.copyWith(
-    color: const Color.fromARGB(255, 255, 153, 0),
-    fontWeight: FontWeight.bold,
-    fontFamily: 'MontserratRegular',
-    fontSize: 18,
-  );
-
-  final TextStyle _titleTheme2Light = theme.textTheme.bodyMedium!.copyWith(
-    color: Colors.black,
-    fontWeight: FontWeight.bold,
-    fontFamily: 'MontserratRegular',
-    fontSize: 18,
-  );
-
-  final TextStyle _titleTheme2Dark = theme.textTheme.bodyMedium!.copyWith(
-    color: Colors.white,
-    fontWeight: FontWeight.bold,
-    fontFamily: 'MontserratRegular',
-    fontSize: 18,
-  );
-
-  TitleWidget({
+  const TitleWidget({
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    final titleStyle = textTheme.bodyMedium!.copyWith(
+      fontWeight: FontWeight.bold,
+      fontFamily: 'MontserratRegular',
+      fontSize: 18,
+    );
+
     return Padding(
       padding: const EdgeInsets.only(left: 2.0),
       child: Row(
         children: <Widget>[
           Text(
             'Anytime ',
-            style: _titleTheme1,
+            style: titleStyle.copyWith(color: colorScheme.primary),
           ),
           Text(
             'Player',
-            style: Theme.of(context).brightness == Brightness.light ? _titleTheme2Light : _titleTheme2Dark,
+            style: titleStyle.copyWith(color: colorScheme.onSurface),
           ),
         ],
       ),

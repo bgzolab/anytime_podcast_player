@@ -62,7 +62,7 @@ class TimelineBloc extends Bloc {
 
   DateTime? _lastFetchTime;
 
-  static const int pageSize = 100;
+  static const int pageSize = 20;
   static const Duration maxStale = Duration(minutes: 5);
 
   TimelineBloc({

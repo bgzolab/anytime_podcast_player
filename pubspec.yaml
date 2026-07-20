@@ -60,6 +60,8 @@ dependencies:
     sdk: flutter
   dynamic_color: ^1.8.1
   flutter_displaymode: ^0.7.0
+  http: ^1.6.0
+  youtube_explode_dart: ^3.1.0
 
 dev_dependencies:
   mockito: ^5.2.0

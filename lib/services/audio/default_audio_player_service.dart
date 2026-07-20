@@ -19,6 +19,7 @@ import 'package:anytime/repository/repository.dart';
 import 'package:anytime/services/audio/audio_player_service.dart';
 import 'package:anytime/services/podcast/podcast_service.dart';
 import 'package:anytime/services/settings/settings_service.dart';
+import 'package:anytime/services/youtube/youtube_audio_resolver.dart';
 import 'package:anytime/state/episode_state.dart';
 import 'package:anytime/state/persistent_state.dart';
 import 'package:anytime/state/queue_event_state.dart';
@@ -41,6 +42,10 @@ class DefaultAudioPlayerService extends AudioPlayerService {
   final Repository repository;
   final SettingsService settingsService;
   final PodcastService podcastService;
+
+  /// Optional resolver for YouTube `youtube://` placeholder URLs.
+  /// If null (default), YouTube episodes will fail to play.
+  YouTubeAudioResolver? youtubeAudioResolver;
 
   late AudioHandler _audioHandler;
   var _initialised = false;
@@ -485,6 +490,17 @@ class DefaultAudioPlayerService extends AudioPlayerService {
 
       episode.streaming = false;
     } else if (uri != null) {
+      // Resolve YouTube placeholder URLs to actual audio streams.
+      if (YouTubeAudioResolver.isYouTubeEpisode(episode) && youtubeAudioResolver != null) {
+        try {
+          uri = await youtubeAudioResolver!.resolveAudioUrl(episode);
+          log.fine('Resolved YouTube audio URL for ${episode.guid}');
+        } catch (e) {
+          log.warning('Failed to resolve YouTube audio URL: $e');
+          throw Exception('Failed to resolve YouTube audio URL for ${episode.title}: $e');
+        }
+      }
+
       uri = _normalizeAudioUrl(uri);
     }
 
@@ -1040,9 +1056,9 @@ class _DefaultAudioPlayerHandler extends BaseAudioHandler with SeekHandler {
 
     log.fine('loading new track ${mediaItem.id} - from position ${start.inSeconds} (${start.inMilliseconds})');
 
-    var source = downloaded
+    var source = downloaded || mediaItem.id.startsWith('file://')
         ? AudioSource.uri(
-            Uri.parse("file://${mediaItem.id}"),
+            Uri.parse(mediaItem.id.startsWith('file://') ? mediaItem.id : "file://${mediaItem.id}"),
             tag: mediaItem.id,
           )
         : AudioSource.uri(Uri.parse(mediaItem.id), tag: mediaItem.id);

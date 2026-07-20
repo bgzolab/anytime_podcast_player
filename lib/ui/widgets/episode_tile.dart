@@ -140,7 +140,7 @@ class _ExpandableEpisodeTileState extends State<ExpandableEpisodeTile> {
                   ? const ColorFilter.mode(Color(0x99FFFFFF), BlendMode.lighten)
                   : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
               child: TileImage(
-                url: widget.episode.thumbImageUrl ?? widget.episode.imageUrl!,
+                url: widget.episode.thumbImageUrl ?? widget.episode.imageUrl ?? '',
                 size: 56.0,
                 highlight: widget.episode.highlight,
               ),
@@ -156,12 +156,24 @@ class _ExpandableEpisodeTileState extends State<ExpandableEpisodeTile> {
         ),
       ),
       subtitle: EpisodeSubtitle(widget.episode),
-      title: Text(
-        widget.episode.title!,
-        overflow: TextOverflow.ellipsis,
-        maxLines: 2,
-        softWrap: false,
-        style: textTheme.bodyMedium?.copyWith(color: mutedTextColor),
+      title: Row(
+        children: [
+          if (widget.episode.contentUrl != null &&
+              widget.episode.contentUrl!.startsWith('youtube://'))
+            const Padding(
+              padding: EdgeInsets.only(right: 4),
+              child: Icon(Icons.smart_display_outlined, size: 14, color: Colors.red),
+            ),
+          Expanded(
+            child: Text(
+              widget.episode.title!,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+              softWrap: false,
+              style: textTheme.bodyMedium?.copyWith(color: mutedTextColor),
+            ),
+          ),
+        ],
       ),
       children: <Widget>[
         Align(
@@ -439,7 +451,7 @@ class _CupertinoAccessibleEpisodeTileState extends State<_CupertinoAccessibleEpi
                           ? const ColorFilter.mode(Color(0x99FFFFFF), BlendMode.lighten)
                           : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
                       child: TileImage(
-                        url: widget.episode.thumbImageUrl ?? widget.episode.imageUrl!,
+                        url: widget.episode.thumbImageUrl ?? widget.episode.imageUrl ?? '',
                         size: 56.0,
                         highlight: widget.episode.highlight,
                       ),
@@ -822,7 +834,7 @@ class _AndroidAccessibleEpisodeTileState extends State<_AndroidAccessibleEpisode
                         ? const ColorFilter.mode(Color(0x99FFFFFF), BlendMode.lighten)
                         : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
                     child: TileImage(
-                      url: widget.episode.thumbImageUrl ?? widget.episode.imageUrl!,
+                      url: widget.episode.thumbImageUrl ?? widget.episode.imageUrl ?? '',
                       size: 56.0,
                       highlight: widget.episode.highlight,
                     ),

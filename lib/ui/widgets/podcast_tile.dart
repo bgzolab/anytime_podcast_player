@@ -10,6 +10,7 @@ import 'package:anytime/bloc/podcast/queue_bloc.dart';
 import 'package:anytime/bloc/settings/settings_bloc.dart';
 import 'package:anytime/entities/app_settings.dart';
 import 'package:anytime/entities/podcast.dart';
+import 'package:anytime/entities/podcast_source.dart';
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/state/queue_event_state.dart';
 import 'package:anytime/ui/podcast/now_playing.dart';
@@ -86,7 +87,7 @@ class PodcastTile extends StatelessWidget {
             key: Key('tilehero${podcast.imageUrl}:${podcast.link}'),
             tag: '${podcast.imageUrl}:${podcast.link}',
             child: TileImage(
-              url: podcast.imageUrl!,
+              url: podcast.imageUrl ?? '',
               fontSize: 13.0,
               highlight: settingsBloc.currentSettings.layoutHighlight && podcast.newEpisodes > 0,
               count: settingsBloc.currentSettings.layoutCount ? podcast.episodeCount : 0,
@@ -103,9 +104,22 @@ class PodcastTile extends StatelessWidget {
         /// A ListTile's density changes depending upon whether we have 2 or more lines of text. We
         /// manually add a newline character here to ensure the density is consistent whether the
         /// podcast subtitle spans 1 or more lines. Bit of a hack, but a simple solution.
-        subtitle: Text(
-          '${podcast.copyright ?? ''}\n',
-          maxLines: 2,
+        subtitle: Row(
+          children: [
+            if (podcast.source == PodcastSource.youtube)
+              const Padding(
+                padding: EdgeInsets.only(right: 4),
+                child: Icon(Icons.smart_display_outlined, size: 14, color: Colors.red),
+              ),
+            Expanded(
+              child: Text(
+                podcast.source == PodcastSource.youtube
+                    ? 'YouTube Channel\n'
+                    : '${podcast.copyright ?? ''}\n',
+                maxLines: 2,
+              ),
+            ),
+          ],
         ),
         isThreeLine: false,
       ),

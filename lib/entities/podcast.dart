@@ -6,6 +6,7 @@ import 'package:anytime/core/annotations.dart';
 import 'package:anytime/core/extensions.dart';
 import 'package:anytime/entities/funding.dart';
 import 'package:anytime/entities/person.dart';
+import 'package:anytime/entities/podcast_source.dart';
 import 'package:podcast_search/podcast_search.dart' as search;
 
 import 'episode.dart';
@@ -42,6 +43,9 @@ class Podcast {
 
   /// Unique identifier for podcast.
   final String? guid;
+
+  /// The source type of this podcast (audio or youtube).
+  final PodcastSource source;
 
   /// The link to the podcast RSS feed.
   final String url;
@@ -112,6 +116,7 @@ class Podcast {
     required this.link,
     required this.title,
     this.id,
+    this.source = PodcastSource.audio,
     this.description,
     String? imageUrl,
     String? thumbImageUrl,
@@ -172,6 +177,7 @@ class Podcast {
       'etag': etag,
       'imageUrl': imageUrl ?? '',
       'thumbImageUrl': thumbImageUrl ?? '',
+      'source': source.toValue(),
       'subscribedDate': subscribedDate?.millisecondsSinceEpoch.toString() ?? '',
       'filter': filter.id,
       'sort': sort.id,
@@ -255,6 +261,11 @@ class Podcast {
       };
     }
 
+    var source = PodcastSource.audio;
+    if (podcast['source'] != null) {
+      source = PodcastSource.fromValue(podcast['source'] as int);
+    }
+
     return Podcast(
       id: key,
       guid: podcast['guid'] as String,
@@ -266,6 +277,7 @@ class Podcast {
       url: podcast['url'] as String,
       imageUrl: podcast['imageUrl'] as String?,
       thumbImageUrl: podcast['thumbImageUrl'] as String?,
+      source: source,
       filter: filter,
       sort: sort,
       funding: funding,
@@ -301,8 +313,8 @@ class Podcast {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Podcast && runtimeType == other.runtimeType && guid == other.guid && url == other.url;
+      other is Podcast && runtimeType == other.runtimeType && guid == other.guid && url == other.url && source == other.source;
 
   @override
-  int get hashCode => guid.hashCode ^ url.hashCode;
+  int get hashCode => guid.hashCode ^ url.hashCode ^ source.hashCode;
 }

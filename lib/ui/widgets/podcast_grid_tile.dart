@@ -79,7 +79,7 @@ class PodcastGridTile extends StatelessWidget {
             tag: '${podcast.imageUrl}:${podcast.link}',
             child: ExcludeSemantics(
               child: TileImage(
-                url: podcast.imageUrl!,
+                url: podcast.imageUrl ?? '',
                 highlight: settingsBloc.currentSettings.layoutHighlight && podcast.newEpisodes > 0,
                 count: settingsBloc.currentSettings.layoutCount ? podcast.episodeCount : 0,
                 fontSize: 16.0,
@@ -229,7 +229,7 @@ class PodcastTitledGridTile extends StatelessWidget {
           child: Column(
             children: [
               TileImage(
-                url: podcast.imageUrl!,
+                url: podcast.imageUrl ?? '',
                 highlight: settingsBloc.currentSettings.layoutHighlight && podcast.newEpisodes > 0,
                 count: settingsBloc.currentSettings.layoutCount ? podcast.episodeCount : 0,
                 size: 128.0,

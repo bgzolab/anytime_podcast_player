@@ -13,7 +13,7 @@ import 'package:sqflite/sqflite.dart';
 /// header and page cache — typically < 100 ms even for large files.
 class SqliteDatabaseService {
   static final _log = Logger('SqliteDatabaseService');
-  static const int _schemaVersion = 3;
+  static const int _schemaVersion = 4;
 
   Database? _db;
   final String databaseName;
@@ -37,6 +37,7 @@ class SqliteDatabaseService {
       version: _schemaVersion,
       singleInstance: false,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
       onOpen: (db) async {
         // Enable WAL mode for better concurrent read performance.
         // sqflite requires rawQuery for PRAGMA statements.
@@ -70,6 +71,7 @@ class SqliteDatabaseService {
         lastUpdated     INTEGER,
         rssFeedLastUpdated INTEGER,
         latestEpisodeDate  INTEGER,
+        source          INTEGER DEFAULT 0,
         filter          INTEGER DEFAULT 0,
         sort            INTEGER DEFAULT 0,
         newEpisodes     INTEGER DEFAULT 0,
@@ -144,6 +146,17 @@ class SqliteDatabaseService {
       )
     ''');
 
+    await db.execute('''
+      CREATE TABLE youtube_audio_cache (
+        video_id     TEXT PRIMARY KEY,
+        audio_url    TEXT NOT NULL,
+        codec        TEXT,
+        bitrate      INTEGER,
+        resolved_at  INTEGER NOT NULL,
+        expires_at   INTEGER NOT NULL
+      )
+    ''');
+
     // Indexes for fast lookups and sorting.
     await db.execute('CREATE INDEX idx_podcast_guid ON podcast(guid)');
     await db.execute('CREATE INDEX idx_episode_pubdate ON episode(publicationDate)');
@@ -153,8 +166,30 @@ class SqliteDatabaseService {
     await db.execute('CREATE INDEX idx_episode_task ON episode(downloadTaskId)');
     await db.execute('CREATE INDEX idx_bookmark_episode ON bookmark(episodeGuid)');
     await db.execute('CREATE INDEX idx_bookmark_created ON bookmark(createdAt)');
+    await db.execute('CREATE INDEX idx_youtube_cache_expires ON youtube_audio_cache(expires_at)');
 
     _log.fine('SQLite schema created in ${sw.elapsedMilliseconds}ms');
+  }
+
+  /// Handles schema upgrades between versions.
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    _log.fine('Upgrading SQLite schema from v$oldVersion to v$newVersion');
+    if (oldVersion < 4) {
+      // v4: Added PodcastSource column for YouTube channel support
+      // and YouTube audio URL cache table.
+      await db.execute('ALTER TABLE podcast ADD COLUMN source INTEGER DEFAULT 0');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS youtube_audio_cache (
+          video_id     TEXT PRIMARY KEY,
+          audio_url    TEXT NOT NULL,
+          codec        TEXT,
+          bitrate      INTEGER,
+          resolved_at  INTEGER NOT NULL,
+          expires_at   INTEGER NOT NULL
+        )
+      ''');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_youtube_cache_expires ON youtube_audio_cache(expires_at)');
+    }
   }
 
   Future<void> close() async {

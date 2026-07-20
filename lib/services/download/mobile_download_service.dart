@@ -14,6 +14,7 @@ import 'package:anytime/repository/repository.dart';
 import 'package:anytime/services/download/download_manager.dart';
 import 'package:anytime/services/download/download_service.dart';
 import 'package:anytime/services/podcast/podcast_service.dart';
+import 'package:anytime/services/youtube/youtube_audio_resolver.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:logging/logging.dart';
 import 'package:mp3_info/mp3_info.dart';
@@ -29,7 +30,15 @@ class MobileDownloadService extends DownloadService {
   final DownloadManager downloadManager;
   final PodcastService podcastService;
 
-  MobileDownloadService({required this.repository, required this.downloadManager, required this.podcastService}) {
+  /// Optional resolver for YouTube `youtube://` placeholder URLs.
+  YouTubeAudioResolver? youtubeAudioResolver;
+
+  MobileDownloadService({
+    required this.repository,
+    required this.downloadManager,
+    required this.podcastService,
+    this.youtubeAudioResolver,
+  }) {
     downloadManager.downloadProgress.pipe(downloadProgress);
     downloadProgress.listen((progress) {
       _updateDownloadProgress(progress);
@@ -80,9 +89,21 @@ class MobileDownloadService extends DownloadService {
         await podcastService.saveEpisode(episode);
       }
 
+      // Resolve YouTube placeholder URLs before download.
+      var downloadUrl = episode.contentUrl!;
+      if (YouTubeAudioResolver.isYouTubeEpisode(episode) && youtubeAudioResolver != null) {
+        try {
+          downloadUrl = await youtubeAudioResolver!.resolveAudioUrl(episode);
+          log.fine('Resolved YouTube audio URL for download: ${episode.guid}');
+        } catch (e) {
+          log.warning('Failed to resolve YouTube audio URL for download: $e');
+          return false;
+        }
+      }
+
       final episodePath = await resolveDirectory(episode: episode);
       final downloadPath = await resolveDirectory(episode: episode, full: true);
-      var uri = Uri.parse(episode.contentUrl!);
+      var uri = Uri.parse(downloadUrl);
 
       // Ensure the download directory exists
       await createDownloadDirectory(episode);
@@ -118,7 +139,7 @@ class MobileDownloadService extends DownloadService {
 
         log.fine('Download episode (${episode.title}) $filename to $downloadPath/$filename');
 
-        final taskId = await downloadManager.enqueueTask(episode.contentUrl!, downloadPath, filename);
+        final taskId = await downloadManager.enqueueTask(downloadUrl, downloadPath, filename);
 
         // Update the episode with download data
         episode.filepath = episodePath;

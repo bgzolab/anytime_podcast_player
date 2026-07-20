@@ -37,9 +37,14 @@ import 'package:anytime/services/podcast/mobile_podcast_service.dart';
 import 'package:anytime/services/podcast/opml_service.dart';
 import 'package:anytime/services/podcast/podcast_service.dart';
 import 'package:anytime/services/settings/mobile_settings_service.dart';
+import 'package:anytime/services/youtube/mobile_youtube_service.dart';
+import 'package:anytime/services/youtube/youtube_audio_resolver.dart';
+import 'package:anytime/services/youtube/youtube_rss_service.dart';
+import 'package:anytime/services/youtube/youtube_service.dart';
 import 'package:anytime/state/bloc_state.dart';
 import 'package:anytime/state/library_state.dart';
 import 'package:anytime/ui/library/bookmarks_page.dart';
+import 'package:anytime/ui/youtube/subscribe_youtube_page.dart';
 import 'package:anytime/ui/library/discovery.dart';
 import 'package:anytime/ui/library/downloads.dart';
 import 'package:anytime/ui/library/library.dart';
@@ -81,6 +86,9 @@ class AnytimePodcastApp extends StatefulWidget {
   late AudioPlayerService audioPlayerService;
   late OPMLService opmlService;
   PodcastService? podcastService;
+  YouTubeService? youtubeService;
+  YouTubeRssService? youtubeRssService;
+  YouTubeAudioResolver? youtubeAudioResolver;
   SettingsBloc? settingsBloc;
   MobileSettingsService mobileSettingsService;
   List<int> certificateAuthorityBytes;
@@ -93,11 +101,21 @@ class AnytimePodcastApp extends StatefulWidget {
     podcastApi = MobilePodcastApi();
     notificationService = MobileNotificationService();
 
+    // YouTube services.
+    youtubeService = MobileYouTubeService();
+    youtubeRssService = YouTubeRssService();
+
+    // YouTube audio resolver for lazy URL resolution at playback/download time.
+    youtubeAudioResolver = YouTubeAudioResolver(
+      youtubeService: youtubeService!,
+    );
+
     podcastService = MobilePodcastService(
       api: podcastApi,
       repository: repository,
       notificationService: notificationService,
       settingsService: mobileSettingsService,
+      youtubeRssService: youtubeRssService,
     );
 
     assert(podcastService != null);
@@ -106,13 +124,14 @@ class AnytimePodcastApp extends StatefulWidget {
       repository: repository,
       downloadManager: MobileDownloaderManager(),
       podcastService: podcastService!,
+      youtubeAudioResolver: youtubeAudioResolver,
     );
 
     audioPlayerService = DefaultAudioPlayerService(
       repository: repository,
       settingsService: mobileSettingsService,
       podcastService: podcastService!,
-    );
+    )..youtubeAudioResolver = youtubeAudioResolver;
 
     settingsBloc = SettingsBloc(
       settingsService: mobileSettingsService,
@@ -233,7 +252,13 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
             repository: widget.repository,
           ),
           dispose: (_, value) => value.dispose(),
-        )
+        ),
+        if (widget.youtubeService != null)
+          Provider<YouTubeService>.value(value: widget.youtubeService!),
+        if (widget.youtubeRssService != null)
+          Provider<YouTubeRssService>.value(value: widget.youtubeRssService!),
+        if (widget.youtubeAudioResolver != null)
+          Provider<YouTubeAudioResolver>.value(value: widget.youtubeAudioResolver!),
       ],
       child: DynamicColorBuilder(
         builder: (lightColorScheme, darkColorScheme) {
@@ -273,6 +298,9 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
               title: 'Anytime Podcast Player',
               audioPlayerService: widget.audioPlayerService,
               repository: widget.repository,
+              youtubeService: widget.youtubeService,
+              youtubeRssService: widget.youtubeRssService,
+              youtubeAudioResolver: widget.youtubeAudioResolver,
             ),
           );
         },
@@ -286,6 +314,9 @@ class AnytimeHomePage extends StatefulWidget {
   final bool topBarVisible;
   final AudioPlayerService? audioPlayerService;
   final Repository? repository;
+  final YouTubeService? youtubeService;
+  final YouTubeRssService? youtubeRssService;
+  final YouTubeAudioResolver? youtubeAudioResolver;
 
   const AnytimeHomePage({
     super.key,
@@ -293,6 +324,9 @@ class AnytimeHomePage extends StatefulWidget {
     this.topBarVisible = true,
     this.audioPlayerService,
     this.repository,
+    this.youtubeService,
+    this.youtubeRssService,
+    this.youtubeAudioResolver,
   });
 
   @override
@@ -584,6 +618,20 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                                 ),
                                 PopupMenuItem<String>(
                                   textStyle: theme.textTheme.titleMedium,
+                                  value: 'youtube',
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      const Padding(
+                                        padding: EdgeInsets.only(right: 8.0),
+                                        child: Icon(Icons.smart_display_outlined, size: 18.0),
+                                      ),
+                                      const Text('YouTube'),
+                                    ],
+                                  ),
+                                ),
+                                PopupMenuItem<String>(
+                                  textStyle: theme.textTheme.titleMedium,
                                   value: 'library',
                                   enabled: !libraryRefreshing,
                                   child: Row(
@@ -767,6 +815,53 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                 ),
               ),
             ]);
+        break;
+      case 'youtube':
+        final podcast = await Navigator.push<Podcast>(
+          context,
+          MaterialPageRoute<Podcast>(
+            builder: (context) => const SubscribeYouTubePage(),
+          ),
+        );
+        if (podcast != null && mounted) {
+          final bloc = Provider.of<PodcastBloc>(context, listen: false);
+
+          // Show loading indicator.
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Subscribing to ${podcast.title}...'),
+                duration: const Duration(seconds: 5),
+              ),
+            );
+          }
+
+          // Wait for the feed to finish loading, then subscribe.
+          late StreamSubscription<BlocState<Podcast>> sub;
+          sub = bloc.details.listen((state) async {
+            if (state is BlocPopulatedState<Podcast>) {
+              sub.cancel();
+              bloc.podcastEvent(PodcastEvent.subscribe);
+              if (mounted) {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Subscribed to ${podcast.title}')),
+                );
+              }
+            } else if (state is BlocErrorState) {
+              sub.cancel();
+              if (mounted) {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Failed to load YouTube channel')),
+                );
+              }
+            }
+          });
+
+          // Start loading the feed.
+          bloc.load(Feed(podcast: podcast, forceFetch: true));
+        }
         break;
       case 'settings':
         await Navigator.push(

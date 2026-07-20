@@ -13,8 +13,10 @@ import 'package:anytime/entities/episode.dart';
 import 'package:anytime/entities/funding.dart';
 import 'package:anytime/entities/person.dart';
 import 'package:anytime/entities/podcast.dart';
+import 'package:anytime/entities/podcast_source.dart';
 import 'package:anytime/entities/transcript.dart';
 import 'package:anytime/services/podcast/podcast_service.dart';
+import 'package:anytime/services/youtube/youtube_rss_service.dart';
 import 'package:anytime/state/episode_state.dart';
 import 'package:anytime/state/library_state.dart';
 import 'package:background_fetch/background_fetch.dart';
@@ -41,11 +43,16 @@ class MobilePodcastService extends PodcastService {
   var _intlCategories = <String?>[];
   var _intlCategoriesSorted = <String>[];
 
+  /// Service for parsing YouTube channel RSS feeds.
+  /// Set before using with YouTube channel subscriptions.
+  YouTubeRssService? youtubeRssService;
+
   MobilePodcastService({
     required super.api,
     required super.repository,
     required super.notificationService,
     required super.settingsService,
+    this.youtubeRssService,
   }) {
     _init();
   }
@@ -156,6 +163,12 @@ class MobilePodcastService extends PodcastService {
 
     _log.fine('loadPodcast: ${podcast.title}, ignore cache $ignoreCache');
 
+    // YouTube podcasts: skip feedLastUpdated (podcast_search doesn't support it).
+    // Always fetch fresh data (the RSS feed is lightweight and fast).
+    if (podcast.source == PodcastSource.youtube) {
+      return await _fetchPodcastFromFeed(podcast, ignoreCache, highlightNewEpisodes);
+    }
+
     // Do we have this podcast in our cache?
     final cachedPodcast = _cache.item(podcast.url);
 
@@ -210,6 +223,11 @@ class MobilePodcastService extends PodcastService {
   }
 
   Future<Podcast?> _fetchPodcastFromFeed(Podcast podcast, bool ignoreCache, bool highlightNewEpisodes) async {
+    // YouTube channel: fetch via RSS service directly, bypassing podcast_search.
+    if (podcast.source == PodcastSource.youtube && youtubeRssService != null) {
+      return await _fetchPodcastFromYouTubeFeed(podcast, highlightNewEpisodes);
+    }
+
     var imageUrl = podcast.imageUrl;
     var thumbImageUrl = podcast.thumbImageUrl;
     var sourceUrl = podcast.url;
@@ -959,6 +977,101 @@ class MobilePodcastService extends PodcastService {
     }
 
     return result;
+  }
+
+  /// Fetches a YouTube channel's episodes via [YouTubeRssService] and
+  /// produces a [Podcast] with episodes ready for saving.
+  Future<Podcast?> _fetchPodcastFromYouTubeFeed(Podcast podcast, bool highlightNewEpisodes) async {
+    // Extract channel ID from URL. If the URL contains /channel/UC... or channel_id=UC...,
+    // extract it. Otherwise, treat the URL itself as the channel ID (bare UC... or @handle
+    // that should have been resolved by the UI layer before reaching this point).
+    var channelId = _extractYouTubeChannelId(podcast.url) ?? podcast.url;
+
+    // Basic validation: channel IDs start with UC and are 24 chars.
+    // If it doesn't match, the YouTube RSS API will return an error which we handle below.
+    if (!channelId.startsWith('UC')) {
+      _log.warning('URL does not appear to be a YouTube channel: ${podcast.url}');
+      return null;
+    }
+
+    _log.fine('Fetching YouTube channel RSS for channel ID: $channelId');
+    final youtubePodcast = await youtubeRssService!.fetchChannel(channelId);
+
+    // Preserve existing podcast metadata if re-fetching.
+    if (podcast.id != null) {
+      youtubePodcast.id = podcast.id;
+      youtubePodcast.filter = podcast.filter;
+      youtubePodcast.sort = podcast.sort;
+      youtubePodcast.subscribedDate = podcast.subscribedDate;
+    }
+
+    // Check for existing episodes: preserve download state, position, played.
+    final existingEpisodes = await repository.findEpisodesByPodcastGuid('yt:$channelId');
+    for (var episode in youtubePodcast.episodes) {
+      episode.pguid = 'yt:$channelId';
+      episode.podcast = youtubePodcast.title;
+
+      final existing = existingEpisodes.firstWhereOrNull((ep) => ep.guid == episode.guid);
+      if (existing != null) {
+        episode.id = existing.id;
+        episode.downloadState = existing.downloadState;
+        episode.filepath = existing.filepath;
+        episode.filename = existing.filename;
+        episode.position = existing.position;
+        episode.played = existing.played;
+        episode.downloadTaskId = existing.downloadTaskId;
+      }
+
+      // Mark new episodes.
+      if (existing == null && highlightNewEpisodes) {
+        episode.newEpisode = true;
+      }
+    }
+
+    // Sort episodes by publication date (newest first) — consistent with audio podcasts.
+    youtubePodcast.episodes.sort((a, b) {
+      final aDate = a.publicationDate?.millisecondsSinceEpoch ?? 0;
+      final bDate = b.publicationDate?.millisecondsSinceEpoch ?? 0;
+      return bDate.compareTo(aDate);
+    });
+
+    if (youtubePodcast.episodes.isNotEmpty) {
+      youtubePodcast.latestEpisodeDate = youtubePodcast.episodes.first.publicationDate;
+    }
+
+    // Publish podcast data change
+    _log.fine('YouTube channel fetched: ${youtubePodcast.episodes.length} episodes');
+    return youtubePodcast;
+  }
+
+  /// Extracts the YouTube channel ID from a user-provided URL or handle.
+  ///
+  /// Supports:
+  /// - Channel URL: `youtube.com/channel/UC...`
+  /// - Handle: `@ChannelName` or `youtube.com/@ChannelName`
+  /// - RSS URL: `youtube.com/feeds/videos.xml?channel_id=UC...`
+  static String? _extractYouTubeChannelId(String url) {
+    // Channel ID in URL: /channel/UC...
+    final channelMatch = RegExp(r'channel/(UC[A-Za-z0-9_-]{22})').firstMatch(url);
+    if (channelMatch != null) return channelMatch.group(1);
+
+    // RSS URL: channel_id=UC...
+    final rssMatch = RegExp(r'channel_id=([A-Za-z0-9_-]+)').firstMatch(url);
+    if (rssMatch != null) return rssMatch.group(1);
+
+    // @handle — can't resolve here (needs API call); return null.
+    // The caller should use YouTubeService.resolveChannelId() first.
+    return null;
+  }
+
+  /// Detects whether a URL points to a YouTube channel.
+  static bool isYouTubeUrl(String url) {
+    return url.contains('youtube.com') || url.contains('youtu.be');
+  }
+
+  /// Constructs a YouTube RSS feed URL from a channel ID.
+  static String constructYouTubeRssUrl(String channelId) {
+    return YouTubeRssService.buildRssUrl(channelId);
   }
 
   /// Loading and parsing a podcast feed can take several seconds. Larger feeds

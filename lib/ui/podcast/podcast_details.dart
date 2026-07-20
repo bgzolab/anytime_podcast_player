@@ -9,6 +9,7 @@ import 'package:anytime/bloc/settings/settings_bloc.dart';
 import 'package:anytime/entities/episode.dart';
 import 'package:anytime/entities/feed.dart';
 import 'package:anytime/entities/podcast.dart';
+import 'package:anytime/entities/podcast_source.dart';
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/state/bloc_state.dart';
 import 'package:anytime/ui/podcast/funding_menu.dart';
@@ -415,7 +416,15 @@ class _PodcastTitleState extends State<PodcastTitle> with SingleTickerProviderSt
                       ),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
-                        child: Text(widget.podcast.copyright ?? '', style: theme.textTheme.bodySmall),
+                        child: widget.podcast.source == PodcastSource.youtube
+                            ? Row(
+                                children: [
+                                  const Icon(Icons.smart_display_outlined, size: 16, color: Colors.red),
+                                  const SizedBox(width: 4),
+                                  Text('YouTube Channel', style: theme.textTheme.bodySmall),
+                                ],
+                              )
+                            : Text(widget.podcast.copyright ?? '', style: theme.textTheme.bodySmall),
                       ),
                     ],
                   ),

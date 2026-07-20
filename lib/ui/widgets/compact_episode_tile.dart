@@ -87,7 +87,7 @@ class CompactEpisodeTile extends StatelessWidget {
                             ? const ColorFilter.mode(Color(0x99FFFFFF), BlendMode.lighten)
                             : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
                         child: TileImage(
-                          url: episode.thumbImageUrl ?? episode.imageUrl!,
+                          url: episode.thumbImageUrl ?? episode.imageUrl ?? '',
                           size: 80.0,
                           highlight: episode.highlight,
                         ),

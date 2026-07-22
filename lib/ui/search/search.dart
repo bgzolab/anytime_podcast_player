@@ -9,13 +9,11 @@ import 'package:anytime/bloc/search/search_bloc.dart';
 import 'package:anytime/bloc/search/search_state_event.dart';
 import 'package:anytime/entities/bookmark.dart';
 import 'package:anytime/entities/episode.dart';
-import 'package:anytime/entities/podcast.dart';
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/repository/repository.dart';
 import 'package:anytime/ui/search/search_mode.dart';
 import 'package:anytime/ui/search/search_results.dart';
 import 'package:anytime/ui/widgets/episode_tile.dart';
-import 'package:anytime/ui/widgets/podcast_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -47,7 +45,6 @@ class _SearchState extends State<Search> {
 
   // Local search state for non-discovery modes.
   List<Episode> _episodeResults = [];
-  List<Podcast> _podcastResults = [];
   List<Bookmark> _bookmarkResults = [];
   bool _isLocalSearching = false;
   bool _hasSearched = false;
@@ -85,7 +82,6 @@ class _SearchState extends State<Search> {
     if (term.isEmpty) {
       setState(() {
         _episodeResults = [];
-        _podcastResults = [];
         _bookmarkResults = [];
         _hasSearched = false;
       });
@@ -106,31 +102,24 @@ class _SearchState extends State<Search> {
     }
 
     switch (_mode) {
-      case SearchMode.timeline:
+      case SearchMode.home:
         final results = await repository.searchEpisodes(term);
         setState(() {
           _episodeResults = results;
           _isLocalSearching = false;
         });
         break;
-      case SearchMode.library:
-        final results = await repository.searchPodcasts(term);
-        setState(() {
-          _podcastResults = results;
-          _isLocalSearching = false;
-        });
-        break;
-      case SearchMode.downloads:
-        final results = await repository.searchDownloads(term);
-        setState(() {
-          _episodeResults = results;
-          _isLocalSearching = false;
-        });
-        break;
-      case SearchMode.bookmarks:
+      case SearchMode.my:
         final results = await repository.searchBookmarks(term);
         setState(() {
           _bookmarkResults = results;
+          _isLocalSearching = false;
+        });
+        break;
+      case SearchMode.download:
+        final results = await repository.searchDownloads(term);
+        setState(() {
+          _episodeResults = results;
           _isLocalSearching = false;
         });
         break;
@@ -142,16 +131,14 @@ class _SearchState extends State<Search> {
 
   String _getHintText(BuildContext context) {
     switch (_mode) {
-      case SearchMode.timeline:
+      case SearchMode.home:
         return L.of(context)!.search_episodes_hint;
-      case SearchMode.library:
-        return L.of(context)!.search_podcasts_hint;
       case SearchMode.discovery:
         return L.of(context)!.search_for_podcasts_hint;
-      case SearchMode.downloads:
-        return L.of(context)!.search_downloads_hint;
-      case SearchMode.bookmarks:
+      case SearchMode.my:
         return L.of(context)!.search_bookmarks_hint;
+      case SearchMode.download:
+        return L.of(context)!.search_downloads_hint;
     }
   }
 
@@ -215,7 +202,6 @@ class _SearchState extends State<Search> {
                   _searchController.clear();
                   setState(() {
                     _episodeResults = [];
-                    _podcastResults = [];
                     _bookmarkResults = [];
                     _hasSearched = false;
                   });
@@ -256,12 +242,10 @@ class _SearchState extends State<Search> {
     }
 
     switch (_mode) {
-      case SearchMode.timeline:
-      case SearchMode.downloads:
+      case SearchMode.home:
+      case SearchMode.download:
         return _buildEpisodeResults();
-      case SearchMode.library:
-        return _buildPodcastResults();
-      case SearchMode.bookmarks:
+      case SearchMode.my:
         return _buildBookmarkResults();
       case SearchMode.discovery:
         return _buildDiscoveryResults();
@@ -290,28 +274,6 @@ class _SearchState extends State<Search> {
           );
         },
         childCount: _episodeResults.length,
-      ),
-    );
-  }
-
-  Widget _buildPodcastResults() {
-    if (_podcastResults.isEmpty) {
-      return SliverFillRemaining(
-        hasScrollBody: false,
-        child: _buildEmptyState(
-          Icons.search,
-          L.of(context)!.no_search_results_message,
-        ),
-      );
-    }
-
-    return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final podcast = _podcastResults[index];
-          return PodcastTile(podcast: podcast);
-        },
-        childCount: _podcastResults.length,
       ),
     );
   }

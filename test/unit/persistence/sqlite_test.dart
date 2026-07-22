@@ -29,18 +29,10 @@ void main() {
     persistenceService = SqliteRepository(databaseName: 'test_${DateTime.now().microsecondsSinceEpoch}.sqlite');
 
     podcast1 = Podcast(
-        title: 'Podcast 1',
-        description: '1st p1',
-        guid: 'http://p1.com',
-        link: 'http://p1.com',
-        url: 'http://p1.com');
+        title: 'Podcast 1', description: '1st p1', guid: 'http://p1.com', link: 'http://p1.com', url: 'http://p1.com');
 
     podcast2 = Podcast(
-        title: 'Podcast 2',
-        description: '2nd p1',
-        guid: 'http://p2.com',
-        link: 'http://p2.com',
-        url: 'http://p2.com');
+        title: 'Podcast 2', description: '2nd p1', guid: 'http://p2.com', link: 'http://p2.com', url: 'http://p2.com');
   });
 
   tearDown(() async {

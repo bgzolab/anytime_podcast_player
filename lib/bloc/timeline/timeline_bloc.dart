@@ -47,6 +47,11 @@ class TimelineBloc extends Bloc {
   bool _isLoadingMore = false;
   bool _showPlayed = false;
 
+  /// In-memory set of episode GUIDs hidden by the user via swipe-to-ignore.
+  /// Persists across BLoC refreshes so hidden episodes stay hidden until
+  /// the user explicitly shows them (via toggle or app restart).
+  final Set<String> _ignoredGuids = {};
+
   /// Accumulated episodes across all loaded pages.
   final List<Episode> _allEpisodes = [];
 
@@ -130,6 +135,28 @@ class TimelineBloc extends Bloc {
   /// Jump to the timeline position for [date]. Loads pages until the target is
   /// reached, then emits so the UI can scroll to the appropriate item.
   void jumpToDate(DateTime date) => _dateJumpInput.add(date);
+
+  /// Re-apply the active filters (played, ignored, date) to the loaded
+  /// episodes and emit the filtered state. Used after external state changes
+  /// (e.g. mark-played) to make the UI react immediately.
+  void reapplyFilter() {
+    if (_allEpisodes.isNotEmpty) {
+      _stateOutput.add(BlocPopulatedState<List<Episode>>(results: _sorted(_allEpisodes)));
+    }
+  }
+
+  /// Hide the episode with [guid] from the timeline. Adds the GUID to an
+  /// in-memory set and re-emits the filtered state. The episode stays hidden
+  /// until [unhideEpisode] is called or the app restarts.
+  void hideEpisode(String guid) {
+    _ignoredGuids.add(guid);
+  }
+
+  /// Restore a previously hidden episode so it appears in the timeline again.
+  void unhideEpisode(String guid) {
+    _ignoredGuids.remove(guid);
+    _emitFromCache();
+  }
 
   // ---------------------------------------------------------------------------
   // Initialisation
@@ -286,9 +313,9 @@ class TimelineBloc extends Bloc {
       }).toList();
     }
 
-    // Hide played episodes unless the user has opted to show them.
+    // Hide played and ignored episodes unless the user has opted to show them.
     if (!_showPlayed) {
-      filtered = filtered.where((ep) => !ep.played).toList();
+      filtered = filtered.where((ep) => !ep.played && !_ignoredGuids.contains(ep.guid)).toList();
     }
 
     if (filtered.isEmpty) return filtered;

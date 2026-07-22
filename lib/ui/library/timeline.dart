@@ -7,7 +7,6 @@ import 'package:anytime/bloc/podcast/queue_bloc.dart';
 import 'package:anytime/entities/episode.dart';
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/state/bloc_state.dart';
-import 'package:anytime/state/library_state.dart';
 import 'package:anytime/state/queue_event_state.dart';
 import 'package:anytime/ui/widgets/compact_episode_tile.dart';
 import 'package:anytime/ui/widgets/platform_progress_indicator.dart';
@@ -15,26 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:provider/provider.dart';
 
-/// Represents an item in the grouped timeline list — either a date header or
-/// an episode tile.
-enum _TimelineItemType { header, episode }
-
-/// A single display item in the flat timeline list.
-class _TimelineItem {
-  final _TimelineItemType type;
-  final String? headerText;
-  final Episode? episode;
-
-  _TimelineItem.header(this.headerText)
-      : type = _TimelineItemType.header,
-        episode = null;
-
-  _TimelineItem.episode(this.episode)
-      : type = _TimelineItemType.episode,
-        headerText = null;
-}
-
-/// Displays a paginated, date-grouped timeline of all episodes from subscribed
+/// Displays a paginated timeline of all episodes from subscribed
 /// podcasts. Supports:
 ///
 /// - **Infinite scroll**: loads more episodes when the user scrolls near the
@@ -186,15 +166,12 @@ class _TimelineState extends State<Timeline> {
       );
     }
 
-    final items = _buildGroupedItems(episodes);
-
     final queueBloc = Provider.of<QueueBloc>(context);
 
     return StreamBuilder<QueueState>(
       stream: queueBloc.queue,
       builder: (context, snapshot) {
         final hasFilter = bloc.dateFilter != null;
-        final toolbarOffset = hasFilter ? 1 : 0;
 
         return SliverList(
           delegate: SliverChildBuilderDelegate(
@@ -204,29 +181,18 @@ class _TimelineState extends State<Timeline> {
                 return _buildFilterBanner(context, bloc);
               }
 
-              // Next item: toolbar (sort + refresh)
-              if (index == toolbarOffset) {
-                return _buildToolbar(context, bloc, isLoadingMore);
-              }
-
-              final itemIndex = index - (toolbarOffset + 1);
+              final itemIndex = index - (hasFilter ? 1 : 0);
 
               // If we've emitted all items, show the loading‑more indicator
               // at the bottom and trigger the next page load.
-              if (itemIndex >= items.length) {
+              if (itemIndex >= episodes.length) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   bloc.loadMore();
                 });
                 return _buildLoadingMoreIndicator();
               }
 
-              final item = items[itemIndex];
-
-              if (item.type == _TimelineItemType.header) {
-                return _buildHeader(context, item.headerText!, bloc);
-              }
-
-              final episode = item.episode!;
+              final episode = episodes[itemIndex];
               var queued = false;
 
               if (snapshot.hasData) {
@@ -241,7 +207,7 @@ class _TimelineState extends State<Timeline> {
                 showPodcastName: true,
               );
             },
-            childCount: (hasFilter ? 1 : 0) + 1 + items.length + (bloc.hasMore ? 1 : 0),
+            childCount: (hasFilter ? 1 : 0) + episodes.length + (bloc.hasMore ? 1 : 0),
             addAutomaticKeepAlives: false,
           ),
         );
@@ -301,223 +267,4 @@ class _TimelineState extends State<Timeline> {
     );
   }
 
-  /// Builds the toolbar row with refresh button and show-played toggle.
-  Widget _buildToolbar(BuildContext context, TimelineBloc bloc, bool isLoadingMore) {
-    final theme = Theme.of(context);
-    final showPlayed = bloc.showPlayed;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: <Widget>[
-          // Loading indicator during refresh
-          if (isLoadingMore)
-            const Padding(
-              padding: EdgeInsets.only(right: 8.0),
-              child: SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2.0),
-              ),
-            ),
-
-          // Show/hide played episodes toggle
-          Semantics(
-            button: true,
-            child: IconButton(
-              icon: Icon(
-                showPlayed ? Icons.visibility : Icons.visibility_off,
-                size: 20.0,
-                color: showPlayed ? theme.colorScheme.primary : theme.colorScheme.secondary,
-              ),
-              tooltip: showPlayed
-                  ? L.of(context)!.hide_played_episodes_tooltip
-                  : L.of(context)!.show_played_episodes_tooltip,
-              onPressed: () => bloc.event(TimelineEvent.toggleShowPlayed),
-              visualDensity: VisualDensity.compact,
-            ),
-          ),
-
-          // Refresh button — fetches new episodes from RSS feeds
-          Semantics(
-            button: true,
-            child: IconButton(
-              icon: Icon(
-                Icons.refresh,
-                size: 20.0,
-                color: theme.colorScheme.secondary,
-              ),
-              tooltip: L.of(context)!.refresh_feeds_tooltip,
-              onPressed: () => _refreshFeeds(context, bloc),
-              visualDensity: VisualDensity.compact,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // Date grouping
-  // ---------------------------------------------------------------------------
-
-  /// Groups [episodes] by date bucket and returns a flat list of display items.
-  List<_TimelineItem> _buildGroupedItems(List<Episode> episodes) {
-    final items = <_TimelineItem>[];
-    String? lastBucket;
-
-    for (final episode in episodes) {
-      final bucket = _dateBucket(episode.publicationDate);
-
-      if (bucket != lastBucket) {
-        items.add(_TimelineItem.header(bucket));
-        lastBucket = bucket;
-      }
-
-      items.add(_TimelineItem.episode(episode));
-    }
-
-    return items;
-  }
-
-  /// Returns a human-readable date bucket label for the given [date].
-  String _dateBucket(DateTime? date) {
-    if (date == null) return 'Unknown';
-
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final dateDay = DateTime(date.year, date.month, date.day);
-    final diff = today.difference(dateDay).inDays;
-
-    if (diff == 0) return 'Today';
-    if (diff == 1) return 'Yesterday';
-    if (diff <= 7) return 'This Week';
-
-    return DateFormat.yMMMd().format(date);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Header (tappable — opens date picker)
-  // ---------------------------------------------------------------------------
-
-  /// Builds a date-section header. Tapping it opens a [showDatePicker] so the
-  /// user can jump to another date in the timeline.
-  Widget _buildHeader(BuildContext context, String text, TimelineBloc bloc) {
-    final theme = Theme.of(context);
-
-    return InkWell(
-      onTap: () => _showDatePicker(context, bloc),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 4.0),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: Text(
-                text,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-            ),
-            Icon(
-              Icons.calendar_today,
-              size: 14.0,
-              color: theme.colorScheme.primary.withValues(alpha: 0.6),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Shows a [showDatePicker]. When the user picks a date, calls
-  /// [TimelineBloc.jumpToDate] to load enough pages and scroll there.
-  Future<void> _showDatePicker(BuildContext context, TimelineBloc bloc) async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: now,
-      firstDate: DateTime(2000),
-      lastDate: now,
-      helpText: L.of(context)!.jump_to_date_tooltip,
-    );
-
-    if (picked != null && context.mounted) {
-      // Use start-of-day so the entire selected day is included.
-      // (Using 23:59:59 would exclude most episodes from that day.)
-      final target = DateTime(picked.year, picked.month, picked.day);
-      bloc.jumpToDate(target);
-    }
-  }
-
-  /// Triggers a refresh of all subscribed podcast RSS feeds and shows a
-  /// progress dialog. Each source has a 5-second timeout.
-  void _refreshFeeds(BuildContext context, TimelineBloc bloc) {
-    final stream = bloc.podcastService.refreshFeedsWithProgress();
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
-        return StreamBuilder<RefreshProgress>(
-          stream: stream,
-          builder: (context, snapshot) {
-            final progress = snapshot.data;
-
-            if (progress == null) {
-              return AlertDialog(
-                content: Row(
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(width: 16),
-                    Text(L.of(context)!.starting_refresh),
-                  ],
-                ),
-              );
-            }
-
-            if (progress.finished) {
-              // Auto-dismiss and reload timeline.
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                Navigator.of(dialogContext).pop();
-                bloc.event(TimelineEvent.refresh);
-              });
-
-              return AlertDialog(
-                content: Row(
-                  children: [
-                    const Icon(Icons.check_circle, color: Colors.green),
-                    const SizedBox(width: 16),
-                    Text(L.of(context)!.refresh_done(progress.total)),
-                  ],
-                ),
-              );
-            }
-
-            final value = progress.total > 0 ? progress.completed / progress.total : 0.0;
-
-            return AlertDialog(
-              title: Text(L.of(context)!.refreshing_feeds_title),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${progress.completed + 1} / ${progress.total}: ${progress.currentSource}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 12),
-                  LinearProgressIndicator(value: value),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
 }

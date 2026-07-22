@@ -7,6 +7,7 @@ import 'package:anytime/bloc/podcast/episode_bloc.dart';
 import 'package:anytime/bloc/podcast/podcast_bloc.dart';
 import 'package:anytime/bloc/podcast/queue_bloc.dart';
 import 'package:anytime/bloc/settings/settings_bloc.dart';
+import 'package:anytime/bloc/timeline/timeline_bloc.dart';
 import 'package:anytime/entities/app_settings.dart';
 import 'package:anytime/entities/downloadable.dart';
 import 'package:anytime/entities/episode.dart';
@@ -19,18 +20,11 @@ import 'package:anytime/ui/widgets/episode_tile.dart';
 import 'package:anytime/ui/widgets/tile_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:rxdart/rxdart.dart';
 
 /// A compact episode tile with a spacious layout and borderless action buttons.
 ///
-/// Used in the Timeline tab and PodcastEpisodeList. The [showPodcastName]
-/// parameter controls whether the podcast name subtitle is displayed —
-/// Timeline shows it (episodes come from many sources), while
-/// PodcastEpisodeList hides it (already inside that podcast's context).
-///
-/// Tap behaviors:
-/// - Tap thumbnail → start playing the episode
-/// - Tap text content area → expand/collapse episode description
+/// Supports swipe actions: left swipe → add to queue, right swipe → ignore.
+/// Shows a play/pause overlay on the image only for the currently playing episode.
 class CompactEpisodeTile extends StatelessWidget {
   final Episode episode;
   final bool download;
@@ -62,276 +56,253 @@ class CompactEpisodeTile extends StatelessWidget {
     final playedMuted = episode.played;
     final mutedTextColor = playedMuted ? colorScheme.onSurface.withValues(alpha: 0.6) : null;
 
-    return Padding(
+    return Dismissible(
+      key: ValueKey('episode_${episode.guid}'),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.endToStart) {
+          queueBloc.queueEvent(QueueAddEvent(episode: episode));
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(L.of(context)!.queue_add_label),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+          return false;
+        } else if (direction == DismissDirection.startToEnd) {
+          if (context.mounted) {
+            Provider.of<TimelineBloc>(context, listen: false).hideEpisode(episode.guid);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(L.of(context)!.episode_hidden),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+          return true;
+        }
+        return false;
+      },
+      onDismissed: (direction) {
+        if (direction == DismissDirection.startToEnd) {
+          Provider.of<TimelineBloc>(context, listen: false).reapplyFilter();
+        }
+      },
+      background: Container(
+        color: colorScheme.tertiaryContainer,
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: 24),
+        child: Icon(Icons.visibility_off, color: colorScheme.onTertiaryContainer),
+      ),
+      secondaryBackground: Container(
+        color: colorScheme.primaryContainer,
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 24),
+        child: Icon(Icons.playlist_add, color: colorScheme.onPrimaryContainer),
+      ),
+      child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          // Image + Content row
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              // Thumbnail with progress bar — tap to play
-              GestureDetector(
-                onTap: () {
-                  audioBloc.play(episode);
-                  _optionalShowNowPlaying(context, settings);
-                },
-                child: ExcludeSemantics(
-                  child: Stack(
-                    alignment: Alignment.bottomLeft,
-                    fit: StackFit.passthrough,
-                    children: <Widget>[
-                      ColorFiltered(
-                        colorFilter: playedMuted
-                            ? const ColorFilter.mode(Color(0x99FFFFFF), BlendMode.lighten)
-                            : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
-                        child: TileImage(
-                          url: episode.thumbImageUrl ?? episode.imageUrl!,
-                          size: 80.0,
-                          highlight: episode.highlight,
-                        ),
-                      ),
-                      SizedBox(
-                        height: 5.0,
-                        width: 80.0 * (episode.percentagePlayed / 100),
-                        child: Container(
-                          color: colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16.0),
-              // Content — tap to open episode details bottom sheet
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    showModalBottomSheet<void>(
-                      context: context,
-                      isScrollControlled: true,
-                      builder: (context) => EpisodeDetails(episode: episode),
-                    );
-                  },
-                  behavior: HitTestBehavior.opaque,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        episode.title!,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.titleSmall?.copyWith(color: mutedTextColor),
-                      ),
-                      if (showPodcastName) ...<Widget>[
-                        const SizedBox(height: 2.0),
-                        Text(
-                          episode.podcast ?? '',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                        ),
-                      ],
-                      const SizedBox(height: 2.0),
-                      EpisodeSubtitle(episode),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          // Borderless action buttons
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Row(
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                // Play / Pause
-                Semantics(
-                  container: true,
-                  child: _BuildPlayButton(episode: episode),
-                ),
-                // Queue add / remove
-                Semantics(
-                  container: true,
-                  child: IconButton(
-                    iconSize: 28,
-                    icon: Icon(
-                      queued ? Icons.playlist_add_check : Icons.playlist_add,
-                      semanticLabel:
-                          queued ? L.of(context)!.semantics_remove_from_queue : L.of(context)!.semantics_add_to_queue,
-                    ),
-                    style: IconButton.styleFrom(padding: EdgeInsets.zero),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () {
-                      if (queued) {
-                        queueBloc.queueEvent(QueueRemoveEvent(episode: episode));
-                      } else {
-                        queueBloc.queueEvent(QueueAddEvent(episode: episode));
-                      }
-                    },
-                  ),
-                ),
-                // Mark played / unplayed
-                Semantics(
-                  container: true,
-                  child: IconButton(
-                    iconSize: 28,
-                    icon: Icon(
-                      episode.played ? Icons.unpublished_outlined : Icons.check_circle_outline,
-                      semanticLabel: episode.played
-                          ? L.of(context)!.semantics_mark_episode_unplayed
-                          : L.of(context)!.semantics_mark_episode_played,
-                    ),
-                    style: IconButton.styleFrom(padding: EdgeInsets.zero),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () => episodeBloc.togglePlayed(episode),
-                  ),
-                ),
-                // Episode details
-                Semantics(
-                  container: true,
-                  child: IconButton(
-                    iconSize: 28,
-                    icon: Icon(
-                      Icons.unfold_more_outlined,
-                      semanticLabel: L.of(context)!.episode_details_button_label,
-                    ),
-                    style: IconButton.styleFrom(padding: EdgeInsets.zero),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () {
+                // Thumbnail with play/pause overlay and progress bar
+                _buildImageWithOverlay(context, audioBloc, playedMuted, settings),
+                const SizedBox(width: 16.0),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
                       showModalBottomSheet<void>(
                         context: context,
                         isScrollControlled: true,
                         builder: (context) => EpisodeDetails(episode: episode),
                       );
                     },
+                    behavior: HitTestBehavior.opaque,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          episode.title!,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.titleSmall?.copyWith(color: mutedTextColor),
+                        ),
+                        if (showPodcastName) ...<Widget>{
+                          const SizedBox(height: 2.0),
+                          Text(
+                            episode.podcast ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                          ),
+                        },
+                        const SizedBox(height: 2.0),
+                        EpisodeSubtitle(episode),
+                      ],
+                    ),
                   ),
                 ),
-                // Download
-                if (download)
-                  Semantics(
-                    container: true,
-                    child: _BuildDownloadButton(episode: episode),
-                  ),
               ],
             ),
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Row(
+                children: <Widget>[
+                  Semantics(
+                    container: true,
+                    child: IconButton(
+                      iconSize: 28,
+                      icon: Icon(
+                        queued ? Icons.playlist_add_check : Icons.playlist_add,
+                        semanticLabel:
+                            queued ? L.of(context)!.semantics_remove_from_queue : L.of(context)!.semantics_add_to_queue,
+                      ),
+                      style: IconButton.styleFrom(padding: EdgeInsets.zero),
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () {
+                        if (queued) {
+                          queueBloc.queueEvent(QueueRemoveEvent(episode: episode));
+                        } else {
+                          queueBloc.queueEvent(QueueAddEvent(episode: episode));
+                        }
+                      },
+                    ),
+                  ),
+                  Semantics(
+                    container: true,
+                    child: IconButton(
+                      iconSize: 28,
+                      icon: Icon(
+                        episode.played ? Icons.unpublished_outlined : Icons.check_circle_outline,
+                        semanticLabel: episode.played
+                            ? L.of(context)!.semantics_mark_episode_unplayed
+                            : L.of(context)!.semantics_mark_episode_played,
+                      ),
+                      style: IconButton.styleFrom(padding: EdgeInsets.zero),
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () {
+                        final timelineBloc = Provider.of<TimelineBloc>(context, listen: false);
+                        episodeBloc.togglePlayed(episode);
+                        Future.microtask(() => timelineBloc.reapplyFilter());
+                      },
+                    ),
+                  ),
+                  Semantics(
+                    container: true,
+                    child: IconButton(
+                      iconSize: 28,
+                      icon: const Icon(Icons.visibility_off_outlined),
+                      tooltip: L.of(context)!.episode_hidden,
+                      style: IconButton.styleFrom(padding: EdgeInsets.zero),
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () {
+                        final bloc = Provider.of<TimelineBloc>(context, listen: false);
+                        bloc.hideEpisode(episode.guid);
+                        bloc.reapplyFilter();
+                      },
+                    ),
+                  ),
+                  if (download)
+                    Semantics(
+                      container: true,
+                      child: _BuildDownloadButton(episode: episode),
+                    ),
+                ],
+              ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  void _optionalShowNowPlaying(BuildContext context, AppSettings settings) {
-    if (settings.autoOpenNowPlaying) {
-      Navigator.push(
-        context,
-        MaterialPageRoute<void>(
-          builder: (context) => const NowPlaying(),
-          settings: const RouteSettings(name: 'nowplaying'),
-          fullscreenDialog: false,
         ),
       );
-    }
   }
-}
 
-/// Determines and renders the correct play/pause icon based on audio state.
-class _BuildPlayButton extends StatelessWidget {
-  final Episode episode;
+  Widget _buildImageWithOverlay(BuildContext context, AudioBloc audioBloc, bool playedMuted, AppSettings settings) {
+    final colorScheme = Theme.of(context).colorScheme;
 
-  const _BuildPlayButton({required this.episode});
-
-  @override
-  Widget build(BuildContext context) {
-    final audioBloc = Provider.of<AudioBloc>(context, listen: false);
-    final settings = Provider.of<SettingsBloc>(context, listen: false).currentSettings;
-
-    return StreamBuilder<_PlayerControlState>(
-      stream: Rx.combineLatest2(
-        audioBloc.playingState!,
-        audioBloc.nowPlaying!,
-        (AudioState audioState, Episode? episode) => _PlayerControlState(audioState, episode),
-      ),
+    return StreamBuilder<Episode?>(
+      stream: audioBloc.nowPlaying,
+      initialData: audioBloc.nowPlaying?.valueOrNull,
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return IconButton(
-            iconSize: 28,
-            icon: const Icon(Icons.play_arrow),
-            style: IconButton.styleFrom(padding: EdgeInsets.zero),
-            visualDensity: VisualDensity.compact,
-            onPressed: () {
-              audioBloc.play(episode);
-              _optionalShowNowPlaying(context, settings);
-            },
-          );
-        }
-
-        final audioState = snapshot.data!.audioState;
-        final nowPlaying = snapshot.data!.episode;
+        final nowPlaying = snapshot.data;
         final isCurrentEpisode = nowPlaying?.guid == episode.guid;
 
-        if (isCurrentEpisode) {
-          if (audioState == AudioState.playing) {
-            return IconButton(
-              iconSize: 28,
-              icon: Icon(Icons.pause, color: Theme.of(context).colorScheme.primary),
-              style: IconButton.styleFrom(padding: EdgeInsets.zero),
-              visualDensity: VisualDensity.compact,
-              onPressed: () => audioBloc.transitionState(TransitionState.pause),
-            );
-          } else if (audioState == AudioState.buffering) {
-            return IconButton(
-              iconSize: 28,
-              icon: const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2.0),
-              ),
-              style: IconButton.styleFrom(padding: EdgeInsets.zero),
-              visualDensity: VisualDensity.compact,
-              onPressed: null,
-            );
-          } else if (audioState == AudioState.pausing) {
-            return IconButton(
-              iconSize: 28,
-              icon: Icon(Icons.play_arrow, color: Theme.of(context).colorScheme.primary),
-              style: IconButton.styleFrom(padding: EdgeInsets.zero),
-              visualDensity: VisualDensity.compact,
-              onPressed: () {
-                audioBloc.transitionState(TransitionState.play);
-                _optionalShowNowPlaying(context, settings);
-              },
-            );
-          }
-        }
+        return StreamBuilder<AudioState>(
+          stream: audioBloc.playingState!,
+          initialData: audioBloc.audioPlayerService.nowPlaying != null ? AudioState.pausing : AudioState.stopped,
+          builder: (context, stateSnapshot) {
+            final audioState = stateSnapshot.data ?? AudioState.stopped;
+            final isPlaying = audioState == AudioState.playing || audioState == AudioState.buffering;
 
-        // Not the currently playing episode — allow play
-        return IconButton(
-          iconSize: 28,
-          icon: const Icon(Icons.play_arrow),
-          style: IconButton.styleFrom(padding: EdgeInsets.zero),
-          visualDensity: VisualDensity.compact,
-          onPressed: () {
-            audioBloc.play(episode);
-            _optionalShowNowPlaying(context, settings);
+            return GestureDetector(
+              onTap: () {
+                if (isCurrentEpisode) {
+                  if (isPlaying) {
+                    audioBloc.transitionState(TransitionState.pause);
+                  } else {
+                    audioBloc.transitionState(TransitionState.play);
+                  }
+                } else {
+                  audioBloc.play(episode);
+                  if (settings.autoOpenNowPlaying) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (context) => const NowPlaying(),
+                        settings: const RouteSettings(name: 'nowplaying'),
+                        fullscreenDialog: false,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: ExcludeSemantics(
+                child: Stack(
+                  alignment: Alignment.bottomLeft,
+                  children: <Widget>[
+                Opacity(
+                  opacity: playedMuted ? 0.5 : 1.0,
+                  child: TileImage(
+                        url: episode.thumbImageUrl ?? episode.imageUrl!,
+                        size: 80.0,
+                        highlight: episode.highlight,
+                      ),
+                    ),
+                    SizedBox(
+                      height: 5.0,
+                      width: 80.0 * (episode.percentagePlayed / 100),
+                      child: Container(color: colorScheme.primary),
+                    ),
+                    if (isCurrentEpisode)
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black26,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          alignment: Alignment.center,
+                          child: CircleAvatar(
+                            radius: 18,
+                            backgroundColor: Colors.black54,
+                            child: Icon(
+                              isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
           },
         );
       },
     );
-  }
-
-  void _optionalShowNowPlaying(BuildContext context, AppSettings settings) {
-    if (settings.autoOpenNowPlaying) {
-      Navigator.push(
-        context,
-        MaterialPageRoute<void>(
-          builder: (context) => const NowPlaying(),
-          settings: const RouteSettings(name: 'nowplaying'),
-          fullscreenDialog: false,
-        ),
-      );
-    }
   }
 }
 
@@ -417,9 +388,4 @@ class _BuildDownloadButton extends StatelessWidget {
   }
 }
 
-class _PlayerControlState {
-  final AudioState audioState;
-  final Episode? episode;
 
-  _PlayerControlState(this.audioState, this.episode);
-}

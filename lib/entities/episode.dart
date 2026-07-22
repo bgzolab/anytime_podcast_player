@@ -143,6 +143,11 @@ class Episode {
   @Transient()
   bool streaming = true;
 
+  /// Set to true when the user swipes to ignore/hide this episode.
+  /// Transient — not persisted to DB. Reset on refresh.
+  @Transient()
+  bool ignored = false;
+
   Episode({
     required this.guid,
     this.pguid,

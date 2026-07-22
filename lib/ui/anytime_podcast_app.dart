@@ -530,33 +530,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
 
   Widget _buildMyPage() {
     return Scaffold(
-      appBar: AppBar(
-        title: const ExcludeSemantics(
-          child: TitleWidget(),
-        ),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        surfaceTintColor: Colors.transparent,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.search, semanticLabel: L.of(context)!.search_episodes_tooltip),
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                defaultTargetPlatform == TargetPlatform.iOS
-                    ? MaterialPageRoute<void>(
-                        fullscreenDialog: false,
-                        settings: const RouteSettings(name: 'search'),
-                        builder: (context) => Search(mode: SearchMode.my, repository: widget.repository))
-                    : SlideRightRoute(
-                        widget: Search(mode: SearchMode.my, repository: widget.repository),
-                        settings: const RouteSettings(name: 'search'),
-                      ),
-              );
-            },
-          ),
-        ],
-      ),
-      body: const MyPage(),
+      body: MyPage(repository: widget.repository),
     );
   }
 

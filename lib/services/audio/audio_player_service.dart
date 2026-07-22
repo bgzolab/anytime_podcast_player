@@ -71,6 +71,12 @@ abstract class AudioPlayerService {
   /// Fast forward the current episode by pre-set number of seconds.
   Future<void> fastForward();
 
+  /// Skip to the next track in the playback queue.
+  Future<void> skipToNext();
+
+  /// Skip to the previous track in the playback queue.
+  Future<void> skipToPrevious();
+
   /// Seek to the specified position within the current episode.
   Future<void> seek({required int position});
 

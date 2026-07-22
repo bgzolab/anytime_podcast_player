@@ -108,6 +108,7 @@ class DefaultAudioPlayerService extends AudioPlayerService {
         settings: settingsService,
         podcastService: podcastService,
         onSkipToPrevious: () => onSkipToPrevious?.call(),
+        onSkipToNext: () => skipToNext(),
       ),
       config: const AudioServiceConfig(
         androidResumeOnClick: true,
@@ -266,6 +267,37 @@ class DefaultAudioPlayerService extends AudioPlayerService {
 
   @override
   Future<void> fastForward() => _audioHandler.fastForward();
+
+  @override
+  Future<void> skipToNext() async {
+    if (_queue.isNotEmpty) {
+      if (_currentEpisode != null) {
+        _queue.add(_currentEpisode!);
+      }
+      _currentEpisode = null;
+      var ep = _queue.removeAt(0);
+      await _playNextEpisode(episode: ep);
+      _updateQueueState();
+    } else if (_nextEpisode != null) {
+      playEpisode(episode: _nextEpisode!);
+    }
+  }
+
+  @override
+  Future<void> skipToPrevious() async {
+    if (_queue.isNotEmpty) {
+      if (_currentEpisode != null) {
+        _queue.insert(0, _currentEpisode!);
+      }
+      _currentEpisode = null;
+      var ep = _queue.removeLast();
+      await _playNextEpisode(episode: ep);
+      _updateQueueState();
+    } else {
+      await seek(position: 0);
+      await play();
+    }
+  }
 
   @override
   Future<void> seek({required int position}) async {
@@ -971,12 +1003,14 @@ class _DefaultAudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   );
 
   VoidCallback? onSkipToPrevious;
+  VoidCallback? onSkipToNext;
 
   _DefaultAudioPlayerHandler({
     required this.repository,
     required this.settings,
     required this.podcastService,
     this.onSkipToPrevious,
+    this.onSkipToNext,
   }) {
     _initPlayer();
   }
@@ -1157,7 +1191,13 @@ class _DefaultAudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   }
 
   @override
-  Future<void> skipToNext() => fastForward();
+  Future<void> skipToNext() async {
+    if (onSkipToNext != null) {
+      onSkipToNext!();
+    } else {
+      await fastForward();
+    }
+  }
 
   @override
   Future<void> skipToPrevious() async {

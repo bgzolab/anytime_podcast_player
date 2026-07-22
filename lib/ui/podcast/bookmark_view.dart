@@ -128,9 +128,9 @@ class _BookmarkViewState extends State<BookmarkView> {
             title: Text(
               _formatPosition(bookmark.positionMs),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
+                fontWeight: FontWeight.bold,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
             subtitle: bookmark.note != null && bookmark.note!.isNotEmpty
                 ? Text(bookmark.note!, maxLines: 1, overflow: TextOverflow.ellipsis)

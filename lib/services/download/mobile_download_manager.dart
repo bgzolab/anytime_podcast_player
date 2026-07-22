@@ -9,7 +9,6 @@ import 'dart:ui';
 import 'package:anytime/core/environment.dart';
 import 'package:anytime/entities/downloadable.dart';
 import 'package:anytime/services/download/download_manager.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:logging/logging.dart';

@@ -252,8 +252,7 @@ class _SettingsState extends State<Settings> {
         systemNavigationBarColor: Theme.of(context).colorScheme.surface,
         systemNavigationBarIconBrightness:
             Theme.of(context).brightness == Brightness.dark ? Brightness.light : Brightness.dark,
-        statusBarIconBrightness:
-            Theme.of(context).brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+        statusBarIconBrightness: Theme.of(context).brightness == Brightness.dark ? Brightness.light : Brightness.dark,
       ),
       child: Scaffold(
         appBar: AppBar(

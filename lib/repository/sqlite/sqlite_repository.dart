@@ -617,9 +617,15 @@ class SqliteRepository extends Repository {
   /// Fields that fromMap() expects as String but SQLite stores as INTEGER.
   /// Based on actual cast types in Episode.fromMap and Podcast.fromMap.
   static const _intToStringFields = {
-    'subscribedDate', 'publicationDate', 'season', 'episode',
-    'duration', 'position', 'downloadPercentage',
-    'positionMs', 'createdAt',
+    'subscribedDate',
+    'publicationDate',
+    'season',
+    'episode',
+    'duration',
+    'position',
+    'downloadPercentage',
+    'positionMs',
+    'createdAt',
   };
 
   /// Fields that need int→'true'/'false' String conversion (Episode.played).
@@ -627,10 +633,14 @@ class SqliteRepository extends Repository {
 
   /// Fields stored as JSON text that fromMap() expects as List.
   static const _jsonListFields = {
-    'chapters', 'transcriptUrls', 'persons', 'person',
-    'funding', 'subtitles', 'q',
+    'chapters',
+    'transcriptUrls',
+    'persons',
+    'person',
+    'funding',
+    'subtitles',
+    'q',
   };
-
 
   /// Converts a database row to an [Episode], parsing nested JSON fields.
   Episode _episodeFromRow(Map<String, dynamic> r) {

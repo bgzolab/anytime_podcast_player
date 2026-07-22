@@ -88,8 +88,8 @@ class _PodcastDetailsState extends State<PodcastDetails> {
 
     // Update toolbar collapse state without triggering a full page rebuild.
     _sliverScrollController.addListener(() {
-      final shouldCollapse = _sliverScrollController.hasClients &&
-          _sliverScrollController.offset > (300 - kToolbarHeight);
+      final shouldCollapse =
+          _sliverScrollController.hasClients && _sliverScrollController.offset > (300 - kToolbarHeight);
 
       if (_toolbarCollapsed.value != shouldCollapse) {
         _toolbarCollapsed.value = shouldCollapse;
@@ -126,7 +126,8 @@ class _PodcastDetailsState extends State<PodcastDetails> {
   void didChangeDependencies() {
     _systemOverlayStyle = SystemUiOverlayStyle(
       statusBarIconBrightness: Theme.of(context).brightness == Brightness.light ? Brightness.dark : Brightness.light,
-      statusBarColor: Theme.of(context).appBarTheme.backgroundColor!.withValues(alpha: _toolbarCollapsed.value ? 1.0 : 0.5),
+      statusBarColor:
+          Theme.of(context).appBarTheme.backgroundColor!.withValues(alpha: _toolbarCollapsed.value ? 1.0 : 0.5),
     );
     super.didChangeDependencies();
   }
@@ -159,7 +160,8 @@ class _PodcastDetailsState extends State<PodcastDetails> {
   void _updateSystemOverlayStyle() {
     _systemOverlayStyle = SystemUiOverlayStyle(
       statusBarIconBrightness: Theme.of(context).brightness == Brightness.light ? Brightness.dark : Brightness.light,
-      statusBarColor: Theme.of(context).appBarTheme.backgroundColor!.withValues(alpha: _toolbarCollapsed.value ? 1.0 : 0.5),
+      statusBarColor:
+          Theme.of(context).appBarTheme.backgroundColor!.withValues(alpha: _toolbarCollapsed.value ? 1.0 : 0.5),
     );
   }
 

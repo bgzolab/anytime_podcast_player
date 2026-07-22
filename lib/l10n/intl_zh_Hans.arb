@@ -211,6 +211,18 @@
     "placeholders_order": [],
     "placeholders": {}
   },
+  "home": "首页",
+  "@home": {
+    "description": "Home tab label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "my_tab": "我的",
+  "@my_tab": {
+    "description": "My tab label",
+    "type": "text",
+    "placeholders": {}
+  },
   "sleep_off_label": "关闭",
   "@sleep_off_label": {
     "description": "Describes off sleep label",

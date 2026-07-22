@@ -96,6 +96,26 @@ class L {
         );
   }
 
+  String get home {
+    return message('home') ??
+        Intl.message(
+          'Home',
+          name: 'home',
+          desc: 'Home tab label',
+          locale: localeName,
+        );
+  }
+
+  String get my_tab {
+    return message('my_tab') ??
+        Intl.message(
+          'My',
+          name: 'my_tab',
+          desc: 'My tab label',
+          locale: localeName,
+        );
+  }
+
   String get no_episodes_message {
     return message('no_episodes_message') ??
         Intl.message(
@@ -616,6 +636,46 @@ class L {
           'About',
           name: 'about_label',
           desc: 'About menu item',
+          locale: localeName,
+        );
+  }
+
+  String get undo_label {
+    return message('undo_label') ??
+        Intl.message(
+          'Undo',
+          name: 'undo_label',
+          desc: 'Undo action label',
+          locale: localeName,
+        );
+  }
+
+  String get see_all {
+    return message('see_all') ??
+        Intl.message(
+          'See All',
+          name: 'see_all',
+          desc: 'See all podcasts label in recent podcasts strip',
+          locale: localeName,
+        );
+  }
+
+  String get episode_hidden {
+    return message('episode_hidden') ??
+        Intl.message(
+          'Episode hidden',
+          name: 'episode_hidden',
+          desc: 'Snackbar message when an episode is swiped to ignore',
+          locale: localeName,
+        );
+  }
+
+  String get coming_soon {
+    return message('coming_soon') ??
+        Intl.message(
+          'Coming Soon',
+          name: 'coming_soon',
+          desc: 'Placeholder label for future features',
           locale: localeName,
         );
   }

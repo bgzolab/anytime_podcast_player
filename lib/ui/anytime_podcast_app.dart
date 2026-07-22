@@ -18,7 +18,6 @@ import 'package:anytime/bloc/settings/settings_bloc.dart';
 import 'package:anytime/bloc/timeline/timeline_bloc.dart';
 import 'package:anytime/bloc/ui/pager_bloc.dart';
 import 'package:anytime/core/bookmark_sound.dart';
-import 'package:anytime/core/environment.dart';
 import 'package:anytime/entities/feed.dart';
 import 'package:anytime/entities/podcast.dart';
 import 'package:anytime/l10n/L.dart';
@@ -39,32 +38,26 @@ import 'package:anytime/services/podcast/podcast_service.dart';
 import 'package:anytime/services/settings/mobile_settings_service.dart';
 import 'package:anytime/state/bloc_state.dart';
 import 'package:anytime/state/library_state.dart';
-import 'package:anytime/ui/library/bookmarks_page.dart';
+import 'package:anytime/ui/home/home_page.dart';
 import 'package:anytime/ui/library/discovery.dart';
-import 'package:anytime/ui/library/downloads.dart';
-import 'package:anytime/ui/library/library.dart';
-import 'package:anytime/ui/library/timeline.dart';
+import 'package:anytime/ui/my/my_page.dart';
 import 'package:anytime/ui/podcast/mini_player.dart';
 import 'package:anytime/ui/podcast/podcast_details.dart';
 import 'package:anytime/ui/podcast/up_next_view.dart';
 import 'package:anytime/ui/search/search.dart';
 import 'package:anytime/ui/search/search_mode.dart';
-import 'package:anytime/ui/settings/settings.dart';
 import 'package:anytime/ui/themes.dart';
 import 'package:dynamic_color/dynamic_color.dart';
-import 'package:anytime/ui/widgets/action_text.dart';
-import 'package:anytime/ui/widgets/layout_selector.dart';
 import 'package:anytime/ui/widgets/search_slide_route.dart';
+import 'package:anytime/ui/widgets/title_widget.dart';
 import 'package:app_links/app_links.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:flutter/services.dart';
-import 'package:flutter_dialogs/flutter_dialogs.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../services/settings/settings_service.dart';
 
@@ -138,6 +131,8 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
   void initState() {
     super.initState();
 
+    _updateSystemUi();
+
     /// Listen to theme change events from settings.
     widget.settingsBloc!.settings.listen((event) {
       setState(() {
@@ -161,8 +156,20 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
         if (newTheme != theme) {
           theme = newTheme;
         }
+        _updateSystemUi();
       });
     });
+  }
+
+  void _updateSystemUi() {
+    final t = theme ?? Themes.darkTheme().themeData;
+    final isDark = t.brightness == Brightness.dark;
+    final statusBarColor = isDark ? const Color(0xFF1C1B1F) : const Color(0xFFFFFBFE);
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: statusBarColor,
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+    ));
   }
 
   @override
@@ -451,191 +458,40 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final pager = Provider.of<PagerBloc>(context);
-    final searchBloc = Provider.of<EpisodeBloc>(context);
-    final backgroundColour = Theme.of(context).scaffoldBackgroundColor;
 
     final isDark = theme.brightness == Brightness.dark;
+    final backgroundColour = theme.scaffoldBackgroundColor;
     final navBarColor = theme.colorScheme.surface;
     final overlayStyle = SystemUiOverlayStyle(
       systemNavigationBarColor: navBarColor,
       systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      statusBarColor: Colors.transparent,
       statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
     );
+    SystemChrome.setSystemUIOverlayStyle(overlayStyle);
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: overlayStyle,
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: backgroundColour,
         body: Column(
           children: <Widget>[
             Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  if (pager.page.value != 0) return;
-                  final bloc = Provider.of<TimelineBloc>(context, listen: false);
-                  bloc.event(TimelineEvent.refresh);
-                  await bloc.state.firstWhere(
-                    (s) => s is BlocPopulatedState || s is BlocErrorState,
-                  );
+              child: StreamBuilder<int>(
+                stream: pager.currentPage,
+                initialData: pager.page.value,
+                builder: (context, snapshot) {
+                  final pageIndex = snapshot.data ?? 0;
+                  switch (pageIndex) {
+                    case 0:
+                      return const HomePage();
+                    case 1:
+                      return _buildPageWithAppBar(context, 1, const Discovery(categories: true));
+                    case 2:
+                      return _buildMyPage();
+                    default:
+                      return const HomePage();
+                  }
                 },
-                child: CustomScrollView(
-                  slivers: <Widget>[
-                    SliverVisibility(
-                      visible: widget.topBarVisible,
-                      sliver: SliverAppBar(
-                        title: const ExcludeSemantics(
-                          child: TitleWidget(),
-                        ),
-                        backgroundColor: backgroundColour,
-                        floating: false,
-                        pinned: true,
-                        snap: false,
-                        actions: <Widget>[
-                          IconButton(
-                            icon: Icon(
-                              Icons.search,
-                              semanticLabel: _getSearchTooltip(context, pager.page.value),
-                            ),
-                            onPressed: () async {
-                              final mode = _getSearchMode(pager.page.value);
-                              await Navigator.push(
-                                context,
-                                defaultTargetPlatform == TargetPlatform.iOS
-                                    ? MaterialPageRoute<void>(
-                                        fullscreenDialog: false,
-                                        settings: const RouteSettings(name: 'search'),
-                                        builder: (context) => Search(mode: mode, repository: widget.repository))
-                                    : SlideRightRoute(
-                                        widget: Search(mode: mode, repository: widget.repository),
-                                        settings: const RouteSettings(name: 'search'),
-                                      ),
-                              );
-                            },
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              Icons.featured_play_list_outlined,
-                              semanticLabel: L.of(context)!.open_up_next_hint,
-                            ),
-                            onPressed: () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute<void>(
-                                  fullscreenDialog: false,
-                                  settings: const RouteSettings(name: 'queue'),
-                                  builder: (context) => const UpNextPage(),
-                                ),
-                              );
-                            },
-                          ),
-                          PopupMenuButton<String>(
-                            onSelected: _menuSelect,
-                            icon: const Icon(
-                              Icons.more_vert,
-                            ),
-                            itemBuilder: (BuildContext context) {
-                              return <PopupMenuEntry<String>>[
-                                if (feedbackUrl.isNotEmpty)
-                                  PopupMenuItem<String>(
-                                    textStyle: theme.textTheme.titleMedium,
-                                    value: 'feedback',
-                                    child: Focus(
-                                      child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        children: [
-                                          const Padding(
-                                            padding: EdgeInsets.only(right: 8.0),
-                                            child: Icon(Icons.feedback_outlined, size: 18.0),
-                                          ),
-                                          Text(L.of(context)!.feedback_menu_item_label),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                PopupMenuItem<String>(
-                                  textStyle: theme.textTheme.titleMedium,
-                                  value: 'layout',
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      const Padding(
-                                        padding: EdgeInsets.only(right: 8.0),
-                                        child: Icon(Icons.dashboard, size: 18.0),
-                                      ),
-                                      Text(L.of(context)!.layout_label),
-                                    ],
-                                  ),
-                                ),
-                                PopupMenuItem<String>(
-                                  textStyle: theme.textTheme.titleMedium,
-                                  value: 'rss',
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      const Padding(
-                                        padding: EdgeInsets.only(right: 8.0),
-                                        child: Icon(Icons.rss_feed, size: 18.0),
-                                      ),
-                                      Text(L.of(context)!.add_rss_feed_option),
-                                    ],
-                                  ),
-                                ),
-                                PopupMenuItem<String>(
-                                  textStyle: theme.textTheme.titleMedium,
-                                  value: 'library',
-                                  enabled: !libraryRefreshing,
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      const Padding(
-                                        padding: EdgeInsets.only(right: 8.0),
-                                        child: Icon(Icons.refresh, size: 18.0),
-                                      ),
-                                      Text(L.of(context)!.update_library_option),
-                                    ],
-                                  ),
-                                ),
-                                PopupMenuItem<String>(
-                                  textStyle: theme.textTheme.titleMedium,
-                                  value: 'settings',
-                                  child: Row(
-                                    children: [
-                                      const Padding(
-                                        padding: EdgeInsets.only(right: 8.0),
-                                        child: Icon(Icons.settings, size: 18.0),
-                                      ),
-                                      Text(L.of(context)!.settings_label),
-                                    ],
-                                  ),
-                                ),
-                                PopupMenuItem<String>(
-                                  textStyle: theme.textTheme.titleMedium,
-                                  value: 'about',
-                                  child: Row(
-                                    children: [
-                                      const Padding(
-                                        padding: EdgeInsets.only(right: 8.0),
-                                        child: Icon(Icons.info_outline, size: 18.0),
-                                      ),
-                                      Text(L.of(context)!.about_label),
-                                    ],
-                                  ),
-                                ),
-                              ];
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                    StreamBuilder<int>(
-                        stream: pager.currentPage,
-                        builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
-                          return _fragment(snapshot.data, searchBloc);
-                        }),
-                  ],
-                ),
               ),
             ),
             const MiniPlayer(),
@@ -652,14 +508,9 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                 onDestinationSelected: pager.changePage,
                 destinations: <NavigationDestination>[
                   NavigationDestination(
-                    icon: const Icon(Icons.timeline_outlined),
-                    selectedIcon: const Icon(Icons.timeline),
-                    label: L.of(context)!.timeline,
-                  ),
-                  NavigationDestination(
-                    icon: const Icon(Icons.library_music_outlined),
-                    selectedIcon: const Icon(Icons.library_music),
-                    label: L.of(context)!.library,
+                    icon: const Icon(Icons.home_outlined),
+                    selectedIcon: const Icon(Icons.home),
+                    label: L.of(context)!.home,
                   ),
                   NavigationDestination(
                     icon: const Icon(Icons.explore_outlined),
@@ -667,52 +518,132 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                     label: L.of(context)!.discover,
                   ),
                   NavigationDestination(
-                    icon: const Icon(Icons.download_outlined),
-                    selectedIcon: const Icon(Icons.download),
-                    label: L.of(context)!.downloads,
-                  ),
-                  NavigationDestination(
-                    icon: const Icon(Icons.bookmarks_outlined),
-                    selectedIcon: const Icon(Icons.bookmarks),
-                    label: L.of(context)!.bookmarks_label,
+                    icon: const Icon(Icons.person_outline),
+                    selectedIcon: const Icon(Icons.person),
+                    label: L.of(context)!.my_tab,
                   ),
                 ],
               );
             }),
+      );
+  }
+
+  Widget _buildMyPage() {
+    return Scaffold(
+      appBar: AppBar(
+        title: const ExcludeSemantics(
+          child: TitleWidget(),
+        ),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        surfaceTintColor: Colors.transparent,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.search, semanticLabel: L.of(context)!.search_episodes_tooltip),
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                defaultTargetPlatform == TargetPlatform.iOS
+                    ? MaterialPageRoute<void>(
+                        fullscreenDialog: false,
+                        settings: const RouteSettings(name: 'search'),
+                        builder: (context) => Search(mode: SearchMode.my, repository: widget.repository))
+                    : SlideRightRoute(
+                        widget: Search(mode: SearchMode.my, repository: widget.repository),
+                        settings: const RouteSettings(name: 'search'),
+                      ),
+              );
+            },
+          ),
+        ],
       ),
+      body: const MyPage(),
     );
   }
 
-  Widget _fragment(int? index, EpisodeBloc searchBloc) {
-    if (index == 0) {
-      return const Timeline();
-    } else if (index == 1) {
-      return const Library();
-    } else if (index == 2) {
-      return const Discovery(
-        categories: true,
-      );
-    } else if (index == 3) {
-      return const Downloads();
-    } else if (index == 4) {
-      return const BookmarksPage();
-    } else {
-      return const Timeline();
-    }
+  /// Wraps a page widget in a RefreshIndicator + CustomScrollView with a shared
+  /// SliverAppBar containing search, queue, and menu actions.
+  Widget _buildPageWithAppBar(BuildContext context, int pageIndex, Widget page) {
+    final backgroundColour = Theme.of(context).scaffoldBackgroundColor;
+    return RefreshIndicator(
+      onRefresh: () async {
+        if (pageIndex != 1) return;
+        final bloc = Provider.of<TimelineBloc>(context, listen: false);
+        bloc.event(TimelineEvent.refresh);
+        await bloc.state.firstWhere(
+          (s) => s is BlocPopulatedState || s is BlocErrorState,
+        );
+      },
+      child: Container(
+        color: backgroundColour,
+        child: CustomScrollView(
+        slivers: <Widget>[
+          SliverVisibility(
+            visible: widget.topBarVisible,
+            sliver: SliverAppBar(
+              title: const ExcludeSemantics(
+                child: TitleWidget(),
+              ),
+              backgroundColor: backgroundColour,
+              floating: false,
+              pinned: true,
+              snap: false,
+              actions: <Widget>[
+                IconButton(
+                  icon: Icon(
+                    Icons.search,
+                    semanticLabel: _getSearchTooltip(context, pageIndex),
+                  ),
+                  onPressed: () async {
+                    final mode = _getSearchMode(pageIndex);
+                    await Navigator.push(
+                      context,
+                      defaultTargetPlatform == TargetPlatform.iOS
+                          ? MaterialPageRoute<void>(
+                              fullscreenDialog: false,
+                              settings: const RouteSettings(name: 'search'),
+                              builder: (context) => Search(mode: mode, repository: widget.repository))
+                          : SlideRightRoute(
+                              widget: Search(mode: mode, repository: widget.repository),
+                              settings: const RouteSettings(name: 'search'),
+                            ),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.featured_play_list_outlined,
+                    semanticLabel: L.of(context)!.open_up_next_hint,
+                  ),
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        fullscreenDialog: false,
+                        settings: const RouteSettings(name: 'queue'),
+                        builder: (context) => const UpNextPage(),
+                      ),
+                    );
+                  },
+                ),
+                // Overflow menu removed — items moved to My page
+              ],
+            ),
+          ),
+          page,
+        ],
+      ),
+      ),
+    );
   }
 
   SearchMode _getSearchMode(int? pageIndex) {
     switch (pageIndex) {
       case 0:
-        return SearchMode.timeline;
+        return SearchMode.home;
       case 1:
-        return SearchMode.library;
-      case 2:
         return SearchMode.discovery;
-      case 3:
-        return SearchMode.downloads;
-      case 4:
-        return SearchMode.bookmarks;
+      case 2:
+        return SearchMode.my;
       default:
         return SearchMode.discovery;
     }
@@ -723,191 +654,14 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
       case 0:
         return L.of(context)!.search_episodes_tooltip;
       case 1:
-        return L.of(context)!.search_podcasts_tooltip;
-      case 2:
         return L.of(context)!.search_for_podcasts_hint;
-      case 3:
-        return L.of(context)!.search_downloads_tooltip;
-      case 4:
+      case 2:
         return L.of(context)!.search_bookmarks_tooltip;
       default:
         return L.of(context)!.search_for_podcasts_hint;
     }
   }
 
-  void _menuSelect(String choice) async {
-    var textFieldController = TextEditingController();
-    var podcastBloc = Provider.of<PodcastBloc>(context, listen: false);
-    final theme = Theme.of(context);
-    var url = '';
-
-    switch (choice) {
-      case 'about':
-        showAboutDialog(
-            context: context,
-            applicationName: 'Anytime Podcast Player',
-            applicationVersion: 'v${Environment.projectVersion}',
-            applicationIcon: Image.asset(
-              'assets/images/anytime-logo-s.png',
-              width: 52.0,
-              height: 52.0,
-            ),
-            children: <Widget>[
-              const Text('\u00a9 2020 Ben Hills'),
-              GestureDetector(
-                onTap: () {
-                  _launchEmail();
-                },
-                child: Text(
-                  'hello@anytimeplayer.app',
-                  style: TextStyle(
-                    decoration: TextDecoration.underline,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              ),
-            ]);
-        break;
-      case 'settings':
-        await Navigator.push(
-          context,
-          MaterialPageRoute<void>(
-            fullscreenDialog: true,
-            settings: const RouteSettings(name: 'settings'),
-            builder: (context) => const Settings(),
-          ),
-        );
-        break;
-      case 'feedback':
-        _launchFeedback();
-        break;
-      case 'layout':
-        await showModalBottomSheet<void>(
-          context: context,
-          backgroundColor: theme.secondaryHeaderColor,
-          barrierLabel: L.of(context)!.scrim_layout_selector,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(16.0),
-              topRight: Radius.circular(16.0),
-            ),
-          ),
-          builder: (context) => const LayoutSelectorWidget(),
-        );
-        break;
-      case 'rss':
-        await showPlatformDialog<void>(
-          context: context,
-          useRootNavigator: false,
-          builder: (_) => BasicDialogAlert(
-            title: Text(L.of(context)!.add_rss_feed_option),
-            content: Material(
-              color: Colors.transparent,
-              child: TextField(
-                onChanged: (value) {
-                  setState(() {
-                    url = value;
-                  });
-                },
-                controller: textFieldController,
-                decoration: const InputDecoration(hintText: 'https://'),
-              ),
-            ),
-            actions: <Widget>[
-              BasicDialogAction(
-                title: ActionText(
-                  L.of(context)!.cancel_button_label,
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-              ),
-              BasicDialogAction(
-                title: ActionText(
-                  L.of(context)!.ok_button_label,
-                ),
-                iosIsDefaultAction: true,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                        settings: const RouteSettings(name: 'podcastdetails'),
-                        builder: (context) => PodcastDetails(Podcast.fromUrl(url: url), podcastBloc)),
-                  ).then((value) {
-                    if (mounted) {
-                      Navigator.of(context).pop();
-                    }
-                  });
-                },
-              ),
-            ],
-          ),
-        );
-        break;
-      case 'library':
-        _updateLibrary();
-        break;
-    }
-  }
-
-  void _updateLibrary() async {
-    var podcastBloc = Provider.of<PodcastBloc>(context, listen: false);
-
-    podcastBloc.podcastEvent(PodcastEvent.refreshSubscriptions);
-  }
-
-  void _launchFeedback() async {
-    final uri = Uri.parse(feedbackUrl);
-
-    if (!await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    )) {
-      throw Exception('Could not launch $uri');
-    }
-  }
-
-  void _launchEmail() async {
-    final uri = Uri.parse('mailto:hello@anytimeplayer.app');
-
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      throw 'Could not launch $uri';
-    }
-  }
 }
 
-class TitleWidget extends StatelessWidget {
-  const TitleWidget({
-    super.key,
-  });
 
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    final titleStyle = textTheme.bodyMedium!.copyWith(
-      fontWeight: FontWeight.bold,
-      fontFamily: 'MontserratRegular',
-      fontSize: 18,
-    );
-
-    return Padding(
-      padding: const EdgeInsets.only(left: 2.0),
-      child: Row(
-        children: <Widget>[
-          Text(
-            'Anytime ',
-            style: titleStyle.copyWith(color: colorScheme.primary),
-          ),
-          Text(
-            'Player',
-            style: titleStyle.copyWith(color: colorScheme.onSurface),
-          ),
-        ],
-      ),
-    );
-  }
-}

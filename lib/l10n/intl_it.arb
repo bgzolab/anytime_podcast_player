@@ -1271,5 +1271,17 @@
     "type": "text",
     "placeholders": {}
   },
-  "@@locale": "it"
+  "@@locale": "it",
+  "home": "Home",
+  "@home": {
+    "description": "Home tab label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "my_tab": "My",
+  "@my_tab": {
+    "description": "My tab label",
+    "type": "text",
+    "placeholders": {}
+  }
 }

@@ -68,7 +68,8 @@ class AppSettings {
   /// True if showing a status icon in the notification bar during fetch is enabled
   final bool updatesNotification;
 
-  /// The default tab shown on app start (0=Timeline, 1=Library, 2=Discover, 3=Downloads).
+  /// The default tab shown on app start (0=Home, 1=Discover, 2=My).
+  /// Auto-clamped to 0-2 range for backward compatibility with old 5-tab settings.
   final int defaultTab;
 
   /// If true, the headphone "previous track" button creates a bookmark
@@ -97,9 +98,9 @@ class AppSettings {
     required this.backgroundUpdate,
     required this.backgroundUpdateMobileData,
     required this.updatesNotification,
-    required this.defaultTab,
+    required int defaultTab,
     required this.bookmarkOnSkipPrevious,
-  });
+  }) : defaultTab = defaultTab.clamp(0, 2);
 
   AppSettings.sensibleDefaults()
       : theme = 'dark',

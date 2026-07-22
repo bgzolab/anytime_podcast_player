@@ -36,6 +36,18 @@
     "type": "text",
     "placeholders": {}
   },
+  "home": "Home",
+  "@home": {
+    "description": "Home tab label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "my_tab": "My",
+  "@my_tab": {
+    "description": "My tab label",
+    "type": "text",
+    "placeholders": {}
+  },
   "no_episodes_message": "No episodes yet",
   "@no_episodes_message": {
     "description": "Displayed when the timeline has no episodes",
@@ -80,7 +92,31 @@
   },
   "unsubscribe_message": "Unfollowing will delete all downloaded episodes of this podcast.",
   "@unsubscribe_message": {
-    "description": "Displayed when the user unsubscribes from a podcast.",
+    "description": "Displayed when the user unfollows a podcast.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "undo_label": "Undo",
+  "@undo_label": {
+    "description": "Undo action label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "see_all": "See All",
+  "@see_all": {
+    "description": "See all podcasts label in recent podcasts strip",
+    "type": "text",
+    "placeholders": {}
+  },
+  "episode_hidden": "Episode hidden",
+  "@episode_hidden": {
+    "description": "Snackbar message when an episode is swiped to ignore",
+    "type": "text",
+    "placeholders": {}
+  },
+  "coming_soon": "Coming Soon",
+  "@coming_soon": {
+    "description": "Placeholder label for future features",
     "type": "text",
     "placeholders": {}
   },

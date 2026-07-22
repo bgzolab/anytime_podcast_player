@@ -306,18 +306,26 @@ class PodcastBloc extends Bloc {
 
       if (episode != null) {
         episode.downloadState = e.downloadState = DownloadState.queued;
-
         _refresh();
+      } else {
+        // Episode may not be in _episodes (e.g. when downloading from
+        // timeline). Set state on the passed-in object for UI feedback.
+        e.downloadState = DownloadState.queued;
+      }
 
-        var result = await downloadService.downloadEpisode(e);
+      var result = await downloadService.downloadEpisode(e);
 
-        // If there was an error downloading the episode, push an error state
-        // and then restore to none.
-        if (!result) {
+      // If there was an error downloading the episode, push an error state
+      // and then restore to none.
+      if (!result) {
+        if (episode != null) {
           episode.downloadState = e.downloadState = DownloadState.failed;
           _refresh();
           episode.downloadState = e.downloadState = DownloadState.none;
           _refresh();
+        } else {
+          e.downloadState = DownloadState.failed;
+          e.downloadState = DownloadState.none;
         }
       }
     });

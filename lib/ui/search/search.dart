@@ -143,7 +143,7 @@ class _SearchState extends State<Search> {
   }
 
   void _onSubmitted(String value) {
-    SemanticsService.announce(L.of(context)!.semantic_announce_searching, TextDirection.ltr);
+    SemanticsService.sendAnnouncement(View.of(context), L.of(context)!.semantic_announce_searching, TextDirection.ltr);
 
     if (_mode == SearchMode.discovery) {
       final bloc = Provider.of<SearchBloc>(context, listen: false);

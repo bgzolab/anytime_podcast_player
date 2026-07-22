@@ -147,19 +147,19 @@ class _MyPageState extends State<MyPage> {
                 height: 52.0,
               ),
               children: [
-                Text('\u00a9 2020 Ben Hills'),
+                const Text('\u00a9 2020 Ben Hills'),
               ],
             );
           },
         ),
         const Divider(indent: 16, endIndent: 16),
         _buildSectionHeader(context, 'More'),
-        _MenuTile(
+        const _MenuTile(
           icon: Icons.bar_chart_outlined,
           title: 'Listening Stats',
           enabled: false,
         ),
-        _MenuTile(
+        const _MenuTile(
           icon: Icons.tune_outlined,
           title: 'Customize',
           enabled: false,

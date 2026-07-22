@@ -68,9 +68,9 @@ class _LibraryPageState extends State<LibraryPage> {
           ),
         ],
       ),
-      body: CustomScrollView(
+      body: const CustomScrollView(
         slivers: [
-          const Library(),
+          Library(),
         ],
       ),
     );

@@ -48,141 +48,92 @@ class _EpisodeRefreshWidgetState extends State<EpisodeRefreshWidget> {
                           scrollable: true,
                           content: StatefulBuilder(
                             builder: (BuildContext context, StateSetter setState) {
-                              return Column(children: <Widget>[
-                                RadioListTile<int>(
-                                  title: Text(
-                                    L.of(context)!.settings_auto_update_episodes_never,
-                                    style: Theme.of(context).textTheme.titleMedium,
-                                  ),
-                                  dense: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-                                  value: -1,
-                                  groupValue: snapshot.data!.autoUpdateEpisodePeriod,
-                                  onChanged: (int? value) {
-                                    setState(() {
-                                      settingsBloc.autoUpdatePeriod(value ?? -1);
-
-                                      Navigator.pop(context);
-                                    });
-                                  },
-                                ),
-                                RadioListTile<int>(
-                                  title: Text(
-                                    L.of(context)!.settings_auto_update_episodes_1hour,
-                                    style: Theme.of(context).textTheme.titleMedium,
-                                  ),
-                                  dense: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-                                  value: 60,
-                                  groupValue: snapshot.data!.autoUpdateEpisodePeriod,
-                                  onChanged: (int? value) {
-                                    setState(() {
-                                      settingsBloc.autoUpdatePeriod(value ?? 60);
-
-                                      Navigator.pop(context);
-                                    });
-                                  },
-                                ),
-                                RadioListTile<int>(
-                                  title: Text(
-                                    L.of(context)!.settings_auto_update_episodes_3hour,
-                                    style: Theme.of(context).textTheme.titleMedium,
-                                  ),
-                                  dense: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-                                  value: 180,
-                                  groupValue: snapshot.data!.autoUpdateEpisodePeriod,
-                                  onChanged: (int? value) {
-                                    setState(() {
-                                      settingsBloc.autoUpdatePeriod(value ?? 180);
-
-                                      Navigator.pop(context);
-                                    });
-                                  },
-                                ),
-                                RadioListTile<int>(
-                                  title: Text(
-                                    L.of(context)!.settings_auto_update_episodes_6hour,
-                                    style: Theme.of(context).textTheme.titleMedium,
-                                  ),
-                                  dense: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-                                  value: 360,
-                                  groupValue: snapshot.data!.autoUpdateEpisodePeriod,
-                                  onChanged: (int? value) {
-                                    setState(() {
-                                      settingsBloc.autoUpdatePeriod(value ?? 360);
-
-                                      Navigator.pop(context);
-                                    });
-                                  },
-                                ),
-                                RadioListTile<int>(
-                                  title: Text(
-                                    L.of(context)!.settings_auto_update_episodes_12hour,
-                                    style: Theme.of(context).textTheme.titleMedium,
-                                  ),
-                                  dense: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-                                  value: 720,
-                                  groupValue: snapshot.data!.autoUpdateEpisodePeriod,
-                                  onChanged: (int? value) {
-                                    setState(() {
-                                      settingsBloc.autoUpdatePeriod(value ?? 720);
-
-                                      Navigator.pop(context);
-                                    });
-                                  },
-                                ),
-                                RadioListTile<int>(
-                                  title: Text(
-                                    L.of(context)!.settings_auto_update_episodes_24hour,
-                                    style: Theme.of(context).textTheme.titleMedium,
-                                  ),
-                                  dense: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-                                  value: 1440,
-                                  groupValue: snapshot.data!.autoUpdateEpisodePeriod,
-                                  onChanged: (int? value) {
-                                    setState(() {
-                                      settingsBloc.autoUpdatePeriod(value ?? 1440);
-
-                                      Navigator.pop(context);
-                                    });
-                                  },
-                                ),
-                                RadioListTile<int>(
-                                  title: Text(
-                                    L.of(context)!.settings_auto_update_episodes_48hour,
-                                    style: Theme.of(context).textTheme.titleMedium,
-                                  ),
-                                  dense: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-                                  value: 2880,
-                                  groupValue: snapshot.data!.autoUpdateEpisodePeriod,
-                                  onChanged: (int? value) {
-                                    setState(() {
-                                      settingsBloc.autoUpdatePeriod(value ?? 2880);
-
-                                      Navigator.pop(context);
-                                    });
-                                  },
-                                ),
-                                SimpleDialogOption(
-                                  padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
-                                  child: Align(
-                                    alignment: Alignment.centerRight,
-                                    child: TextButton(
-                                      child: ActionText(L.of(context)!.close_button_label),
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                    ),
-                                  ),
-                                )
-                              ]);
+                              return RadioGroup<int>(
+                            groupValue: snapshot.data!.autoUpdateEpisodePeriod,
+                            onChanged: (int? value) {
+                              settingsBloc.autoUpdatePeriod(value ?? -1);
+                              Navigator.pop(context);
                             },
-                          ));
+                            child: Column(children: <Widget>[
+                              RadioListTile<int>(
+                                title: Text(
+                                  L.of(context)!.settings_auto_update_episodes_never,
+                                  style: Theme.of(context).textTheme.titleMedium,
+                                ),
+                                dense: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
+                                value: -1,
+                              ),
+                              RadioListTile<int>(
+                                title: Text(
+                                  L.of(context)!.settings_auto_update_episodes_1hour,
+                                  style: Theme.of(context).textTheme.titleMedium,
+                                ),
+                                dense: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
+                                value: 60,
+                              ),
+                              RadioListTile<int>(
+                                title: Text(
+                                  L.of(context)!.settings_auto_update_episodes_3hour,
+                                  style: Theme.of(context).textTheme.titleMedium,
+                                ),
+                                dense: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
+                                value: 180,
+                              ),
+                              RadioListTile<int>(
+                                title: Text(
+                                  L.of(context)!.settings_auto_update_episodes_6hour,
+                                  style: Theme.of(context).textTheme.titleMedium,
+                                ),
+                                dense: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
+                                value: 360,
+                              ),
+                              RadioListTile<int>(
+                                title: Text(
+                                  L.of(context)!.settings_auto_update_episodes_12hour,
+                                  style: Theme.of(context).textTheme.titleMedium,
+                                ),
+                                dense: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
+                                value: 720,
+                              ),
+                              RadioListTile<int>(
+                                title: Text(
+                                  L.of(context)!.settings_auto_update_episodes_24hour,
+                                  style: Theme.of(context).textTheme.titleMedium,
+                                ),
+                                dense: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
+                                value: 1440,
+                              ),
+                              RadioListTile<int>(
+                                title: Text(
+                                  L.of(context)!.settings_auto_update_episodes_48hour,
+                                  style: Theme.of(context).textTheme.titleMedium,
+                                ),
+                                dense: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
+                                value: 2880,
+                              ),
+                              SimpleDialogOption(
+                                padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
+                                child: Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton(
+                                    child: ActionText(L.of(context)!.close_button_label),
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                ),
+                              )
+                              ]),
+                            );
+                          },
+                        ));
                     },
                   );
                 },

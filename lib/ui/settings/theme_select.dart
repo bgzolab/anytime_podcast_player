@@ -44,63 +44,46 @@ class _ThemeSelectWidgetState extends State<ThemeSelectWidget> {
                             ),
                             scrollable: true,
                             content: StatefulBuilder(builder: (BuildContext context, StateSetter setState) {
-                              return Column(children: <Widget>[
-                                RadioListTile<String>(
-                                    title: Text(L.of(context)!.settings_theme_value_auto),
-                                    dense: true,
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-                                    value: 'system',
-                                    groupValue: snapshot.data!.theme,
-                                    onChanged: (String? value) {
-                                      setState(() {
-                                        settingsBloc.theme(value ?? 'system');
-
-                                        Navigator.pop(context);
-                                      });
-                                    }),
-                                RadioListTile<String>(
-                                    title: Text(L.of(context)!.settings_theme_value_light),
-                                    dense: true,
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-                                    value: 'light',
-                                    groupValue: snapshot.data!.theme,
-                                    onChanged: (String? value) {
-                                      setState(() {
-                                        settingsBloc.theme(value ?? 'light');
-
-                                        Navigator.pop(context);
-                                      });
-                                    }),
-                                RadioListTile<String>(
-                                    title: Text(L.of(context)!.settings_theme_value_dark),
-                                    dense: true,
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-                                    value: 'dark',
-                                    groupValue: snapshot.data!.theme,
-                                    onChanged: (String? value) {
-                                      setState(() {
-                                        settingsBloc.theme(value ?? 'dark');
-
-                                        Navigator.pop(context);
-                                      });
-                                    }),
-                                SimpleDialogOption(
-                                  padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
-                                  // child: Text(L.of(context)!.close_button_label),
-                                  child: Align(
-                                    alignment: Alignment.centerRight,
-                                    child: TextButton(
-                                      child: ActionText(L.of(context)!.close_button_label),
-                                      onPressed: () {
-                                        Navigator.pop(context, '');
-                                      },
+                              return RadioGroup<String>(
+                                groupValue: snapshot.data!.theme,
+                                onChanged: (String? value) {
+                                  settingsBloc.theme(value ?? 'system');
+                                  Navigator.pop(context);
+                                },
+                                child: Column(children: <Widget>[
+                                  RadioListTile<String>(
+                                      title: Text(L.of(context)!.settings_theme_value_auto),
+                                      dense: true,
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
+                                      value: 'system'),
+                                  RadioListTile<String>(
+                                      title: Text(L.of(context)!.settings_theme_value_light),
+                                      dense: true,
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
+                                      value: 'light'),
+                                  RadioListTile<String>(
+                                      title: Text(L.of(context)!.settings_theme_value_dark),
+                                      dense: true,
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
+                                      value: 'dark'),
+                                  SimpleDialogOption(
+                                    padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
+                                    child: Align(
+                                      alignment: Alignment.centerRight,
+                                      child: TextButton(
+                                        child: ActionText(L.of(context)!.close_button_label),
+                                        onPressed: () {
+                                          Navigator.pop(context, '');
+                                        },
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ]);
-                            }),
-                          );
-                        });
+                                ]),
+                              );
+                            },
+                          ));
+                        },
+                      );
                   },
                 )
               ]);

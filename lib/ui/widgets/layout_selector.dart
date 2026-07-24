@@ -6,7 +6,6 @@ import 'package:anytime/bloc/settings/settings_bloc.dart';
 import 'package:anytime/entities/app_settings.dart';
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/ui/widgets/action_text.dart';
-import 'package:anytime/ui/widgets/slider_handle.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -71,7 +70,6 @@ class _LayoutSelectorWidgetState extends State<LayoutSelectorWidget> {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                const SliderHandle(),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(8.0, 24.0, 8.0, 0.0),
                   child: Row(

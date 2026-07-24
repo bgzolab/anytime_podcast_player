@@ -51,6 +51,7 @@ class _LibraryPageState extends State<LibraryPage> {
             onPressed: () {
               showModalBottomSheet<void>(
                 context: context,
+                showDragHandle: true,
                 shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(16.0),

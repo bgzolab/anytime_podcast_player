@@ -7,10 +7,8 @@ import 'package:anytime/bloc/settings/settings_bloc.dart';
 import 'package:anytime/core/extensions.dart';
 import 'package:anytime/entities/app_settings.dart';
 import 'package:anytime/l10n/L.dart';
-import 'package:anytime/ui/widgets/slider_handle.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 /// This widget allows the user to change the playback speed and toggle audio effects.
 ///
 /// The two audio effects, trim silence and volume boost, are currently Android only.

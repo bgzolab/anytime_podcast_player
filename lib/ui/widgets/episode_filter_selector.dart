@@ -6,7 +6,6 @@ import 'package:anytime/bloc/podcast/podcast_bloc.dart';
 import 'package:anytime/entities/podcast.dart';
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/state/bloc_state.dart';
-import 'package:anytime/ui/widgets/slider_handle.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -54,6 +53,7 @@ class _EpisodeFilterSelectorWidgetState extends State<EpisodeFilterSelectorWidge
                         ? () {
                             showModalBottomSheet<void>(
                                 isScrollControlled: true,
+                                showDragHandle: true,
                                 barrierLabel: L.of(context)!.scrim_episode_filter_selector,
                                 context: context,
                                 backgroundColor: theme.secondaryHeaderColor,
@@ -99,7 +99,6 @@ class _EpisodeFilterSliderState extends State<EpisodeFilterSlider> {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          const SliderHandle(),
           Padding(
             padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
             child: Semantics(

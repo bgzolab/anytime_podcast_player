@@ -7,7 +7,6 @@ import 'package:anytime/bloc/settings/settings_bloc.dart';
 import 'package:anytime/entities/app_settings.dart';
 import 'package:anytime/entities/sleep.dart';
 import 'package:anytime/l10n/L.dart';
-import 'package:anytime/ui/widgets/slider_handle.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

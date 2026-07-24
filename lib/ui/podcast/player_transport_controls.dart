@@ -15,12 +15,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
 
-/// Builds a transport control bar for bookmark, play and fast-forward.
-/// See [NowPlaying].
+/// Transport controls: Sleep | Like | Rewind10 | Play/Pause | Forward30 | Bookmark | Speed.
 class PlayerTransportControls extends StatefulWidget {
-  const PlayerTransportControls({
-    super.key,
-  });
+  const PlayerTransportControls({super.key});
 
   @override
   State<PlayerTransportControls> createState() => _PlayerTransportControlsState();
@@ -31,72 +28,63 @@ class _PlayerTransportControlsState extends State<PlayerTransportControls> {
   Widget build(BuildContext context) {
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: StreamBuilder<AudioState>(
-          stream: audioBloc.playingState,
-          initialData: AudioState.none,
-          builder: (context, snapshot) {
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              mainAxisSize: MainAxisSize.max,
-              children: <Widget>[
-                const SleepSelectorWidget(),
-                IconButton(
-                  onPressed: () {
-                    return snapshot.data == AudioState.buffering ? null : _rewind(audioBloc);
-                  },
-                  padding: const EdgeInsets.all(0.0),
-                  icon: Icon(
-                    semanticLabel: L.of(context)!.rewind_button_label,
-                    Icons.replay_10,
-                    size: 48.0,
-                  ),
-                ),
-                AnimatedPlayButton(audioState: snapshot.data!),
-                IconButton(
-                  onPressed: () {
-                    return snapshot.data == AudioState.buffering ? null : _fastforward(audioBloc);
-                  },
-                  padding: const EdgeInsets.all(0.0),
-                  icon: Icon(
-                    semanticLabel: L.of(context)!.fast_forward_button_label,
-                    Icons.forward_30,
-                    size: 48.0,
-                  ),
-                ),
-                BookmarkButton(audioState: snapshot.data!),
-                const SpeedSelectorWidget(),
-              ],
-            );
-          }),
+    return StreamBuilder<AudioState>(
+      stream: audioBloc.playingState,
+      initialData: AudioState.none,
+      builder: (context, snapshot) {
+        final state = snapshot.data ?? AudioState.none;
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            const SleepSelectorWidget(),
+            const _LikeButton(),
+            IconButton(
+              icon: const Icon(Icons.replay_10, size: 28),
+              tooltip: L.of(context)!.rewind_button_label,
+              onPressed: () => audioBloc.transitionState(TransitionState.rewind),
+            ),
+            AnimatedPlayButton(audioState: state),
+            IconButton(
+              icon: const Icon(Icons.forward_30, size: 28),
+              tooltip: L.of(context)!.fast_forward_button_label,
+              onPressed: () => audioBloc.transitionState(TransitionState.fastforward),
+            ),
+            const _BookmarkButton(),
+            const SpeedSelectorWidget(),
+          ],
+        );
+      },
     );
   }
-
-  void _rewind(AudioBloc audioBloc) {
-    audioBloc.transitionState(TransitionState.rewind);
-  }
-
-  void _fastforward(AudioBloc audioBloc) {
-    audioBloc.transitionState(TransitionState.fastforward);
-  }
 }
 
-/// A bookmark button that creates a bookmark at the current playback position.
-class BookmarkButton extends StatefulWidget {
-  final AudioState audioState;
-
-  const BookmarkButton({
-    super.key,
-    required this.audioState,
-  });
+/// Placeholder like/favorite button (no logic yet).
+class _LikeButton extends StatelessWidget {
+  const _LikeButton();
 
   @override
-  State<BookmarkButton> createState() => _BookmarkButtonState();
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.favorite_border, size: 28),
+      tooltip: 'Like',
+      onPressed: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Like — coming soon'), duration: Duration(seconds: 1)),
+        );
+      },
+    );
+  }
 }
 
-class _BookmarkButtonState extends State<BookmarkButton> with SingleTickerProviderStateMixin {
+/// Bookmark button that creates a bookmark at the current playback position.
+class _BookmarkButton extends StatefulWidget {
+  const _BookmarkButton();
+
+  @override
+  State<_BookmarkButton> createState() => _BookmarkButtonState();
+}
+
+class _BookmarkButtonState extends State<_BookmarkButton> with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   bool _justBookmarked = false;
 
@@ -119,23 +107,16 @@ class _BookmarkButtonState extends State<BookmarkButton> with SingleTickerProvid
   void _createBookmark() {
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
     final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
-
     final positionState = audioBloc.playPosition?.value;
     final episode = audioBloc.nowPlaying?.value;
-
     if (positionState == null || episode == null) return;
-
-    final positionMs = positionState.position.inMilliseconds;
 
     bookmarkBloc.event(BookmarkCreateEvent(
       episode: episode,
-      positionMs: positionMs,
+      positionMs: positionState.position.inMilliseconds,
     ));
-
-    // Play sound effect
     BookmarkSound.play();
 
-    // Show SnackBar feedback
     final timestamp = _formatDuration(positionState.position);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -144,15 +125,12 @@ class _BookmarkButtonState extends State<BookmarkButton> with SingleTickerProvid
       ),
     );
 
-    // Animate icon
     setState(() => _justBookmarked = true);
     _animController.forward().then((_) {
       Future.delayed(const Duration(milliseconds: 700), () {
         if (mounted) {
           _animController.reverse().then((_) {
-            if (mounted) {
-              setState(() => _justBookmarked = false);
-            }
+            if (mounted) setState(() => _justBookmarked = false);
           });
         }
       });
@@ -160,40 +138,25 @@ class _BookmarkButtonState extends State<BookmarkButton> with SingleTickerProvid
   }
 
   String _formatDuration(Duration duration) {
-    String twoDigits(int n) {
-      if (n >= 10) return '$n';
-      return '0$n';
-    }
-
-    var twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60).toInt());
-    var twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60).toInt());
-
-    return '$twoDigitMinutes:$twoDigitSeconds';
+    String twoDigits(int n) => n >= 10 ? '$n' : '0$n';
+    return '${twoDigits(duration.inMinutes)}:${twoDigits(duration.inSeconds.remainder(60))}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final isPlaying = widget.audioState == AudioState.playing || widget.audioState == AudioState.pausing;
-    final isBuffering = widget.audioState == AudioState.buffering;
-
+    final colorScheme = Theme.of(context).colorScheme;
     return Tooltip(
       message: L.of(context)!.bookmark_add_button_label,
       child: IconButton(
-        onPressed: isBuffering
-            ? null
-            : isPlaying
-                ? _createBookmark
-                : null,
-        padding: const EdgeInsets.all(0.0),
+        onPressed: _createBookmark,
         icon: ScaleTransition(
           scale: Tween<double>(begin: 1.0, end: 1.3).animate(
             CurvedAnimation(parent: _animController, curve: Curves.easeOutBack),
           ),
           child: Icon(
-            semanticLabel: L.of(context)!.bookmark_add_button_label,
             _justBookmarked ? Icons.bookmark : Icons.bookmark_add_outlined,
-            size: 36.0,
-            color: _justBookmarked ? Theme.of(context).colorScheme.primary : null,
+            size: 28,
+            color: _justBookmarked ? colorScheme.primary : null,
           ),
         ),
       ),
@@ -219,13 +182,8 @@ class AnimatedPlayButton extends StatefulWidget {
   State<AnimatedPlayButton> createState() => _AnimatedPlayButtonState();
 }
 
-void _onPlay(AudioBloc audioBloc) {
-  audioBloc.transitionState(TransitionState.play);
-}
-
-void _onPause(AudioBloc audioBloc) {
-  audioBloc.transitionState(TransitionState.pause);
-}
+void _onPlay(AudioBloc audioBloc) => audioBloc.transitionState(TransitionState.play);
+void _onPause(AudioBloc audioBloc) => audioBloc.transitionState(TransitionState.pause);
 
 class _AnimatedPlayButtonState extends State<AnimatedPlayButton> with SingleTickerProviderStateMixin {
   late AnimationController _playPauseController;
@@ -235,16 +193,9 @@ class _AnimatedPlayButtonState extends State<AnimatedPlayButton> with SingleTick
   @override
   void initState() {
     super.initState();
-
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
-
     _playPauseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
 
-    /// Seems a little hacky, but when we load the form we want the play/pause
-    /// button to be in the correct state. If we are building the first frame,
-    /// just set the animation controller to the correct state; for all other
-    /// frames we want to animate. Doing it this way prevents the play/pause
-    /// button from animating when the form is first loaded.
     _audioStateSubscription = audioBloc.playingState!.listen((event) {
       if (event == AudioState.playing || event == AudioState.buffering) {
         if (init) {
@@ -274,34 +225,24 @@ class _AnimatedPlayButtonState extends State<AnimatedPlayButton> with SingleTick
   @override
   Widget build(BuildContext context) {
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
-
     final playing = widget.audioState == AudioState.playing;
     final buffering = widget.audioState == AudioState.buffering;
-
     final colorScheme = Theme.of(context).colorScheme;
 
     return Stack(
-      alignment: AlignmentDirectional.center,
+      alignment: Alignment.center,
       children: [
         if (buffering)
-          SpinKitRing(
-            lineWidth: 4.0,
-            color: colorScheme.primary,
-            size: 84,
-          ),
-        if (!buffering)
-          const SizedBox(
-            height: 84,
-            width: 84,
-          ),
+          SpinKitRing(lineWidth: 4.0, color: colorScheme.primary, size: 64),
+        if (!buffering) const SizedBox(height: 64, width: 64),
         Tooltip(
           message: playing ? L.of(context)!.pause_button_label : L.of(context)!.play_button_label,
           child: TextButton(
             style: TextButton.styleFrom(
-              shape: CircleBorder(side: BorderSide(color: colorScheme.surface, width: 0.0)),
+              shape: CircleBorder(side: BorderSide(color: colorScheme.surface, width: 0)),
               backgroundColor: colorScheme.primary,
               foregroundColor: colorScheme.onPrimary,
-              padding: const EdgeInsets.all(6.0),
+              padding: const EdgeInsets.all(4),
             ),
             onPressed: () {
               if (playing) {
@@ -311,7 +252,7 @@ class _AnimatedPlayButtonState extends State<AnimatedPlayButton> with SingleTick
               }
             },
             child: AnimatedIcon(
-              size: 60.0,
+              size: 44,
               semanticLabel: playing ? L.of(context)!.pause_button_label : L.of(context)!.play_button_label,
               icon: AnimatedIcons.play_pause,
               color: colorScheme.onPrimary,

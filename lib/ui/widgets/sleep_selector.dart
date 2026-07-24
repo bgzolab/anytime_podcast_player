@@ -80,6 +80,7 @@ class _SleepSelectorWidgetState extends State<SleepSelectorWidget> {
                             showModalBottomSheet<void>(
                                 isScrollControlled: true,
                                 context: context,
+                                showDragHandle: true,
                                 backgroundColor: theme.secondaryHeaderColor,
                                 barrierLabel: L.of(context)!.scrim_sleep_timer_selector,
                                 shape: const RoundedRectangleBorder(
@@ -138,7 +139,6 @@ class _SleepSliderState extends State<SleepSlider> {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                const SliderHandle(),
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
                   child: Semantics(

@@ -88,7 +88,7 @@ class _NowPlayingState extends State<NowPlaying> with WidgetsBindingObserver {
   }
 }
 
-/// Main layout: AppBar with TabBar, tab content in middle, controls at bottom.
+/// Main layout: AppBar with TabBar, episode details, transport controls, options panel.
 class NowPlayingLayout extends StatefulWidget {
   final Episode episode;
   final WidgetBuilder? transportBuilder;
@@ -180,20 +180,25 @@ class _NowPlayingLayoutState extends State<NowPlayingLayout> with TickerProvider
         ),
         body: Column(
           children: [
-            Expanded(
-              child: EpisodeTabBarView(
-                controller: tabController,
-                episode: widget.episode,
-                chapters: widget.episode.hasChapters,
+              // 1 Episode details (artwork, chapters, show notes, bookmarks, transcript)
+              //   Uses Expanded so it takes all remaining space above controls + options.
+              Expanded(
+                child: EpisodeTabBarView(
+                  controller: tabController,
+                  episode: widget.episode,
+                  chapters: widget.episode.hasChapters,
+                ),
               ),
-            ),
-            SizedBox(
-              height: 124,
-              child: widget.transportBuilder != null
-                  ? widget.transportBuilder!(context)
-                  : const NowPlayingTransport(),
-            ),
-            const NowPlayingOptionsSelector(),
+              // 2 Transport controls: wavy progress bar + play/pause/skip/bookmark/buttons
+              SizedBox(
+                height: 124,
+                child: widget.transportBuilder != null
+                    ? widget.transportBuilder!(context)
+                    : const NowPlayingTransport(),
+              ),
+              // 3 Options panel: collapsible Up Next queue at the very bottom.
+              //   Tap the handle or drag up/down to expand/collapse.
+              const NowPlayingOptionsSelector(),
           ],
         ),
       ),
@@ -231,20 +236,28 @@ class _EpisodeTabBarState extends State<EpisodeTabBar> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    const double colimnWidth = 75;
     return TabBar(
       controller: widget.controller,
       isScrollable: true,
-      indicatorSize: TabBarIndicatorSize.label,
-      indicatorColor: theme.colorScheme.primary,
-      labelColor: theme.colorScheme.primary,
-      unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+      labelStyle: theme.textTheme.titleSmall,
+      unselectedLabelStyle: theme.textTheme.titleSmall,
+      dividerColor: Colors.transparent,
+      indicator: BoxDecoration(
+        color: colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      indicatorColor: colorScheme.primary,
+      labelColor: colorScheme.onPrimaryContainer,
+      unselectedLabelColor: colorScheme.onSurfaceVariant,
       tabs: [
         if (widget.chapters)
-          Tab(child: Align(alignment: Alignment.center, child: Text(L.of(context)!.chapters_label))),
-        Tab(child: Align(alignment: Alignment.center, child: Text(L.of(context)!.episode_label))),
-        Tab(child: Align(alignment: Alignment.center, child: Text(L.of(context)!.show_notes_label))),
-        Tab(child: Align(alignment: Alignment.center, child: Text(L.of(context)!.bookmarks_label))),
-        Tab(child: Align(alignment: Alignment.center, child: Text(L.of(context)!.transcript_label))),
+          Tab(child: SizedBox(width: colimnWidth, child: Align(alignment: Alignment.center, child: Text(L.of(context)!.chapters_label)))),
+        Tab(child: SizedBox(width: colimnWidth, child: Align(alignment: Alignment.center, child: Text(L.of(context)!.episode_label)))),
+        Tab(child: SizedBox(width: colimnWidth, child: Align(alignment: Alignment.center, child: Text(L.of(context)!.show_notes_label)))),
+        Tab(child: SizedBox(width: colimnWidth, child: Align(alignment: Alignment.center, child: Text(L.of(context)!.bookmarks_label)))),
+        Tab(child: SizedBox(width: colimnWidth, child: Align(alignment: Alignment.center, child: Text(L.of(context)!.transcript_label)))),
       ],
     );
   }

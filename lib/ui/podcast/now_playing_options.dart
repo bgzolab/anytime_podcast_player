@@ -64,25 +64,6 @@ class _NowPlayingOptionsSelectorState extends State<NowPlayingOptionsSelector> {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      L.of(context)!.up_next_queue_label.toUpperCase(),
-                      style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.primary),
-                    ),
-                  ),
-                  AnimatedRotation(
-                    turns: _expanded ? 0.5 : 0.0,
-                    duration: const Duration(milliseconds: 300),
-                    child: Icon(Icons.expand_less,
-                        size: 20, color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                ],
-              ),
-            ),
             if (_expanded)
               const Expanded(
                 child: UpNextView(),

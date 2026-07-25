@@ -1,18 +1,11 @@
-## Anytime Podcast Player
+## A Fork of Anytime Podcast Player 
 
-This is the official repository for Anytime Podcast Player - the simple and easy to use Podcast
-playing
-app for Android & iOS, built with Dart & Flutter.
-***
-Latest build status
+This is a fork of Anytime Podcast Player, with several enhanced features.
 
-[![Codemagic build status](https://api.codemagic.io/apps/5ee1c043c2d4735b25c146a5/5ee1c043c2d4735b25c146a4/status_badge.svg)](https://codemagic.io/apps/5ee1c043c2d4735b25c146a5/5ee1c043c2d4735b25c146a4/latest_build)
-***
-
-![screenshot1.png](docs/screenshot1b.png)&nbsp;
-![screenshot2.png](docs/screenshot2b.png)&nbsp;
-![screenshot3.png](docs/screenshot3b.png)&nbsp;
-![screenshot3.png](docs/screenshot4b.png)&nbsp;
+![](https://pub-89c11651a8434f18a530bd6f93e399da.r2.dev/2026/20260726012805928.webp)&nbsp;
+![](https://pub-89c11651a8434f18a530bd6f93e399da.r2.dev/2026/20260726012805880.webp)&nbsp;
+![](https://pub-89c11651a8434f18a530bd6f93e399da.r2.dev/2026/20260726012805841.webp)&nbsp;
+![](https://pub-89c11651a8434f18a530bd6f93e399da.r2.dev/2026/20260726012805905.webp)&nbsp;
 
 ## Getting Started
 

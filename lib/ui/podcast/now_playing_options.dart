@@ -44,9 +44,6 @@ class _NowPlayingOptionsSelectorState extends State<NowPlayingOptionsSelector> {
         width: double.infinity,
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceContainerLow,
-          border: Border(
-            top: BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
-          ),
         ),
         clipBehavior: Clip.hardEdge,
         child: Column(
@@ -117,7 +114,6 @@ class _NowPlayingOptionsSelectorWideState extends State<NowPlayingOptionsSelecto
               ),
             ),
           ),
-          const Divider(height: 1),
           const Expanded(child: UpNextView()),
         ],
       ),

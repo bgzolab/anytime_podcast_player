@@ -96,6 +96,55 @@ description: 给后续 LLM 提供「可执行、可验证、可迭代」的上�
 - `lib/ui/anytime_podcast_app.dart` — 搜索按钮根据标签页传递 SearchMode
 - `lib/repository/sqlite/sqlite_repository.dart` — 搜索方法实现（SQL LIKE 查询）
 
+### PodcastBloc subscriptions `PublishSubject` → `BehaviorSubject`（2026-07-24）
+
+**问题：** `_openPodcastDetails()` 中 `await podcastBloc.subscriptions.first` 卡死。
+
+**原因：** `PublishSubject` 不缓存旧值。UI 其他 Widget 在初始化时已消费了 subscriptions stream，数据 emit 完后 `.first` 再订阅永远等不到新事件。
+
+**修复：** `late BehaviorSubject<List<Podcast>> _subscriptions`。`BehaviorSubject` 保留最后一个值，任何时候 `.first` 都能立即拿到缓存数据。
+
+### NowPlaying 布局重构（2026-07-24）
+
+**动机：** TabBarView + 传输控件 + 选项面板三层布局重叠/溢出问题，DraggableScrollableSheet 定位失控。
+
+**现布局（`now_playing.dart`）：** 简单 Column，无 Stack 嵌套：
+```
+Column[
+  Expanded(TabBarView)
+  SizedBox(height: 124, NowPlayingTransport)
+  AnimatedContainer(height: 48↔340, NowPlayingOptionsSelector)
+]
+```
+
+**Options 面板（`now_playing_options.dart`）：** 弃用 DraggableScrollableSheet，改用：
+- AnimatedContainer + _expanded bool — tap/velocity 拖拽切换展开/收起
+- 折叠 48px（仅拖拽手柄），展开 340px
+- clipBehavior: Clip.hardEdge 防止动画溢出
+- 条件渲染 UpNextView（if (_expanded)），不渲染时无布局溢出
+- 移除 "UP NEXT" 标题 + 箭头
+
+**传输控件（`player_transport_controls.dart`）：**
+- 移除 SingleChildScrollView + Padding(horizontal)
+- Row(spaceEvenly) — 7 按钮均分屏幕宽度
+- AnimatedPlayButton 缩小到 64px，iconSize 44
+
+**TabBar 样式（`now_playing.dart`）：**
+- isScrollable: true + SizedBox(width:100) 固定标签宽度
+- pill 指示器：BoxDecoration(primaryContainer, borderRadius: 8)
+- dividerColor: Colors.transparent 去掉底部 1px 分割线
+- Padding(left: 32) 避免与返回箭头重叠
+
+**MiniPlayer（`mini_player.dart`）：**
+- 点击打开 NowPlaying：GestureDetector 增加 onTap
+- 节目名下方显示 episode.podcast（播客名）代替 episode.author（作者/嘉宾）
+
+### Settings 默认标签页选择器 M3 化（2026-07-24）
+
+**旧：** DropdownButton（M2 组件），4 个硬编码英文选项
+
+**新：** ListTile + showModalBottomSheet + RadioGroup（M3 风格），点击选项 → 弹窗选择
+
 ## 状态管理约定
 
 所有 BLoC 遵循统一的状态模式：
@@ -156,32 +205,25 @@ StreamBuilder<AudioState>(
 ```
 AnytimePodcastApp (StatefulWidget)
   └── MaterialApp
-       ├── ThemeData (light / dark)
-       └── AnytimeHomePage (底部导航)
-            ├── LibraryPage (Tab 0)
-            │    ├── PodcastGridView / PodcastListView (可切换布局)
-            │    ├── PodcastTile / PodcastGridTile
-            │    └── RefreshIndicator (下拉刷新)
+       ├── ThemeData (light / dark, DynamicColorBuilder 注入动态色)
+       └── AnytimeHomePage (底部导航 3 tab)
+            ├── HomePage (Tab 0)
+            │    ├── RecentPodcastsStrip (横向滚动)
+            │    ├── Timeline (按日期分组的剧集列表)
+            │    │    ├── 工具栏：刷新/排序/显示已播/日期筛选
+            │    │    ├── CompactEpisodeTile (播放/队列/已播/忽略/下载)
+            │    │    └── 无限滚动
+            │    └── FAB (滚动到顶/刷新/显示已播切换/日期筛选)
             ├── DiscoveryPage (Tab 1)
             │    └── 排行榜列表 → PodcastTile → PodcastPage
-            ├── DownloadsPage (Tab 2)
-            │    └── 已下载剧集列表
-            ├── Timeline (Tab 3)
-            │    ├── 按日期分组的剧集列表（Today / Yesterday / This Week / 完整日期）
-            │    ├── 工具栏：刷新按钮 + 排序切换（最新/最早）
-            │    ├── 无限滚动：滚到底自动加载更多
-            │    ├── 日期筛选：点击日期头 → showDatePicker → 只显示当天剧集
-            │    └── Empty/Loading/Error 状态
-            ├── BookmarksPage (Tab 4)
-            │    ├── SliverList 实现（嵌入父 CustomScrollView）
-            │    ├── 按播客→单集分组（播客标题行 → 单集行 → 书签行）
-            │    ├── 书签行：HH:MM:SS 时间点 + 备注 + 日期 + 播放按钮
-            │    ├── 左滑删除书签
-            │    └── Empty/Loading/Error 状态
+            ├── MyPage (Tab 2)
+            │    ├── DownloadsPage (搜索模式 .download)
+            │    └── BookmarksPageFull (搜索模式 .bookmarks)
             └── MiniPlayer (浮动底部条)
-                 ├── 播客封面缩略图 + 标题
+                 ├── 封面 58x58 + 节目标题 + 播客名
+                 ├── forward_30 按钮
                  ├── 播放/暂停按钮
-                 └── 进度条
+                 └── 垂直拖拽展开 / 点击打开 NowPlaying
 ```
 
 播客详情和播放器的流转：
@@ -195,15 +237,23 @@ PodcastPage (播客详情)
   ├── ChapterSelector (如有章节)
   └── ShowNotes (HTML 渲染)
   ↓ 点击剧集或 MiniPlayer
-NowPlayingPage (全屏播放器)
-  ├── 大封面 + 标题/播客名
-  ├── TransportControls (倒退/播放暂停/快进/书签/速度)
-  ├── SeekBar (进度条 + 时间显示)
-  ├── SpeedSelector (0.5x ~ 3.0x)
-  ├── SleepSelector (定时关闭)
-  ├── ChapterSelector
-  ├── TranscriptView
-  └── BookmarkView (当前单集书签列表)
+NowPlaying (全屏播放器，点 MiniPlayer 进入)
+  ├── AppBar: 返回箭头 + TabBar (pill 样式, 固定 100px/格, 可滚动)
+  │    ├── Tab: 章节(可选) / 单集 / 节目笔记 / 书签 / 文字记录
+  │    └── TabBarView 内容
+  │         ├── NowPlayingEpisode: 大封面(7:3) + 标题 + 播客名(可点击跳转)
+  │         ├── NowPlayingShowNotes: HTML 渲染
+  │         ├── BookmarkView: 当前单集书签列表
+  │         └── TranscriptView
+  ├── Transport (124px)
+  │    ├── PlayerPositionControls: 波浪进度条 + 时间 (CustomPaint wavy)
+  │    └── PlayerTransportControls: 7 按钮 Row(spaceEvenly)
+  │         Sleep → Like(占位) → Rewind10 → Play/Pause → Forward30 → Bookmark → Speed
+  └── NowPlayingOptionsSelector (底部, 展开 48↔340px)
+       ├── 拖拽手柄 (4px 横条)
+       └── UpNextView (展开时显示)
+            ├── "即将播放" 标签 + 清空按钮
+            └── ReorderableListView (可拖拽排序/滑动移除)
 ```
 
 ## 音频播放状态机

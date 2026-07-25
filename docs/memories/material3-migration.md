@@ -47,7 +47,7 @@ description: 2026-07-19 完成从 Material 2 到 Material 3 的全量迁移，�
 | Logo | `anytime_podcast_app.dart` | `TitleWidget` 从硬编码橙色改为 `colorScheme.primary` |
 | 迷你播放器 | `mini_player.dart` | 容器 `surfaceContainerLow`，进度条 2px 圆角，图片 8dp 圆角 |
 | 播放按钮 | `player_transport_controls.dart` | `Colors.orange`/`Colors.grey[800]` → `colorScheme.primary`/`onPrimary` |
-| 标签页 | `now_playing.dart` | `DotDecoration` → M3 默认下划线指示器，文字用 `textTheme.titleLarge` |
+| 标签页 | `now_playing.dart` | `DotDecoration` → pill 指示器（`BoxDecoration` + `primaryContainer`），无 divider，`isScrollable: true` + `SizedBox(width:100)` 固定宽度 |
 | 进度条 | `player_position_controls.dart` | `primaryColor` → `colorScheme.primary` |
 | 剧集卡片 | `episode_tile.dart` | `Opacity(0.5)` → `ColorFiltered` + 文字透明度 0.6，`ExpansionTile` 12dp 圆角 |
 | 缩略图 | `tile_image.dart` | `borderRadius` 4.0 → 8.0 |
@@ -64,15 +64,29 @@ description: 2026-07-19 完成从 Material 2 到 Material 3 的全量迁移，�
 
 ### 为什么不用 `ColorScheme.fromSeed()`？
 
-`fromSeed()` 需要硬编码种子颜色。我们选择不指定 `ColorScheme`，直接用 `ThemeData(useMaterial3: true)` 的默认色板，再通过 `DynamicColorBuilder` 合并系统动态颜色。这样：
+~~`fromSeed()` 需要硬编码种子颜色。我们选择不指定 `ColorScheme`，直接用 `ThemeData(useMaterial3: true)` 的默认色板，再通过 `DynamicColorBuilder` 合并系统动态颜色。这样：~~
 
-- Android 12+：自动使用壁纸派生的 Material You 颜色
-- 旧设备/iOS：使用 M3 默认紫色系
-- 所有组件颜色统一从同一个 `colorScheme` 派生
+**2026-07-24 更新：** 发现 `copyWith(colorScheme: ...)` 不更新 sub-theme 中已经拍平的颜色值（如 `AppBarTheme.backgroundColor` 在编译时已被求值为具体 `Color`），动态颜色实际上从未生效。
+
+**现方案（`themes.dart`）：**
+- `_buildTheme(ColorScheme colorScheme)` — 一个函数根据传入的 colorScheme 重新构建整个 ThemeData，sub-theme 颜色在调用时重新求值，不再拍平缓存
+- `Themes.lightTheme([ColorScheme?])` / `.darkTheme([ColorScheme?])` — 接受可选动态色参数
+- `DynamicColorBuilder` 在 `anytime_podcast_app.dart` 中拿到系统动态色后，调用 `Themes.lightTheme(dynamicScheme)` 或 `.darkTheme(dynamicScheme)` 构建完整主题
+- 不支持动态色的设备回退到 `Color(0xFF1976D2)` 种子色（蓝色），不再是 M3 默认紫色
+
+**效果：**
+- Android 12+：自动使用壁纸派生的 Material You 颜色（现在实际生效）
+- 旧设备/iOS：使用蓝色回退种子，不再偏紫
 
 ### 为什么添加 `dynamic_color` 依赖？
 
 仅设置 `useMaterial3: true` 不会自动获取系统动态颜色。`dynamic_color` 是 Flutter 官方推荐的 Material You 集成方式，轻量无侵入。原计划 CON-007 禁止新依赖，但动态取色是 M3 核心体验，属必要依赖。
+
+### 为什么 `copyWith(colorScheme: ...)` 不生效？
+
+`copyWith(colorScheme: newScheme)` 只替换了顶层 `colorScheme` 属性，但 sub-theme 里预先捕获的颜色值（如 `AppBarTheme.backgroundColor: colorScheme.surface`）在构建时已被求值为具体 `Color` 对象写入 `AppBarTheme`。换 `colorScheme` 不会回头去重跑 sub-theme 的构造函数。
+
+**修复：** 改为函数式构建 `_buildTheme(ColorScheme cs)`，每次调用时用入参 `cs` 重新构造所有 sub-theme，确保颜色值始终与当前 `colorScheme` 一致。
 
 ### 为什么保留 `primaryColor` 全局变量？
 

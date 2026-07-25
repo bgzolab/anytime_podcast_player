@@ -136,19 +136,21 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
     /// Listen to theme change events from settings.
     widget.settingsBloc!.settings.listen((event) {
       setState(() {
-        var newTheme = Themes.darkTheme().themeData;
+        var newTheme = Themes.darkTheme(null, event.useSystemFont).themeData;
 
         /// As we add new themes, we will move this selection into its own theme module.
         switch (event.theme) {
           case 'system':
             var brightness = SchedulerBinding.instance.platformDispatcher.platformBrightness;
-            newTheme = brightness == Brightness.dark ? Themes.darkTheme().themeData : Themes.lightTheme().themeData;
+            newTheme = brightness == Brightness.dark
+                ? Themes.darkTheme(null, event.useSystemFont).themeData
+                : Themes.lightTheme(null, event.useSystemFont).themeData;
             break;
           case 'light':
-            newTheme = Themes.lightTheme().themeData;
+            newTheme = Themes.lightTheme(null, event.useSystemFont).themeData;
             break;
           case 'dark':
-            newTheme = Themes.darkTheme().themeData;
+            newTheme = Themes.darkTheme(null, event.useSystemFont).themeData;
             break;
         }
 
@@ -247,8 +249,12 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
           final currentTheme = theme ?? Themes.darkTheme().themeData;
           final isDark = currentTheme.brightness == Brightness.dark;
           final dynamicScheme = isDark ? darkColorScheme : lightColorScheme;
+          final useSystemFont = widget.settingsBloc?.currentSettings.useSystemFont ?? false;
           final effectiveTheme = dynamicScheme != null
-              ? (isDark ? Themes.darkTheme(dynamicScheme) : Themes.lightTheme(dynamicScheme)).themeData
+              ? (isDark
+                      ? Themes.darkTheme(dynamicScheme, useSystemFont)
+                      : Themes.lightTheme(dynamicScheme, useSystemFont))
+                  .themeData
               : currentTheme;
 
           return MaterialApp(

@@ -38,6 +38,7 @@ class SettingsBloc extends Bloc {
   final BehaviorSubject<bool> _updateNotification = BehaviorSubject<bool>();
   final BehaviorSubject<int> _defaultTab = BehaviorSubject<int>();
   final BehaviorSubject<bool> _bookmarkOnSkipPrevious = BehaviorSubject<bool>();
+  final BehaviorSubject<bool> _useSystemFont = BehaviorSubject<bool>();
 
   var _currentSettings = AppSettings.sensibleDefaults();
 
@@ -81,6 +82,7 @@ class SettingsBloc extends Bloc {
       updatesNotification: settingsService.updateNotification,
       defaultTab: settingsService.defaultTab,
       bookmarkOnSkipPrevious: settingsService.bookmarkOnSkipPrevious,
+      useSystemFont: settingsService.useSystemFont,
     );
 
     _settings.add(_currentSettings);
@@ -219,6 +221,12 @@ class SettingsBloc extends Bloc {
       settingsService.bookmarkOnSkipPrevious = value;
     });
 
+    _useSystemFont.listen((bool value) {
+      _currentSettings = _currentSettings.copyWith(useSystemFont: value);
+      _settings.add(_currentSettings);
+      settingsService.useSystemFont = value;
+    });
+
     _updateNotification.listen((updateNotification) {
       _currentSettings = _currentSettings.copyWith(updatesNotification: updateNotification);
       _settings.add(_currentSettings);
@@ -286,6 +294,8 @@ class SettingsBloc extends Bloc {
 
   void Function(bool) get setBookmarkOnSkipPrevious => _bookmarkOnSkipPrevious.add;
 
+  void Function(bool) get setUseSystemFont => _useSystemFont.add;
+
   AppSettings get currentSettings => _settings.value;
 
   @override
@@ -310,6 +320,7 @@ class SettingsBloc extends Bloc {
     _updateNotification.close();
     _defaultTab.close();
     _bookmarkOnSkipPrevious.close();
+    _useSystemFont.close();
     _settings.close();
   }
 }

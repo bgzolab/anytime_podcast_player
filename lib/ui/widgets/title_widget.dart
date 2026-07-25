@@ -14,7 +14,6 @@ class TitleWidget extends StatelessWidget {
 
     final titleStyle = textTheme.bodyMedium!.copyWith(
       fontWeight: FontWeight.bold,
-      fontFamily: 'MontserratRegular',
       fontSize: 18,
     );
 

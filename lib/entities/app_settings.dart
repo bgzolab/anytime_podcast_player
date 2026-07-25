@@ -76,6 +76,10 @@ class AppSettings {
   /// instead of rewinding.
   final bool bookmarkOnSkipPrevious;
 
+  /// If true, the app uses the system default font instead of the bundled
+  /// Montserrat font.
+  final bool useSystemFont;
+
   AppSettings({
     required this.theme,
     required this.markDeletedEpisodesAsPlayed,
@@ -100,6 +104,7 @@ class AppSettings {
     required this.updatesNotification,
     required int defaultTab,
     required this.bookmarkOnSkipPrevious,
+    required this.useSystemFont,
   }) : defaultTab = defaultTab.clamp(0, 2);
 
   AppSettings.sensibleDefaults()
@@ -125,7 +130,8 @@ class AppSettings {
         backgroundUpdateMobileData = false,
         updatesNotification = false,
         defaultTab = 0,
-        bookmarkOnSkipPrevious = true;
+        bookmarkOnSkipPrevious = true,
+        useSystemFont = false;
 
   AppSettings copyWith({
     String? theme,
@@ -152,6 +158,7 @@ class AppSettings {
     bool? updatesNotification,
     int? defaultTab,
     bool? bookmarkOnSkipPrevious,
+    bool? useSystemFont,
   }) =>
       AppSettings(
         theme: theme ?? this.theme,
@@ -177,5 +184,6 @@ class AppSettings {
         updatesNotification: updatesNotification ?? this.updatesNotification,
         defaultTab: defaultTab ?? this.defaultTab,
         bookmarkOnSkipPrevious: bookmarkOnSkipPrevious ?? this.bookmarkOnSkipPrevious,
+        useSystemFont: useSystemFont ?? this.useSystemFont,
       );
 }

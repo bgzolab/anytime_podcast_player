@@ -7,13 +7,16 @@ import 'package:flutter/material.dart';
 /// Fallback seed when dynamic colors are unavailable.
 const _fallbackSeed = Colors.blue;
 
-ThemeData _buildLightTheme([ColorScheme? cs]) => _buildTheme(cs ?? ColorScheme.fromSeed(seedColor: _fallbackSeed, brightness: Brightness.light));
-ThemeData _buildDarkTheme([ColorScheme? cs]) => _buildTheme(cs ?? ColorScheme.fromSeed(seedColor: _fallbackSeed, brightness: Brightness.dark));
+ThemeData _buildLightTheme([ColorScheme? cs, bool useSystemFont = false]) =>
+    _buildTheme(cs ?? ColorScheme.fromSeed(seedColor: _fallbackSeed, brightness: Brightness.light), useSystemFont);
+ThemeData _buildDarkTheme([ColorScheme? cs, bool useSystemFont = false]) =>
+    _buildTheme(cs ?? ColorScheme.fromSeed(seedColor: _fallbackSeed, brightness: Brightness.dark), useSystemFont);
 
-ThemeData _buildTheme(ColorScheme colorScheme) {
+ThemeData _buildTheme(ColorScheme colorScheme, bool useSystemFont) {
   final isDark = colorScheme.brightness == Brightness.dark;
   final typography = Typography.material2021(platform: TargetPlatform.android);
-  final textTheme = (isDark ? typography.white : typography.black).apply(fontFamily: 'MontserratRegular');
+  final textTheme =
+      useSystemFont ? (isDark ? typography.white : typography.black) : (isDark ? typography.white : typography.black).apply(fontFamily: 'MontserratRegular');
 
   return ThemeData(
     useMaterial3: true,
@@ -94,16 +97,15 @@ ThemeData _buildTheme(ColorScheme colorScheme) {
   );
 }
 
-final ThemeData _lightTheme = _buildLightTheme();
-final ThemeData _darkTheme = _buildDarkTheme();
-
 class Themes {
   final ThemeData themeData;
 
   Themes({required this.themeData});
 
   /// Build with optional dynamic color scheme override.
-  factory Themes.lightTheme([ColorScheme? cs]) => Themes(themeData: cs != null ? _buildLightTheme(cs) : _lightTheme);
+  factory Themes.lightTheme([ColorScheme? cs, bool useSystemFont = false]) =>
+      Themes(themeData: cs != null ? _buildLightTheme(cs, useSystemFont) : _buildLightTheme(null, useSystemFont));
 
-  factory Themes.darkTheme([ColorScheme? cs]) => Themes(themeData: cs != null ? _buildDarkTheme(cs) : _darkTheme);
+  factory Themes.darkTheme([ColorScheme? cs, bool useSystemFont = false]) =>
+      Themes(themeData: cs != null ? _buildDarkTheme(cs, useSystemFont) : _buildDarkTheme(null, useSystemFont));
 }

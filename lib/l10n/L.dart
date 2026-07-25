@@ -209,6 +209,36 @@ class L {
         );
   }
 
+  String get settings_appearance_label {
+    return message('settings_appearance_label') ??
+        Intl.message(
+          'Appearance',
+          name: 'settings_appearance_label',
+          desc: 'Settings label for appearance page',
+          locale: localeName,
+        );
+  }
+
+  String get settings_use_system_font {
+    return message('settings_use_system_font') ??
+        Intl.message(
+          'Use system font',
+          name: 'settings_use_system_font',
+          desc: 'Setting to use system font instead of bundled font',
+          locale: localeName,
+        );
+  }
+
+  String get settings_use_system_font_subtitle {
+    return message('settings_use_system_font_subtitle') ??
+        Intl.message(
+          'Disable bundled Montserrat font and use the system default font',
+          name: 'settings_use_system_font_subtitle',
+          desc: 'Subtitle for system font setting',
+          locale: localeName,
+        );
+  }
+
   /// Podcasts
   String get subscribe_button_label {
     return message('subscribe_button_label') ??

@@ -80,5 +80,8 @@ class MockSettingsService extends SettingsService {
   bool bookmarkOnSkipPrevious = true;
 
   @override
+  bool useSystemFont = false;
+
+  @override
   Stream<String> get settingsListener => PublishSubject<String>().stream;
 }

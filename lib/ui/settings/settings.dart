@@ -11,10 +11,10 @@ import 'package:anytime/l10n/L.dart';
 import 'package:anytime/state/opml_state.dart';
 import 'package:anytime/ui/library/opml_export.dart';
 import 'package:anytime/ui/library/opml_import.dart';
+import 'package:anytime/ui/settings/appearance_settings.dart';
 import 'package:anytime/ui/settings/episode_refresh.dart';
 import 'package:anytime/ui/settings/search_provider.dart';
 import 'package:anytime/ui/settings/settings_section_label.dart';
-import 'package:anytime/ui/settings/theme_select.dart';
 import 'package:anytime/ui/widgets/action_text.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -59,24 +59,17 @@ class _SettingsState extends State<Settings> {
           return ListView(
             children: [
               SettingsDividerLabel(label: L.of(context)!.settings_personalisation_divider_label),
-              const ThemeSelectWidget(),
               MergeSemantics(
                 child: ListTile(
-                  title: Text(L.of(context)!.settings_default_tab_label),
-                  trailing: DropdownButton<int>(
-                    value: snapshot.data!.defaultTab,
-                    underline: const SizedBox(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => settingsBloc.setDefaultTab(value));
-                      }
-                    },
-                    items: [
-                      DropdownMenuItem(value: 0, child: Text(L.of(context)!.home)),
-                      DropdownMenuItem(value: 1, child: Text(L.of(context)!.discover)),
-                      DropdownMenuItem(value: 2, child: Text(L.of(context)!.my_tab)),
-                    ],
-                  ),
+                  title: Text(L.of(context)!.settings_appearance_label),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (context) => const AppearanceSettingsPage(),
+                      ),
+                    );
+                  },
                 ),
               ),
               SettingsDividerLabel(label: L.of(context)!.settings_episodes_divider_label),

@@ -306,6 +306,10 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage('Headphone previous button creates bookmark'),
         'settings_bookmark_on_skip_previous_subtitle':
             MessageLookupByLibrary.simpleMessage('When off, the headphone previous button rewinds instead'),
+        'settings_appearance_label': MessageLookupByLibrary.simpleMessage('Appearance'),
+        'settings_use_system_font': MessageLookupByLibrary.simpleMessage('Use system font'),
+        'settings_use_system_font_subtitle':
+            MessageLookupByLibrary.simpleMessage('Disable bundled Montserrat font and use the system default font'),
         'settings_continuous_play_option': MessageLookupByLibrary.simpleMessage('Continuous play'),
         'settings_continuous_play_subtitle': MessageLookupByLibrary.simpleMessage(
             'Automatically play the next episode in the podcast if the queue is empty'),

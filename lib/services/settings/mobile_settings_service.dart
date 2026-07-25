@@ -292,5 +292,14 @@ class MobileSettingsService extends SettingsService {
   }
 
   @override
+  bool get useSystemFont => _sharedPreferences.getBool('useSystemFont') ?? false;
+
+  @override
+  set useSystemFont(bool value) {
+    _sharedPreferences.setBool('useSystemFont', value);
+    settingsNotifier.sink.add('useSystemFont');
+  }
+
+  @override
   Stream<String> get settingsListener => settingsNotifier.stream;
 }

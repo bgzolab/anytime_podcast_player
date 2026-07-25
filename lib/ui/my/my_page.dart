@@ -65,6 +65,8 @@ class _MyPageState extends State<MyPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final tileShape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(12));
     final episodeBloc = Provider.of<EpisodeBloc>(context, listen: false);
     final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
 
@@ -72,97 +74,120 @@ class _MyPageState extends State<MyPage> {
       children: [
         _buildHeader(context),
         _buildSectionHeader(context, 'Library'),
-        _MenuTile(
-          icon: Icons.download_outlined,
-          title: L.of(context)!.downloads,
-          trailing: StreamBuilder<BlocState<List<Episode>>>(
-            stream: episodeBloc.downloads,
-            builder: (context, snapshot) {
-              final state = snapshot.data;
-              int count = 0;
-              if (state is BlocPopulatedState<List<Episode>>) {
-                count = state.results?.length ?? 0;
-              }
-              return Text('$count', style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.primary));
-            },
-          ),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (context) => DownloadsPage(repository: widget.repository),
+        Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          child: Column(
+            children: [
+              _MenuTile(
+                icon: Icons.download_outlined,
+                title: L.of(context)!.downloads,
+                shape: tileShape,
+                trailing: StreamBuilder<BlocState<List<Episode>>>(
+                  stream: episodeBloc.downloads,
+                  builder: (context, snapshot) {
+                    final state = snapshot.data;
+                    int count = 0;
+                    if (state is BlocPopulatedState<List<Episode>>) {
+                      count = state.results?.length ?? 0;
+                    }
+                    return Text('$count', style: theme.textTheme.labelLarge?.copyWith(color: colorScheme.primary));
+                  },
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (context) => DownloadsPage(repository: widget.repository),
+                    ),
+                  );
+                },
               ),
-            );
-          },
-        ),
-        _MenuTile(
-          icon: Icons.bookmark_outline,
-          title: L.of(context)!.bookmarks_label,
-          trailing: StreamBuilder<BlocState>(
-            stream: bookmarkBloc.state,
-            builder: (context, snapshot) {
-              final state = snapshot.data;
-              int count = 0;
-              if (state is BlocPopulatedState<List<Bookmark>>) {
-                count = state.results?.length ?? 0;
-              }
-              return Text('$count', style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.primary));
-            },
-          ),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (context) => BookmarksPageFull(repository: widget.repository),
+              _MenuTile(
+                icon: Icons.bookmark_outline,
+                title: L.of(context)!.bookmarks_label,
+                shape: tileShape,
+                trailing: StreamBuilder<BlocState>(
+                  stream: bookmarkBloc.state,
+                  builder: (context, snapshot) {
+                    final state = snapshot.data;
+                    int count = 0;
+                    if (state is BlocPopulatedState<List<Bookmark>>) {
+                      count = state.results?.length ?? 0;
+                    }
+                    return Text('$count', style: theme.textTheme.labelLarge?.copyWith(color: colorScheme.primary));
+                  },
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (context) => BookmarksPageFull(repository: widget.repository),
+                    ),
+                  );
+                },
               ),
-            );
-          },
+            ],
+          ),
         ),
-        const Divider(indent: 16, endIndent: 16),
         _buildSectionHeader(context, 'App'),
-        _MenuTile(
-          icon: Icons.settings_outlined,
-          title: L.of(context)!.settings_label,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                fullscreenDialog: true,
-                settings: const RouteSettings(name: 'settings'),
-                builder: (context) => const Settings(),
+        Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          child: Column(
+            children: [
+              _MenuTile(
+                icon: Icons.settings_outlined,
+                title: L.of(context)!.settings_label,
+                shape: tileShape,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      fullscreenDialog: true,
+                      settings: const RouteSettings(name: 'settings'),
+                      builder: (context) => const Settings(),
+                    ),
+                  );
+                },
               ),
-            );
-          },
-        ),
-        _MenuTile(
-          icon: Icons.info_outline,
-          title: L.of(context)!.about_label,
-          onTap: () {
-            showAboutDialog(
-              context: context,
-              applicationName: 'Anytime Podcast Player',
-              applicationIcon: Image.asset(
-                'assets/images/anytime-logo-s.png',
-                width: 52.0,
-                height: 52.0,
+              _MenuTile(
+                icon: Icons.info_outline,
+                title: L.of(context)!.about_label,
+                shape: tileShape,
+                onTap: () {
+                  showAboutDialog(
+                    context: context,
+                    applicationName: 'Anytime Podcast Player',
+                    applicationIcon: Image.asset(
+                      'assets/images/anytime-logo-s.png',
+                      width: 52.0,
+                      height: 52.0,
+                    ),
+                    children: [
+                      const Text('\u00a9 2020 Ben Hills'),
+                    ],
+                  );
+                },
               ),
-              children: [
-                const Text('\u00a9 2020 Ben Hills'),
-              ],
-            );
-          },
+            ],
+          ),
         ),
-        const Divider(indent: 16, endIndent: 16),
         _buildSectionHeader(context, 'More'),
-        const _MenuTile(
-          icon: Icons.bar_chart_outlined,
-          title: 'Listening Stats',
-          enabled: false,
-        ),
-        const _MenuTile(
-          icon: Icons.tune_outlined,
-          title: 'Customize',
-          enabled: false,
+        Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          child: Column(
+            children: [
+              const _MenuTile(
+                icon: Icons.bar_chart_outlined,
+                title: 'Listening Stats',
+                enabled: false,
+              ),
+              const _MenuTile(
+                icon: Icons.tune_outlined,
+                title: 'Customize',
+                enabled: false,
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 32),
       ],
@@ -176,6 +201,7 @@ class _MenuTile extends StatelessWidget {
   final Widget? trailing;
   final VoidCallback? onTap;
   final bool enabled;
+  final ShapeBorder? shape;
 
   const _MenuTile({
     required this.icon,
@@ -183,14 +209,16 @@ class _MenuTile extends StatelessWidget {
     this.trailing,
     this.onTap,
     this.enabled = true,
+    this.shape,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ListTile(
+      shape: shape,
       leading: Icon(icon, color: enabled
-          ? theme.colorScheme.onSurface
+          ? theme.colorScheme.onSurfaceVariant
           : theme.colorScheme.onSurface.withValues(alpha: 0.38)),
       title: Text(
         title,
@@ -205,6 +233,7 @@ class _MenuTile extends StatelessWidget {
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.38),
               ))),
       onTap: enabled ? onTap : null,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
     );
   }
 }

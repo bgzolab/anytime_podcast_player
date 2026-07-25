@@ -21,6 +21,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, bool useSystemFont) {
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
+    scaffoldBackgroundColor: colorScheme.surfaceDim, // 页面背景用 surfaceDim（比 surface 稍暗），和卡片拉开色差
     textTheme: textTheme,
     primaryTextTheme: textTheme,
     appBarTheme: AppBarTheme(
@@ -35,9 +36,10 @@ ThemeData _buildTheme(ColorScheme colorScheme, bool useSystemFont) {
       elevation: 0,
     ),
     cardTheme: CardThemeData(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      elevation: 0, // 阴影高度，0 为无阴影
+      color: colorScheme.surfaceContainerHighest, // 卡片背景色，和 scaffold 的 surface 有明显色差
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // 圆角矩形，12px 圆角
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), // 卡片外边距，左右各 16，上下各 4
     ),
     dialogTheme: DialogThemeData(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -78,7 +80,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, bool useSystemFont) {
     ),
     navigationBarTheme: NavigationBarThemeData(
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-      backgroundColor: colorScheme.surface,
+      backgroundColor: colorScheme.surfaceContainerHigh, // 导航栏背景，比页面 surfaceDim 稍亮，形成层次
       indicatorColor: colorScheme.secondaryContainer,
     ),
     navigationDrawerTheme: NavigationDrawerThemeData(

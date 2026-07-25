@@ -467,9 +467,9 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
   Widget build(BuildContext context) {
     final pager = Provider.of<PagerBloc>(context);
 
-    final isDark = theme.brightness == Brightness.dark;
-    final backgroundColour = theme.scaffoldBackgroundColor;
-    final navBarColor = theme.colorScheme.surface;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColour = Theme.of(context).scaffoldBackgroundColor;
+    final navBarColor = Theme.of(context).colorScheme.surface;
     final overlayStyle = SystemUiOverlayStyle(
       systemNavigationBarColor: navBarColor,
       systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,

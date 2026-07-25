@@ -154,8 +154,8 @@ class _WavyPainter extends CustomPainter {
     final h = size.height / 2;
     final w = size.width;
     final amp = animating ? 5.0 : 0.0;
-    final waveLen = 22.0;
-    final stroke = 3.0;
+    const waveLen = 22.0;
+    const stroke = 3.0;
 
     final bg = Paint()
       ..color = bgColor

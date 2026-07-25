@@ -265,36 +265,35 @@ class SleepSelectorEntry extends StatelessWidget {
 
         Navigator.pop(context);
       },
-      child: Padding(
-        padding: const EdgeInsets.only(
-          top: 4.0,
-          bottom: 4.0,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            if (sleep.type == SleepType.none)
-              Text(
-                L.of(context)!.sleep_off_label,
-                style: theme.textTheme.bodyLarge,
-              ),
-            if (sleep.type == SleepType.time)
-              Text(
-                L.of(context)!.sleep_minute_label(sleep.duration.inMinutes.toString()),
-                style: theme.textTheme.bodyLarge,
-              ),
-            if (sleep.type == SleepType.episode)
-              Text(
-                L.of(context)!.sleep_episode_label,
-                style: theme.textTheme.bodyLarge,
-              ),
-            if (sleep == current)
-              const Icon(
-                Icons.check,
-                size: 18.0,
-              ),
-          ],
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              if (sleep.type == SleepType.none)
+                Text(
+                  L.of(context)!.sleep_off_label,
+                  style: theme.textTheme.bodyLarge,
+                ),
+              if (sleep.type == SleepType.time)
+                Text(
+                  L.of(context)!.sleep_minute_label(sleep.duration.inMinutes.toString()),
+                  style: theme.textTheme.bodyLarge,
+                ),
+              if (sleep.type == SleepType.episode)
+                Text(
+                  L.of(context)!.sleep_episode_label,
+                  style: theme.textTheme.bodyLarge,
+                ),
+              if (sleep == current)
+                const Icon(
+                  Icons.check,
+                  size: 18.0,
+                ),
+            ],
+          ),
         ),
       ),
     );

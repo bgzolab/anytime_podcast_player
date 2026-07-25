@@ -182,28 +182,27 @@ class EpisodeFilterSelectorEntry extends StatelessWidget {
 
         Navigator.pop(context);
       },
-      child: Padding(
-        padding: const EdgeInsets.only(
-          top: 4.0,
-          bottom: 4.0,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            Semantics(
-              selected: filter == selectedFilter,
-              child: Text(
-                label,
-                style: Theme.of(context).textTheme.bodyLarge,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Semantics(
+                selected: filter == selectedFilter,
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
               ),
-            ),
-            if (filter == selectedFilter)
-              const Icon(
-                Icons.check,
-                size: 18.0,
-              ),
-          ],
+              if (filter == selectedFilter)
+                const Icon(
+                  Icons.check,
+                  size: 18.0,
+                ),
+            ],
+          ),
         ),
       ),
     );

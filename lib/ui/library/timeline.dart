@@ -193,18 +193,33 @@ class _TimelineState extends State<Timeline> {
               }
 
               final episode = episodes[itemIndex];
+              final isFirst = itemIndex == 0;
+              final isLast = itemIndex == episodes.length - 1;
               var queued = false;
 
               if (snapshot.hasData) {
                 queued = snapshot.data!.queue.any((element) => element.guid == episode.guid);
               }
 
-              return CompactEpisodeTile(
-                episode: episode,
-                download: true,
-                play: true,
-                queued: queued,
-                showPodcastName: true,
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: isFirst && isLast
+                      ? BorderRadius.circular(12)
+                      : BorderRadius.only(
+                          topLeft: isFirst ? const Radius.circular(12) : Radius.zero,
+                          topRight: isFirst ? const Radius.circular(12) : Radius.zero,
+                          bottomLeft: isLast ? const Radius.circular(12) : Radius.zero,
+                          bottomRight: isLast ? const Radius.circular(12) : Radius.zero,
+                        ),
+                ),
+                child: CompactEpisodeTile(
+                  episode: episode,
+                  download: true,
+                  play: true,
+                  queued: queued,
+                  showPodcastName: true,
+                ),
               );
             },
             childCount: (hasFilter ? 1 : 0) + episodes.length + (bloc.hasMore ? 1 : 0),

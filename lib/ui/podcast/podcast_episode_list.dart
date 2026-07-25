@@ -52,13 +52,15 @@ class PodcastEpisodeList extends StatelessWidget {
                   playing = playingGuid == episode.guid;
                 }
 
-                return CompactEpisodeTile(
-                  episode: episode,
-                  download: download,
-                  play: play,
-                  playing: playing,
-                  queued: queued,
-                  showPodcastName: false,
+                return Card(
+                  child: CompactEpisodeTile(
+                    episode: episode,
+                    download: download,
+                    play: play,
+                    playing: playing,
+                    queued: queued,
+                    showPodcastName: false,
+                  ),
                 );
               },
               itemCount: episodes!.length,
@@ -120,13 +122,15 @@ class AccessibleSliverList extends StatelessWidget {
 
     return accessibleNavigation
         ? SliverPrototypeExtentList.builder(
-            prototypeItem: CompactEpisodeTile(
-              episode: episode,
-              download: true,
-              play: true,
-              playing: false,
-              queued: false,
-              showPodcastName: false,
+            prototypeItem: Card(
+              child: CompactEpisodeTile(
+                episode: episode,
+                download: true,
+                play: true,
+                playing: false,
+                queued: false,
+                showPodcastName: false,
+              ),
             ),
             addAutomaticKeepAlives: false,
             itemBuilder: itemBuilder,

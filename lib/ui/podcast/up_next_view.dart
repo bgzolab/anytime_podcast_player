@@ -138,6 +138,7 @@ class UpNextView extends StatelessWidget {
                   : Expanded(
                       child: ReorderableListView.builder(
                         buildDefaultDragHandles: false,
+                        proxyDecorator: (child, index, animation) => child,
                         padding: const EdgeInsets.all(8),
                         itemCount: snapshot.hasData ? snapshot.data!.queue.length : 0,
                         itemBuilder: (BuildContext context, int index) {
@@ -147,11 +148,13 @@ class UpNextView extends StatelessWidget {
                             onDismissed: (direction) {
                               queueBloc.queueEvent(QueueRemoveEvent(episode: snapshot.data!.queue[index]));
                             },
-                            child: DraggableEpisodeTile(
-                              key: ValueKey('tilequeue${snapshot.data!.queue[index].guid}'),
-                              index: index,
-                              episode: snapshot.data!.queue[index],
-                              playable: true,
+                            child: Card(
+                              child: DraggableEpisodeTile(
+                                key: ValueKey('tilequeue${snapshot.data!.queue[index].guid}'),
+                                index: index,
+                                episode: snapshot.data!.queue[index],
+                                playable: true,
+                              ),
                             ),
                           );
                         },

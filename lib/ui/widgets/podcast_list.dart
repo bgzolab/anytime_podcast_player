@@ -39,7 +39,9 @@ class PodcastList extends StatelessWidget {
                     final i = results.items[index];
                     final p = Podcast.fromSearchResultItem(i);
 
-                    return PodcastTile(podcast: p);
+                    return Card(
+                      child: PodcastTile(podcast: p),
+                    );
                   },
                   childCount: results.items.length,
                   addAutomaticKeepAlives: false,

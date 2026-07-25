@@ -63,6 +63,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, bool useSystemFont) {
       color: colorScheme.surfaceContainerHighest, // 卡片背景色，和 scaffold 的 surface 有明显色差
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // 圆角矩形，12px 圆角
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), // 卡片外边距，左右各 16，上下各 4
+      clipBehavior: Clip.antiAlias, // 圆角裁剪，让 hover/ripple 不溢出
     ),
     dialogTheme: DialogThemeData(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

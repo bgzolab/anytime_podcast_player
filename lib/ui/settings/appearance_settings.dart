@@ -26,32 +26,36 @@ class AppearanceSettingsPage extends StatelessWidget {
           body: ListView(
             children: [
               SettingsDividerLabel(label: L.of(context)!.settings_personalisation_divider_label),
-              const ThemeSelectWidget(),
-              MergeSemantics(
-                child: ListTile(
-                  title: Text(L.of(context)!.settings_default_tab_label),
-                  subtitle: Text(_tabLabel(context, snapshot.data!.defaultTab)),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _showTabPicker(context, settingsBloc, snapshot.data!.defaultTab),
-                ),
-              ),
-              MergeSemantics(
-                child: ListTile(
-                  title: Text(L.of(context)!.settings_color_scheme),
-                  subtitle: Text(_colorSchemeLabel(context, settings.colorScheme)),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _showColorSchemePicker(context, settingsBloc, settings.colorScheme),
-                ),
-              ),
-              MergeSemantics(
-                child: ListTile(
-                  title: Text(L.of(context)!.settings_use_system_font),
-                  subtitle: Text(L.of(context)!.settings_use_system_font_subtitle),
-                  trailing: Switch.adaptive(
-                    value: settings.useSystemFont,
-                    onChanged: (value) => settingsBloc.setUseSystemFont(value),
+              Card(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const ThemeSelectWidget(),
+                  MergeSemantics(
+                    child: ListTile(
+                      title: Text(L.of(context)!.settings_default_tab_label),
+                      subtitle: Text(_tabLabel(context, snapshot.data!.defaultTab)),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _showTabPicker(context, settingsBloc, snapshot.data!.defaultTab),
+                    ),
                   ),
-                ),
+                  MergeSemantics(
+                    child: ListTile(
+                      title: Text(L.of(context)!.settings_color_scheme),
+                      subtitle: Text(_colorSchemeLabel(context, settings.colorScheme)),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _showColorSchemePicker(context, settingsBloc, settings.colorScheme),
+                    ),
+                  ),
+                  MergeSemantics(
+                    child: ListTile(
+                      title: Text(L.of(context)!.settings_use_system_font),
+                      subtitle: Text(L.of(context)!.settings_use_system_font_subtitle),
+                      trailing: Switch.adaptive(
+                        value: settings.useSystemFont,
+                        onChanged: (value) => settingsBloc.setUseSystemFont(value),
+                      ),
+                    ),
+                  ),
+                ]),
               ),
             ],
           ),

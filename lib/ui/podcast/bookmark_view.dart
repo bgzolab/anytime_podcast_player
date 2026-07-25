@@ -123,27 +123,29 @@ class _BookmarkViewState extends State<BookmarkView> {
             color: Colors.red,
             child: const Icon(Icons.delete, color: Colors.white),
           ),
-          child: ListTile(
-            leading: Icon(Icons.bookmark, color: Theme.of(context).colorScheme.primary),
-            title: Text(
-              _formatPosition(bookmark.positionMs),
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                fontFeatures: const [FontFeature.tabularFigures()],
+          child: Card(
+            child: ListTile(
+              leading: Icon(Icons.bookmark, color: Theme.of(context).colorScheme.primary),
+              title: Text(
+                _formatPosition(bookmark.positionMs),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
               ),
-            ),
-            subtitle: bookmark.note != null && bookmark.note!.isNotEmpty
-                ? Text(bookmark.note!, maxLines: 1, overflow: TextOverflow.ellipsis)
-                : null,
-            trailing: IconButton(
-              icon: const Icon(Icons.play_circle_outline),
-              onPressed: () {
+              subtitle: bookmark.note != null && bookmark.note!.isNotEmpty
+                  ? Text(bookmark.note!, maxLines: 1, overflow: TextOverflow.ellipsis)
+                  : null,
+              trailing: IconButton(
+                icon: const Icon(Icons.play_circle_outline),
+                onPressed: () {
+                  audioBloc.transitionPosition(bookmark.positionMs / 1000.0);
+                },
+              ),
+              onTap: () {
                 audioBloc.transitionPosition(bookmark.positionMs / 1000.0);
               },
             ),
-            onTap: () {
-              audioBloc.transitionPosition(bookmark.positionMs / 1000.0);
-            },
           ),
         );
       },

@@ -105,8 +105,7 @@ class _ChapterSelectorState extends State<ChapterSelector> {
                     /// we scroll the currently selected item out of view, the selected colour is
                     /// still visible behind the transport control. This is a little hack, but fixes
                     /// the issue until I can get ListTile to work correctly.
-                    return Padding(
-                      padding: const EdgeInsets.fromLTRB(4.0, 0.0, 4.0, 0.0),
+                    return Card(
                       child: ListTile(
                         selectedTileColor: theme.cardTheme.color,
                         onTap: () {

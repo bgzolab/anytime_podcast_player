@@ -59,40 +59,46 @@ class _SettingsState extends State<Settings> {
           return ListView(
             children: [
               SettingsDividerLabel(label: L.of(context)!.settings_personalisation_divider_label),
-              MergeSemantics(
-                child: ListTile(
-                  title: Text(L.of(context)!.settings_appearance_label),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (context) => const AppearanceSettingsPage(),
-                      ),
-                    );
-                  },
-                ),
+              Card(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  MergeSemantics(
+                    child: ListTile(
+                      title: Text(L.of(context)!.settings_appearance_label),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (context) => const AppearanceSettingsPage(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ]),
               ),
               SettingsDividerLabel(label: L.of(context)!.settings_episodes_divider_label),
-              MergeSemantics(
-                child: ListTile(
-                  title: Text(L.of(context)!.settings_mark_deleted_played_label),
-                  trailing: Switch.adaptive(
-                    value: snapshot.data!.markDeletedEpisodesAsPlayed,
-                    onChanged: (value) => setState(() => settingsBloc.markDeletedAsPlayed(value)),
+              Card(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  MergeSemantics(
+                    child: ListTile(
+                      title: Text(L.of(context)!.settings_mark_deleted_played_label),
+                      trailing: Switch.adaptive(
+                        value: snapshot.data!.markDeletedEpisodesAsPlayed,
+                        onChanged: (value) => setState(() => settingsBloc.markDeletedAsPlayed(value)),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              MergeSemantics(
-                child: ListTile(
-                    shape: const RoundedRectangleBorder(side: BorderSide.none),
-                    title: Text(L.of(context)!.settings_delete_played_label),
-                    trailing: Switch.adaptive(
-                      value: snapshot.data!.deleteDownloadedPlayedEpisodes,
-                      onChanged: (value) => setState(() => settingsBloc.deleteDownloadedPlayedEpisodes(value)),
-                    )),
-              ),
-              sdcard
-                  ? MergeSemantics(
+                  MergeSemantics(
+                    child: ListTile(
+                        shape: const RoundedRectangleBorder(side: BorderSide.none),
+                        title: Text(L.of(context)!.settings_delete_played_label),
+                        trailing: Switch.adaptive(
+                          value: snapshot.data!.deleteDownloadedPlayedEpisodes,
+                          onChanged: (value) => setState(() => settingsBloc.deleteDownloadedPlayedEpisodes(value)),
+                        )),
+                  ),
+                  if (sdcard)
+                    MergeSemantics(
                       child: ListTile(
                         title: Text(L.of(context)!.settings_download_sd_card_label),
                         trailing: Switch.adaptive(
@@ -110,129 +116,143 @@ class _SettingsState extends State<Settings> {
                               : null,
                         ),
                       ),
-                    )
-                  : const SizedBox(
-                      height: 0,
-                      width: 0,
                     ),
+                ]),
+              ),
               SettingsDividerLabel(label: L.of(context)!.settings_playback_divider_label),
-              MergeSemantics(
-                child: ListTile(
-                  title: Text(L.of(context)!.settings_auto_open_now_playing),
-                  trailing: Switch.adaptive(
-                    value: snapshot.data!.autoOpenNowPlaying,
-                    onChanged: (value) => setState(() => settingsBloc.setAutoOpenNowPlaying(value)),
+              Card(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  MergeSemantics(
+                    child: ListTile(
+                      title: Text(L.of(context)!.settings_auto_open_now_playing),
+                      trailing: Switch.adaptive(
+                        value: snapshot.data!.autoOpenNowPlaying,
+                        onChanged: (value) => setState(() => settingsBloc.setAutoOpenNowPlaying(value)),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              MergeSemantics(
-                child: ListTile(
-                  title: Text(L.of(context)!.settings_continuous_play_option),
-                  subtitle: Text(L.of(context)!.settings_continuous_play_subtitle),
-                  trailing: Switch.adaptive(
-                    value: snapshot.data!.autoPlay,
-                    onChanged: (value) => setState(() => settingsBloc.autoPlay(value)),
+                  MergeSemantics(
+                    child: ListTile(
+                      title: Text(L.of(context)!.settings_continuous_play_option),
+                      subtitle: Text(L.of(context)!.settings_continuous_play_subtitle),
+                      trailing: Switch.adaptive(
+                        value: snapshot.data!.autoPlay,
+                        onChanged: (value) => setState(() => settingsBloc.autoPlay(value)),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              MergeSemantics(
-                child: ListTile(
-                  title: Text(L.of(context)!.settings_bookmark_on_skip_previous),
-                  subtitle: Text(L.of(context)!.settings_bookmark_on_skip_previous_subtitle),
-                  trailing: Switch.adaptive(
-                    value: snapshot.data!.bookmarkOnSkipPrevious,
-                    onChanged: (value) => setState(() => settingsBloc.setBookmarkOnSkipPrevious(value)),
+                  MergeSemantics(
+                    child: ListTile(
+                      title: Text(L.of(context)!.settings_bookmark_on_skip_previous),
+                      subtitle: Text(L.of(context)!.settings_bookmark_on_skip_previous_subtitle),
+                      trailing: Switch.adaptive(
+                        value: snapshot.data!.bookmarkOnSkipPrevious,
+                        onChanged: (value) => setState(() => settingsBloc.setBookmarkOnSkipPrevious(value)),
+                      ),
+                    ),
                   ),
-                ),
+                ]),
               ),
               SettingsDividerLabel(label: L.of(context)!.settings_podcast_management_divider_label),
-              const EpisodeRefreshWidget(),
-              MergeSemantics(
-                child: ListTile(
-                  title: Text(L.of(context)!.settings_background_refresh_option),
-                  subtitle: Text(L.of(context)!.settings_background_refresh_option_subtitle),
-                  trailing: Switch.adaptive(
-                    value: snapshot.data!.backgroundUpdate,
-                    onChanged: (value) => setState(() => settingsBloc.backgroundUpdates(value)),
+              Card(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const EpisodeRefreshWidget(),
+                  MergeSemantics(
+                    child: ListTile(
+                      title: Text(L.of(context)!.settings_background_refresh_option),
+                      subtitle: Text(L.of(context)!.settings_background_refresh_option_subtitle),
+                      trailing: Switch.adaptive(
+                        value: snapshot.data!.backgroundUpdate,
+                        onChanged: (value) => setState(() => settingsBloc.backgroundUpdates(value)),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              MergeSemantics(
-                child: ListTile(
-                  title: Text(L.of(context)!.settings_background_refresh_mobile_data_option),
-                  subtitle: Text(L.of(context)!.settings_background_refresh_mobile_data_option_subtitle),
-                  trailing: Switch.adaptive(
-                    value: snapshot.data!.backgroundUpdateMobileData,
-                    onChanged: (value) => setState(() => settingsBloc.backgroundUpdatesMobileData(value)),
+                  MergeSemantics(
+                    child: ListTile(
+                      title: Text(L.of(context)!.settings_background_refresh_mobile_data_option),
+                      subtitle: Text(L.of(context)!.settings_background_refresh_mobile_data_option_subtitle),
+                      trailing: Switch.adaptive(
+                        value: snapshot.data!.backgroundUpdateMobileData,
+                        onChanged: (value) => setState(() => settingsBloc.backgroundUpdatesMobileData(value)),
+                      ),
+                    ),
                   ),
-                ),
+                ]),
               ),
               SettingsDividerLabel(label: L.of(context)!.settings_notification_divider_label),
-              MergeSemantics(
-                child: ListTile(
-                  title: Text(L.of(context)!.settings_refresh_notification_option),
-                  subtitle: Text(L.of(context)!.settings_refresh_notification_option_subtitle),
-                  trailing: Switch.adaptive(
-                    value: snapshot.data!.updatesNotification,
-                    onChanged: (value) => setState(() => settingsBloc.updateNotification(value)),
+              Card(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  MergeSemantics(
+                    child: ListTile(
+                      title: Text(L.of(context)!.settings_refresh_notification_option),
+                      subtitle: Text(L.of(context)!.settings_refresh_notification_option_subtitle),
+                      trailing: Switch.adaptive(
+                        value: snapshot.data!.updatesNotification,
+                        onChanged: (value) => setState(() => settingsBloc.updateNotification(value)),
+                      ),
+                    ),
                   ),
-                ),
+                ]),
               ),
               SettingsDividerLabel(label: L.of(context)!.settings_data_divider_label),
-              ListTile(
-                title: Text(L.of(context)!.settings_import_opml),
-                onTap: () async {
-                  var result = (await FilePicker.platform.pickFiles(
-                    type: FileType.any,
-                  ));
+              Card(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  ListTile(
+                    title: Text(L.of(context)!.settings_import_opml),
+                    onTap: () async {
+                      var result = (await FilePicker.platform.pickFiles(
+                        type: FileType.any,
+                      ));
 
-                  if (result != null && result.count > 0) {
-                    var file = result.files.first;
+                      if (result != null && result.count > 0) {
+                        var file = result.files.first;
 
-                    if (context.mounted) {
-                      var e = await showPlatformDialog<bool>(
-                        androidBarrierDismissible: false,
-                        useRootNavigator: false,
-                        context: context,
-                        builder: (_) => PopScope(
-                          canPop: true,
-                          onPopInvokedWithResult: (didPop, result) async => false,
-                          child: BasicDialogAlert(
-                            title: Text(L.of(context)!.settings_import_opml),
-                            content: OPMLImport(file: file.path!),
-                            actions: <Widget>[
-                              BasicDialogAction(
-                                title: ActionText(L.of(context)!.cancel_button_label),
-                                onPressed: () {
-                                  return Navigator.pop(context, true);
-                                },
+                        if (context.mounted) {
+                          var e = await showPlatformDialog<bool>(
+                            androidBarrierDismissible: false,
+                            useRootNavigator: false,
+                            context: context,
+                            builder: (_) => PopScope(
+                              canPop: true,
+                              onPopInvokedWithResult: (didPop, result) async => false,
+                              child: BasicDialogAlert(
+                                title: Text(L.of(context)!.settings_import_opml),
+                                content: OPMLImport(file: file.path!),
+                                actions: <Widget>[
+                                  BasicDialogAction(
+                                    title: ActionText(L.of(context)!.cancel_button_label),
+                                    onPressed: () {
+                                      return Navigator.pop(context, true);
+                                    },
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          );
+
+                          if (e != null && e) {
+                            opmlBloc.opmlEvent(OPMLCancelEvent());
+                          }
+                        }
+                        podcastBloc.podcastEvent(PodcastEvent.reloadSubscriptions);
+                      }
+                    },
+                  ),
+                  ListTile(
+                    title: Text(L.of(context)!.settings_export_opml),
+                    onTap: () async {
+                      await showPlatformDialog<void>(
+                        context: context,
+                        useRootNavigator: false,
+                        builder: (_) => BasicDialogAlert(
+                          content: const OPMLExport(),
                         ),
                       );
-
-                      if (e != null && e) {
-                        opmlBloc.opmlEvent(OPMLCancelEvent());
-                      }
-                    }
-                    podcastBloc.podcastEvent(PodcastEvent.reloadSubscriptions);
-                  }
-                },
+                    },
+                  ),
+                  const SearchProviderWidget(),
+                ]),
               ),
-              ListTile(
-                title: Text(L.of(context)!.settings_export_opml),
-                onTap: () async {
-                  await showPlatformDialog<void>(
-                    context: context,
-                    useRootNavigator: false,
-                    builder: (_) => BasicDialogAlert(
-                      content: const OPMLExport(),
-                    ),
-                  );
-                },
-              ),
-              const SearchProviderWidget(),
             ],
           );
         });

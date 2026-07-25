@@ -29,20 +29,9 @@ class AppearanceSettingsPage extends StatelessWidget {
               MergeSemantics(
                 child: ListTile(
                   title: Text(L.of(context)!.settings_default_tab_label),
-                  trailing: DropdownButton<int>(
-                    value: settings.defaultTab,
-                    underline: const SizedBox(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        settingsBloc.setDefaultTab(value);
-                      }
-                    },
-                    items: [
-                      DropdownMenuItem(value: 0, child: Text(L.of(context)!.home)),
-                      DropdownMenuItem(value: 1, child: Text(L.of(context)!.discover)),
-                      DropdownMenuItem(value: 2, child: Text(L.of(context)!.my_tab)),
-                    ],
-                  ),
+                  subtitle: Text(_tabLabel(context, snapshot.data!.defaultTab)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showTabPicker(context, settingsBloc, snapshot.data!.defaultTab),
                 ),
               ),
               MergeSemantics(
@@ -59,6 +48,47 @@ class AppearanceSettingsPage extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+  String _tabLabel(BuildContext context, int tab) {
+    switch (tab) {
+      case 0: return L.of(context)!.home;
+      case 1: return L.of(context)!.discover;
+      case 2: return L.of(context)!.my_tab;
+      default: return '';
+    }
+  }
+  void _showTabPicker(BuildContext context, SettingsBloc bloc, int current) {
+    showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(L.of(context)!.settings_default_tab_label,
+                  style: Theme.of(context).textTheme.titleMedium),
+            ),
+            RadioGroup<int>(
+              groupValue: current,
+              onChanged: (v) {
+                bloc.setDefaultTab(v!);
+                Navigator.pop(ctx);
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RadioListTile<int>(value: 0, title: Text(L.of(context)!.home)),
+                  RadioListTile<int>(value: 1, title: Text(L.of(context)!.discover)),
+                  RadioListTile<int>(value: 2, title: Text(L.of(context)!.my_tab)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

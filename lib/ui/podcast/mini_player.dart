@@ -234,7 +234,7 @@ class _MiniPlayerBuilderState extends State<_MiniPlayerBuilder> with TickerProvi
                                               Padding(
                                                 padding: const EdgeInsets.only(top: 4.0),
                                                 child: Text(
-                                                  snapshot.data?.author ?? '',
+                                                  snapshot.data?.podcast ?? '',
                                                   overflow: TextOverflow.ellipsis,
                                                   style: theme.textTheme.bodySmall,
                                                 ),

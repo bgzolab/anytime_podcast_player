@@ -122,6 +122,7 @@ class _MiniPlayerBuilderState extends State<_MiniPlayerBuilder> with TickerProvi
     final currentHeight = _minHeight + (_maxHeight - _minHeight) * dragProgress;
 
     return GestureDetector(
+      onTap: () => _openNowPlaying(context),
       onVerticalDragUpdate: (details) {
         _dragController.stop();
         setState(() {

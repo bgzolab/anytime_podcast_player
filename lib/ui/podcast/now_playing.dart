@@ -398,7 +398,7 @@ class NowPlayingEpisode extends StatelessWidget {
                   child: Text(
                     episode.podcast ?? '',
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.primary, decoration: TextDecoration.underline),
+                    style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.primary),
                   ),
                 ),
                 const SizedBox(height: 8),

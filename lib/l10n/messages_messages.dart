@@ -310,6 +310,14 @@ class MessageLookup extends MessageLookupByLibrary {
         'settings_use_system_font': MessageLookupByLibrary.simpleMessage('Use system font'),
         'settings_use_system_font_subtitle':
             MessageLookupByLibrary.simpleMessage('Disable bundled Montserrat font and use the system default font'),
+        'settings_color_scheme': MessageLookupByLibrary.simpleMessage('Color scheme'),
+        'settings_color_scheme_system': MessageLookupByLibrary.simpleMessage('System dynamic color'),
+        'settings_color_scheme_blue': MessageLookupByLibrary.simpleMessage('Blue'),
+        'settings_color_scheme_green': MessageLookupByLibrary.simpleMessage('Green'),
+        'settings_color_scheme_purple': MessageLookupByLibrary.simpleMessage('Purple'),
+        'settings_color_scheme_orange': MessageLookupByLibrary.simpleMessage('Orange'),
+        'settings_color_scheme_teal': MessageLookupByLibrary.simpleMessage('Teal'),
+        'settings_color_scheme_pink': MessageLookupByLibrary.simpleMessage('Pink'),
         'settings_continuous_play_option': MessageLookupByLibrary.simpleMessage('Continuous play'),
         'settings_continuous_play_subtitle': MessageLookupByLibrary.simpleMessage(
             'Automatically play the next episode in the podcast if the queue is empty'),

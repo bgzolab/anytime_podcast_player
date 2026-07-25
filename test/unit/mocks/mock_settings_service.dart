@@ -83,5 +83,8 @@ class MockSettingsService extends SettingsService {
   bool useSystemFont = false;
 
   @override
+  String colorScheme = 'system';
+
+  @override
   Stream<String> get settingsListener => PublishSubject<String>().stream;
 }

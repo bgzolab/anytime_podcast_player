@@ -239,6 +239,86 @@ class L {
         );
   }
 
+  String get settings_color_scheme {
+    return message('settings_color_scheme') ??
+        Intl.message(
+          'Color scheme',
+          name: 'settings_color_scheme',
+          desc: 'Settings label for color scheme picker',
+          locale: localeName,
+        );
+  }
+
+  String get settings_color_scheme_system {
+    return message('settings_color_scheme_system') ??
+        Intl.message(
+          'System dynamic color',
+          name: 'settings_color_scheme_system',
+          desc: 'Color scheme option: system dynamic color',
+          locale: localeName,
+        );
+  }
+
+  String get settings_color_scheme_blue {
+    return message('settings_color_scheme_blue') ??
+        Intl.message(
+          'Blue',
+          name: 'settings_color_scheme_blue',
+          desc: 'Color scheme option: blue',
+          locale: localeName,
+        );
+  }
+
+  String get settings_color_scheme_green {
+    return message('settings_color_scheme_green') ??
+        Intl.message(
+          'Green',
+          name: 'settings_color_scheme_green',
+          desc: 'Color scheme option: green',
+          locale: localeName,
+        );
+  }
+
+  String get settings_color_scheme_purple {
+    return message('settings_color_scheme_purple') ??
+        Intl.message(
+          'Purple',
+          name: 'settings_color_scheme_purple',
+          desc: 'Color scheme option: purple',
+          locale: localeName,
+        );
+  }
+
+  String get settings_color_scheme_orange {
+    return message('settings_color_scheme_orange') ??
+        Intl.message(
+          'Orange',
+          name: 'settings_color_scheme_orange',
+          desc: 'Color scheme option: orange',
+          locale: localeName,
+        );
+  }
+
+  String get settings_color_scheme_teal {
+    return message('settings_color_scheme_teal') ??
+        Intl.message(
+          'Teal',
+          name: 'settings_color_scheme_teal',
+          desc: 'Color scheme option: teal',
+          locale: localeName,
+        );
+  }
+
+  String get settings_color_scheme_pink {
+    return message('settings_color_scheme_pink') ??
+        Intl.message(
+          'Pink',
+          name: 'settings_color_scheme_pink',
+          desc: 'Color scheme option: pink',
+          locale: localeName,
+        );
+  }
+
   /// Podcasts
   String get subscribe_button_label {
     return message('subscribe_button_label') ??

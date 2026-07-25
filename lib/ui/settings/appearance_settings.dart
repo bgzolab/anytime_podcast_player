@@ -3,6 +3,7 @@ import 'package:anytime/entities/app_settings.dart';
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/ui/settings/settings_section_label.dart';
 import 'package:anytime/ui/settings/theme_select.dart';
+import 'package:anytime/ui/themes.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -32,6 +33,14 @@ class AppearanceSettingsPage extends StatelessWidget {
                   subtitle: Text(_tabLabel(context, snapshot.data!.defaultTab)),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _showTabPicker(context, settingsBloc, snapshot.data!.defaultTab),
+                ),
+              ),
+              MergeSemantics(
+                child: ListTile(
+                  title: Text(L.of(context)!.settings_color_scheme),
+                  subtitle: Text(_colorSchemeLabel(context, settings.colorScheme)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showColorSchemePicker(context, settingsBloc, settings.colorScheme),
                 ),
               ),
               MergeSemantics(
@@ -84,6 +93,72 @@ class AppearanceSettingsPage extends StatelessWidget {
                   RadioListTile<int>(value: 1, title: Text(L.of(context)!.discover)),
                   RadioListTile<int>(value: 2, title: Text(L.of(context)!.my_tab)),
                 ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _colorSchemeLabel(BuildContext context, String key) {
+    return switch (key) {
+      'system' => L.of(context)!.settings_color_scheme_system,
+      'blue' => L.of(context)!.settings_color_scheme_blue,
+      'green' => L.of(context)!.settings_color_scheme_green,
+      'purple' => L.of(context)!.settings_color_scheme_purple,
+      'orange' => L.of(context)!.settings_color_scheme_orange,
+      'teal' => L.of(context)!.settings_color_scheme_teal,
+      'pink' => L.of(context)!.settings_color_scheme_pink,
+      _ => key,
+    };
+  }
+
+  void _showColorSchemePicker(BuildContext context, SettingsBloc bloc, String current) {
+    showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                L.of(context)!.settings_color_scheme,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            RadioGroup<String>(
+              groupValue: current,
+              onChanged: (v) {
+                bloc.setColorScheme(v!);
+                Navigator.pop(ctx);
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: colorSchemeKeys.map((key) {
+                  final color = key == 'system'
+                      ? null
+                      : colorSchemes[key];
+                  return RadioListTile<String>(
+                    value: key,
+                    title: Text(_colorSchemeLabel(context, key)),
+                    secondary: color != null
+                        ? Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                            ),
+                          )
+                        : Icon(
+                            Icons.palette_outlined,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                  );
+                }).toList(),
               ),
             ),
           ],

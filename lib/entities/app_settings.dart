@@ -80,6 +80,10 @@ class AppSettings {
   /// Montserrat font.
   final bool useSystemFont;
 
+  /// The color scheme key: 'system' for dynamic colors, or a preset key
+  /// like 'blue', 'green', 'purple', 'orange', 'teal', 'pink'.
+  final String colorScheme;
+
   AppSettings({
     required this.theme,
     required this.markDeletedEpisodesAsPlayed,
@@ -105,6 +109,7 @@ class AppSettings {
     required int defaultTab,
     required this.bookmarkOnSkipPrevious,
     required this.useSystemFont,
+    required this.colorScheme,
   }) : defaultTab = defaultTab.clamp(0, 2);
 
   AppSettings.sensibleDefaults()
@@ -131,7 +136,8 @@ class AppSettings {
         updatesNotification = false,
         defaultTab = 0,
         bookmarkOnSkipPrevious = true,
-        useSystemFont = false;
+        useSystemFont = false,
+        colorScheme = 'system';
 
   AppSettings copyWith({
     String? theme,
@@ -159,6 +165,7 @@ class AppSettings {
     int? defaultTab,
     bool? bookmarkOnSkipPrevious,
     bool? useSystemFont,
+    String? colorScheme,
   }) =>
       AppSettings(
         theme: theme ?? this.theme,
@@ -185,5 +192,6 @@ class AppSettings {
         defaultTab: defaultTab ?? this.defaultTab,
         bookmarkOnSkipPrevious: bookmarkOnSkipPrevious ?? this.bookmarkOnSkipPrevious,
         useSystemFont: useSystemFont ?? this.useSystemFont,
+        colorScheme: colorScheme ?? this.colorScheme,
       );
 }

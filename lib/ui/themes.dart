@@ -7,6 +7,29 @@ import 'package:flutter/material.dart';
 /// Fallback seed when dynamic colors are unavailable.
 const _fallbackSeed = Colors.blue;
 
+/// Built-in color scheme seed colors (key → Color).
+const Map<String, Color> colorSchemes = {
+  'blue': Color(0xFF1565C0),
+  'green': Color(0xFF2E7D32),
+  'purple': Color(0xFF7B1FA2),
+  'orange': Color(0xFFE65100),
+  'teal': Color(0xFF00796B),
+  'pink': Color(0xFFC2185B),
+};
+
+/// Ordered list of all color scheme keys including 'system'.
+const List<String> colorSchemeKeys = ['system', 'blue', 'green', 'purple', 'orange', 'teal', 'pink'];
+
+/// Returns a [ColorScheme] for the given key and brightness.
+/// 'system' falls back to the default seed; presets use their seed color.
+ColorScheme buildColorScheme(String key, Brightness brightness) {
+  final seed = colorSchemes[key];
+  return ColorScheme.fromSeed(
+    seedColor: seed ?? _fallbackSeed,
+    brightness: brightness,
+  );
+}
+
 ThemeData _buildLightTheme([ColorScheme? cs, bool useSystemFont = false]) =>
     _buildTheme(cs ?? ColorScheme.fromSeed(seedColor: _fallbackSeed, brightness: Brightness.light), useSystemFont);
 ThemeData _buildDarkTheme([ColorScheme? cs, bool useSystemFont = false]) =>
@@ -105,9 +128,14 @@ class Themes {
   Themes({required this.themeData});
 
   /// Build with optional dynamic color scheme override.
-  factory Themes.lightTheme([ColorScheme? cs, bool useSystemFont = false]) =>
-      Themes(themeData: cs != null ? _buildLightTheme(cs, useSystemFont) : _buildLightTheme(null, useSystemFont));
+  /// [colorSchemeKey] selects a preset seed; 'system' or null uses default.
+  factory Themes.lightTheme([ColorScheme? cs, bool useSystemFont = false, String? colorSchemeKey]) {
+    final effectiveCs = cs ?? (colorSchemeKey != null ? buildColorScheme(colorSchemeKey, Brightness.light) : null);
+    return Themes(themeData: _buildLightTheme(effectiveCs, useSystemFont));
+  }
 
-  factory Themes.darkTheme([ColorScheme? cs, bool useSystemFont = false]) =>
-      Themes(themeData: cs != null ? _buildDarkTheme(cs, useSystemFont) : _buildDarkTheme(null, useSystemFont));
+  factory Themes.darkTheme([ColorScheme? cs, bool useSystemFont = false, String? colorSchemeKey]) {
+    final effectiveCs = cs ?? (colorSchemeKey != null ? buildColorScheme(colorSchemeKey, Brightness.dark) : null);
+    return Themes(themeData: _buildDarkTheme(effectiveCs, useSystemFont));
+  }
 }

@@ -106,4 +106,8 @@ abstract class SettingsService {
   set useSystemFont(bool value);
 
   bool get useSystemFont;
+
+  set colorScheme(String value);
+
+  String get colorScheme;
 }

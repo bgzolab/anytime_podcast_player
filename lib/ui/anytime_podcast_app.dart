@@ -136,21 +136,25 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
     /// Listen to theme change events from settings.
     widget.settingsBloc!.settings.listen((event) {
       setState(() {
-        var newTheme = Themes.darkTheme(null, event.useSystemFont).themeData;
+        /// For 'system' color scheme, pass null so DynamicColorBuilder can override.
+        /// For presets, pass the key so Themes uses the preset seed color.
+        final colorSchemeKey = event.colorScheme == 'system' ? null : event.colorScheme;
+
+        var newTheme = Themes.darkTheme(null, event.useSystemFont, colorSchemeKey).themeData;
 
         /// As we add new themes, we will move this selection into its own theme module.
         switch (event.theme) {
           case 'system':
             var brightness = SchedulerBinding.instance.platformDispatcher.platformBrightness;
             newTheme = brightness == Brightness.dark
-                ? Themes.darkTheme(null, event.useSystemFont).themeData
-                : Themes.lightTheme(null, event.useSystemFont).themeData;
+                ? Themes.darkTheme(null, event.useSystemFont, colorSchemeKey).themeData
+                : Themes.lightTheme(null, event.useSystemFont, colorSchemeKey).themeData;
             break;
           case 'light':
-            newTheme = Themes.lightTheme(null, event.useSystemFont).themeData;
+            newTheme = Themes.lightTheme(null, event.useSystemFont, colorSchemeKey).themeData;
             break;
           case 'dark':
-            newTheme = Themes.darkTheme(null, event.useSystemFont).themeData;
+            newTheme = Themes.darkTheme(null, event.useSystemFont, colorSchemeKey).themeData;
             break;
         }
 
@@ -248,8 +252,11 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
         builder: (lightColorScheme, darkColorScheme) {
           final currentTheme = theme ?? Themes.darkTheme().themeData;
           final isDark = currentTheme.brightness == Brightness.dark;
-          final dynamicScheme = isDark ? darkColorScheme : lightColorScheme;
           final useSystemFont = widget.settingsBloc?.currentSettings.useSystemFont ?? false;
+          final colorSchemeSetting = widget.settingsBloc?.currentSettings.colorScheme ?? 'system';
+
+          /// Only use DynamicColorBuilder when user chose 'system' color scheme.
+          final dynamicScheme = colorSchemeSetting == 'system' ? (isDark ? darkColorScheme : lightColorScheme) : null;
           final effectiveTheme = dynamicScheme != null
               ? (isDark
                       ? Themes.darkTheme(dynamicScheme, useSystemFont)

@@ -301,5 +301,14 @@ class MobileSettingsService extends SettingsService {
   }
 
   @override
+  String get colorScheme => _sharedPreferences.getString('colorScheme') ?? 'system';
+
+  @override
+  set colorScheme(String value) {
+    _sharedPreferences.setString('colorScheme', value);
+    settingsNotifier.sink.add('colorScheme');
+  }
+
+  @override
   Stream<String> get settingsListener => settingsNotifier.stream;
 }

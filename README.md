@@ -2,10 +2,7 @@
 
 This is a fork of Anytime Podcast Player, with several enhanced features.
 
-![](https://pub-89c11651a8434f18a530bd6f93e399da.r2.dev/2026/20260726012805928.webp)&nbsp;
-![](https://pub-89c11651a8434f18a530bd6f93e399da.r2.dev/2026/20260726012805880.webp)&nbsp;
-![](https://pub-89c11651a8434f18a530bd6f93e399da.r2.dev/2026/20260726012805841.webp)&nbsp;
-![](https://pub-89c11651a8434f18a530bd6f93e399da.r2.dev/2026/20260726012805905.webp)&nbsp;
+<img src="https://pub-89c11651a8434f18a530bd6f93e399da.r2.dev/2026/20260726012805880.webp" width="200"/> <img src="https://pub-89c11651a8434f18a530bd6f93e399da.r2.dev/2026/20260726012805928.webp" width="200" /><img src="https://pub-89c11651a8434f18a530bd6f93e399da.r2.dev/2026/20260726012805841.webp" width="200" /> <img src="https://pub-89c11651a8434f18a530bd6f93e399da.r2.dev/2026/20260726012805905.webp" width="200" />
 
 ## Getting Started
 

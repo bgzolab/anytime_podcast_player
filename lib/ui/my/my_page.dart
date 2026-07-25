@@ -11,6 +11,7 @@ import 'package:anytime/repository/repository.dart';
 import 'package:anytime/state/bloc_state.dart';
 import 'package:anytime/ui/my/bookmarks_page_full.dart';
 import 'package:anytime/ui/my/downloads_page.dart';
+import 'package:anytime/ui/settings/about_page.dart';
 import 'package:anytime/ui/settings/settings.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -154,17 +155,11 @@ class _MyPageState extends State<MyPage> {
                 title: L.of(context)!.about_label,
                 shape: tileShape,
                 onTap: () {
-                  showAboutDialog(
-                    context: context,
-                    applicationName: 'Anytime Podcast Player',
-                    applicationIcon: Image.asset(
-                      'assets/images/anytime-logo-s.png',
-                      width: 52.0,
-                      height: 52.0,
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (context) => const AboutPage(),
                     ),
-                    children: [
-                      const Text('\u00a9 2020 Ben Hills'),
-                    ],
                   );
                 },
               ),

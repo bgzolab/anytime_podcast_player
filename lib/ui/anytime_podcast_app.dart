@@ -247,8 +247,9 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
           final currentTheme = theme ?? Themes.darkTheme().themeData;
           final isDark = currentTheme.brightness == Brightness.dark;
           final dynamicScheme = isDark ? darkColorScheme : lightColorScheme;
-          final effectiveTheme =
-              dynamicScheme != null ? currentTheme.copyWith(colorScheme: dynamicScheme) : currentTheme;
+          final effectiveTheme = dynamicScheme != null
+              ? (isDark ? Themes.darkTheme(dynamicScheme) : Themes.lightTheme(dynamicScheme)).themeData
+              : currentTheme;
 
           return MaterialApp(
             debugShowCheckedModeBanner: false,

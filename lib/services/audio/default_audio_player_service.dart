@@ -460,7 +460,16 @@ class DefaultAudioPlayerService extends AudioPlayerService {
   @override
   Future<void> suspend() async {
     _stopPositionTicker();
-    _persistState();
+
+    if (_audioUnavailable()) return;
+
+    // Only persist state and stop the player when not actively playing.
+    // If the user is listening, allow background playback to continue.
+    // Stopping an actively playing stream would kill background audio.
+    if (!_audioHandler.playbackState.value.playing) {
+      _persistState();
+      await _audioHandler.stop();
+    }
   }
 
   @override
@@ -499,8 +508,9 @@ class DefaultAudioPlayerService extends AudioPlayerService {
 
       // If we have no state we'll have to assume we stopped whilst suspended.
       if (basicState == AudioProcessingState.idle) {
-        /// We will have to assume we have stopped.
-        _playingState.add(AudioState.stopped);
+        // We have a current episode but the player is idle (stopped to save
+        // data). Treat as paused so the mini player stays visible.
+        _playingState.add(AudioState.pausing);
       } else if (basicState == AudioProcessingState.ready) {
         _startPositionTicker();
       }
@@ -647,8 +657,16 @@ class DefaultAudioPlayerService extends AudioPlayerService {
     }).listen((PlaybackState state) {
       switch (state.processingState) {
         case AudioProcessingState.idle:
-          _playingState.add(AudioState.none);
-          _stopPositionTicker();
+          // If we still have a current episode, treat idle as "paused" so the
+          // mini player stays visible and headphone controls can resume.
+          // Only emit none when there is truly nothing loaded.
+          if (_currentEpisode != null) {
+            _stopPositionTicker();
+            _playingState.add(AudioState.pausing);
+          } else {
+            _playingState.add(AudioState.none);
+            _stopPositionTicker();
+          }
           break;
         case AudioProcessingState.loading:
           _playingState.add(AudioState.buffering);
@@ -1057,6 +1075,14 @@ class _DefaultAudioPlayerHandler extends BaseAudioHandler with SeekHandler {
       _player = AudioPlayer(
         audioPipeline: _audioPipeline,
         userAgent: Environment.userAgent(),
+        useProxyForRequestHeaders: false,
+        audioLoadConfiguration: const AudioLoadConfiguration(
+          androidLoadControl: AndroidLoadControl(
+            minBufferDuration: Duration(seconds: 15),
+            maxBufferDuration: Duration(seconds: 30),
+            bufferForPlaybackDuration: Duration(seconds: 3),
+          ),
+        ),
       );
     } else {
       _player = AudioPlayer(
@@ -1158,14 +1184,35 @@ class _DefaultAudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   Future<void> play() async {
     log.fine('play() triggered');
 
-    await _player.play();
+    // If the player was stopped (e.g. from a pause() that stopped the stream
+    // to prevent background data usage), re-load the source before playing.
+    if (_player.processingState == ProcessingState.idle && _currentItem != null) {
+      await playMediaItem(_currentItem!);
+    } else {
+      await _player.play();
+    }
   }
 
   @override
   Future<void> pause() async {
     log.fine('pause() triggered - saving position');
+
+    // Save the current position before stopping, so play() can re-load from
+    // the right spot. ExoPlayer continues buffering after a simple pause(),
+    // which wastes data on streaming episodes — stopping releases the
+    // connection and prevents background downloads.
+    final position = playbackState.value.position.inMilliseconds;
     await _savePosition();
-    await _player.pause();
+
+    // Update _currentItem extras with the saved position so a subsequent
+    // play() -> playMediaItem() picks up the correct resume point.
+    if (_currentItem != null) {
+      final currentExtras = Map<String, dynamic>.from(_currentItem!.extras ?? {});
+      currentExtras['position'] = position;
+      _currentItem = _currentItem!.copyWith(extras: currentExtras);
+    }
+
+    await _player.stop();
   }
 
   @override
@@ -1174,6 +1221,16 @@ class _DefaultAudioPlayerHandler extends BaseAudioHandler with SeekHandler {
 
     await _player.stop();
     await _savePosition();
+
+    // Update _currentItem extras with the saved position so a subsequent
+    // play() -> playMediaItem() (e.g. from notification play button) picks
+    // up the correct resume point.
+    if (_currentItem != null) {
+      final savedPos = playbackState.value.position.inMilliseconds;
+      final currentExtras = Map<String, dynamic>.from(_currentItem!.extras ?? {});
+      currentExtras['position'] = savedPos;
+      _currentItem = _currentItem!.copyWith(extras: currentExtras);
+    }
 
     await super.stop();
   }

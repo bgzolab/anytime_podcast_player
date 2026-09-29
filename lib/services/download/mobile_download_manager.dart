@@ -9,6 +9,7 @@ import 'dart:ui';
 import 'package:anytime/core/environment.dart';
 import 'package:anytime/entities/downloadable.dart';
 import 'package:anytime/services/download/download_manager.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:logging/logging.dart';
 
@@ -21,6 +22,10 @@ class MobileDownloaderManager implements DownloadManager {
   final downloadController = StreamController<DownloadProgress>();
   var _lastUpdateTime = 0;
 
+  /// False on platforms without a `flutter_downloader` implementation (e.g.
+  /// Windows). All download actions are then ignored safely.
+  var _supported = true;
+
   @override
   Stream<DownloadProgress> get downloadProgress => downloadController.stream;
 
@@ -31,7 +36,15 @@ class MobileDownloaderManager implements DownloadManager {
   Future _init() async {
     log.fine('Initialising download manager');
 
-    await FlutterDownloader.initialize();
+    try {
+      await FlutterDownloader.initialize();
+    } on MissingPluginException catch (e) {
+      log.warning('Download manager not available on this platform: $e');
+      _supported = false;
+
+      return;
+    }
+
     IsolateNameServer.removePortNameMapping(portName);
 
     IsolateNameServer.registerPortWithName(_port.sendPort, portName);
@@ -64,6 +77,12 @@ class MobileDownloaderManager implements DownloadManager {
 
   @override
   Future<String?> enqueueTask(String url, String downloadPath, String fileName) async {
+    if (!_supported) {
+      log.warning('Download manager is not supported on this platform; ignoring download request');
+
+      return null;
+    }
+
     return await FlutterDownloader.enqueue(
       url: url,
       savedDir: downloadPath,

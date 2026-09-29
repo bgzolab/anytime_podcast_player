@@ -285,8 +285,10 @@ class _SettingsState extends State<Settings> {
         return _buildAndroid(context);
       case TargetPlatform.iOS:
         return _buildIos(context);
-      default:
-        assert(false, 'Unexpected platform $defaultTargetPlatform');
+      case TargetPlatform.windows:
+      case TargetPlatform.linux:
+      case TargetPlatform.macOS:
+      case TargetPlatform.fuchsia:
         return _buildAndroid(context);
     }
   }
@@ -296,6 +298,8 @@ class _SettingsState extends State<Settings> {
     super.initState();
 
     hasExternalStorage().then((value) {
+      if (!mounted) return;
+
       setState(() {
         sdcard = value;
       });

@@ -21,6 +21,7 @@ import 'package:background_fetch/background_fetch.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
@@ -620,8 +621,14 @@ class MobilePodcastService extends PodcastService {
       if (settingsService.markDeletedEpisodesAsPlayed) {
         episode.played = true;
       }
-    } else if (episode.downloadState == DownloadState.downloading && episode.downloadPercentage! < 100) {
-      await FlutterDownloader.cancel(taskId: episode.downloadTaskId!);
+    } else if (episode.downloadState == DownloadState.downloading &&
+        episode.downloadPercentage! < 100 &&
+        episode.downloadTaskId != null) {
+      try {
+        await FlutterDownloader.cancel(taskId: episode.downloadTaskId!);
+      } on MissingPluginException catch (e) {
+        _log.warning('Download manager not available on this platform: $e');
+      }
     }
 
     episode.downloadTaskId = null;

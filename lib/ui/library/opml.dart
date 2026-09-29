@@ -24,8 +24,10 @@ class _OPMLSelectState extends State<OPMLSelect> {
         return _buildAndroid(context);
       case TargetPlatform.iOS:
         return _buildIos(context);
-      default:
-        assert(false, 'Unexpected platform $defaultTargetPlatform');
+      case TargetPlatform.windows:
+      case TargetPlatform.linux:
+      case TargetPlatform.macOS:
+      case TargetPlatform.fuchsia:
         return _buildAndroid(context);
     }
   }
@@ -60,9 +62,9 @@ class _OPMLSelectState extends State<OPMLSelect> {
             ElevatedButton(
               onPressed: () async {
                 final navigator = Navigator.of(context);
-                var result = (await FilePicker.platform.pickFiles())!;
+                final result = await FilePicker.platform.pickFiles();
 
-                if (result.count > 0) {
+                if (result != null && result.count > 0) {
                   var file = result.files.first;
 
                   await navigator.push(

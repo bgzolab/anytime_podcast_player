@@ -49,7 +49,7 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static m11(weeks) => "${Intl.plural(weeks, one: '1w ago', other: '${weeks}w ago')}";
 
-  static m19(total) => "Done! Updated ${total} sources";
+  static m21(total) => "Done! Updated ${total} sources";
 
   static m12(episodes) => "${Intl.plural(episodes, one: '1 new episode', other: '${episodes} new episodes')}";
 
@@ -65,7 +65,7 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static m18(seconds) => "${seconds} seconds";
 
-  static m20(dateStr) => "Showing ${dateStr}";
+  static m22(dateStr) => "Showing ${dateStr}";
 
   @override
   final Map<String, dynamic> messages = _notInlinedMessages(_notInlinedMessages);
@@ -204,7 +204,7 @@ class MessageLookup extends MessageLookupByLibrary {
     'queue_clear_label': MessageLookupByLibrary.simpleMessage('Are you sure you wish to clear the queue?'),
     'queue_clear_label_title': MessageLookupByLibrary.simpleMessage('Clear Queue'),
     'queue_remove_label': MessageLookupByLibrary.simpleMessage('Remove'),
-    'refresh_done': m19,
+    'refresh_done': m21,
     'refresh_feed_label': MessageLookupByLibrary.simpleMessage('Refresh episodes'),
     'refresh_feeds_failed': MessageLookupByLibrary.simpleMessage('Could not refresh feeds'),
     'refresh_feeds_tooltip': MessageLookupByLibrary.simpleMessage('Refresh feeds'),
@@ -322,7 +322,7 @@ class MessageLookup extends MessageLookupByLibrary {
     'timeline_date_unknown': MessageLookupByLibrary.simpleMessage('Unknown'),
     'timeline_date_yesterday': MessageLookupByLibrary.simpleMessage('Yesterday'),
     'timeline_failed_to_load': MessageLookupByLibrary.simpleMessage('Failed to load timeline'),
-    'timeline_showing_date': m20,
+    'timeline_showing_date': m22,
     'transcript_label': MessageLookupByLibrary.simpleMessage('Transcript'),
     'transcript_why_not_label': MessageLookupByLibrary.simpleMessage('Why not?'),
     'transcript_why_not_url': MessageLookupByLibrary.simpleMessage('https://anytimeplayer.app/docs/anytime_transcript_support_en.html'),

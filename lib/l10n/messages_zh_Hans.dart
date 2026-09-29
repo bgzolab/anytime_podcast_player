@@ -21,11 +21,15 @@ class MessageLookup extends MessageLookupByLibrary {
   @override
   String get localeName => 'zh_Hans';
 
+  static m19(timestamp) => "书签已添加于 ${timestamp}";
+
+  static m20(timestamp) => "跳转到 ${timestamp}";
+
   static m8(minutes) => "剩余${minutes}分钟";
 
   static m10(seconds) => "剩余${seconds}秒";
 
-  static m19(total) => "完成！已更新 ${total} 个来源";
+  static m21(total) => "完成！已更新 ${total} 个来源";
 
   static m14(minutes) => "${minutes} 分钟";
 
@@ -37,7 +41,7 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static m18(seconds) => "${seconds}秒";
 
-  static m20(dateStr) => "显示 ${dateStr}";
+  static m22(dateStr) => "显示 ${dateStr}";
 
   @override
   final Map<String, dynamic> messages = _notInlinedMessages(_notInlinedMessages);
@@ -53,6 +57,11 @@ class MessageLookup extends MessageLookupByLibrary {
     'audio_effect_volume_boost_label': MessageLookupByLibrary.simpleMessage('音量增强'),
     'audio_settings_playback_speed_label': MessageLookupByLibrary.simpleMessage('播放速度'),
     'auto_scroll_transcript_label': MessageLookupByLibrary.simpleMessage('跟随转写'),
+    'bookmark_add_button_label': MessageLookupByLibrary.simpleMessage('添加书签'),
+    'bookmark_added_snackbar': m19,
+    'bookmark_delete_label': MessageLookupByLibrary.simpleMessage('删除书签'),
+    'bookmark_seek_label': m20,
+    'bookmarks_label': MessageLookupByLibrary.simpleMessage('书签'),
     'cancel_button_label': MessageLookupByLibrary.simpleMessage('取消'),
     'cancel_download_button_label': MessageLookupByLibrary.simpleMessage('取消下载'),
     'cancel_option_label': MessageLookupByLibrary.simpleMessage('取消'),
@@ -126,6 +135,7 @@ class MessageLookup extends MessageLookupByLibrary {
     'more_label': MessageLookupByLibrary.simpleMessage('更多'),
     'new_episodes_label': MessageLookupByLibrary.simpleMessage('有新单集上线'),
     'new_episodes_view_now_label': MessageLookupByLibrary.simpleMessage('立即查看'),
+    'no_bookmarks_message': MessageLookupByLibrary.simpleMessage('暂无书签'),
     'no_downloads_message': MessageLookupByLibrary.simpleMessage('您暂未下载任何单集'),
     'no_episodes_message': MessageLookupByLibrary.simpleMessage('暂无单集'),
     'no_podcast_details_message': MessageLookupByLibrary.simpleMessage('无法加载播客节目。请检查您的连接。'),
@@ -158,7 +168,7 @@ class MessageLookup extends MessageLookupByLibrary {
     'queue_clear_label': MessageLookupByLibrary.simpleMessage('您确定要清除队列吗？'),
     'queue_clear_label_title': MessageLookupByLibrary.simpleMessage('清空队列'),
     'queue_remove_label': MessageLookupByLibrary.simpleMessage('删除'),
-    'refresh_done': m19,
+    'refresh_done': m21,
     'refresh_feed_label': MessageLookupByLibrary.simpleMessage('刷新节目'),
     'refresh_feeds_failed': MessageLookupByLibrary.simpleMessage('无法刷新节目源'),
     'refresh_feeds_tooltip': MessageLookupByLibrary.simpleMessage('刷新节目'),
@@ -222,6 +232,8 @@ class MessageLookup extends MessageLookupByLibrary {
     'settings_background_refresh_mobile_data_option_subtitle': MessageLookupByLibrary.simpleMessage('允许在使用移动数据时刷新播客库'),
     'settings_background_refresh_option': MessageLookupByLibrary.simpleMessage('后台刷新'),
     'settings_background_refresh_option_subtitle': MessageLookupByLibrary.simpleMessage('在屏幕关闭时刷新单集。这会增加电池消耗。'),
+    'settings_bookmark_on_skip_previous': MessageLookupByLibrary.simpleMessage('耳机上一曲按钮创建书签'),
+    'settings_bookmark_on_skip_previous_subtitle': MessageLookupByLibrary.simpleMessage('关闭时，耳机上一曲按钮将改为倒退'),
     'settings_continuous_play_option': MessageLookupByLibrary.simpleMessage('连续播放'),
     'settings_continuous_play_subtitle': MessageLookupByLibrary.simpleMessage('当队列为空时，自动播放该播客的下一集'),
     'settings_data_divider_label': MessageLookupByLibrary.simpleMessage('数据'),
@@ -272,7 +284,7 @@ class MessageLookup extends MessageLookupByLibrary {
     'timeline_date_unknown': MessageLookupByLibrary.simpleMessage('未知'),
     'timeline_date_yesterday': MessageLookupByLibrary.simpleMessage('昨天'),
     'timeline_failed_to_load': MessageLookupByLibrary.simpleMessage('加载时间线失败'),
-    'timeline_showing_date': m20,
+    'timeline_showing_date': m22,
     'transcript_label': MessageLookupByLibrary.simpleMessage('转写'),
     'transcript_why_not_label': MessageLookupByLibrary.simpleMessage('为什么没有？'),
     'transcript_why_not_url': MessageLookupByLibrary.simpleMessage('https://anytimeplayer.app/docs/anytime_transcript_support_en.html'),

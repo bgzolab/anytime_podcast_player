@@ -21,6 +21,10 @@ class MessageLookup extends MessageLookupByLibrary {
   @override
   String get localeName => 'messages';
 
+  static m19(timestamp) => "Bookmark added at ${timestamp}";
+
+  static m20(timestamp) => "Jump to ${timestamp}";
+
   static m0(days) => "${Intl.plural(days, one: 'One day ago', other: '${days} days ago')}";
 
   static m1(hours) => "${Intl.plural(hours, one: '${hours} hour ago', other: '${hours} hours ago')}";
@@ -45,7 +49,7 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static m11(weeks) => "${Intl.plural(weeks, one: '1w ago', other: '${weeks}w ago')}";
 
-  static m19(total) => "Done! Updated ${total} sources";
+  static m21(total) => "Done! Updated ${total} sources";
 
   static m12(episodes) => "${Intl.plural(episodes, one: '1 new episode', other: '${episodes} new episodes')}";
 
@@ -61,7 +65,7 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static m18(seconds) => "${seconds} seconds";
 
-  static m20(dateStr) => "Showing ${dateStr}";
+  static m22(dateStr) => "Showing ${dateStr}";
 
   @override
   final Map<String, dynamic> messages = _notInlinedMessages(_notInlinedMessages);
@@ -77,6 +81,11 @@ class MessageLookup extends MessageLookupByLibrary {
     'audio_effect_volume_boost_label': MessageLookupByLibrary.simpleMessage('Volume Boost'),
     'audio_settings_playback_speed_label': MessageLookupByLibrary.simpleMessage('Playback Speed'),
     'auto_scroll_transcript_label': MessageLookupByLibrary.simpleMessage('Follow transcript'),
+    'bookmark_add_button_label': MessageLookupByLibrary.simpleMessage('Add bookmark'),
+    'bookmark_added_snackbar': m19,
+    'bookmark_delete_label': MessageLookupByLibrary.simpleMessage('Delete bookmark'),
+    'bookmark_seek_label': m20,
+    'bookmarks_label': MessageLookupByLibrary.simpleMessage('Bookmarks'),
     'cancel_button_label': MessageLookupByLibrary.simpleMessage('Cancel'),
     'cancel_download_button_label': MessageLookupByLibrary.simpleMessage('Cancel download'),
     'cancel_option_label': MessageLookupByLibrary.simpleMessage('Cancel'),
@@ -162,6 +171,7 @@ class MessageLookup extends MessageLookupByLibrary {
     'more_label': MessageLookupByLibrary.simpleMessage('More'),
     'new_episodes_label': MessageLookupByLibrary.simpleMessage('New episodes are available'),
     'new_episodes_view_now_label': MessageLookupByLibrary.simpleMessage('VIEW NOW'),
+    'no_bookmarks_message': MessageLookupByLibrary.simpleMessage('No bookmarks yet'),
     'no_downloads_message': MessageLookupByLibrary.simpleMessage('You do not have any downloaded episodes'),
     'no_episodes_message': MessageLookupByLibrary.simpleMessage('No episodes yet'),
     'no_podcast_details_message': MessageLookupByLibrary.simpleMessage('Could not load podcast episodes. Please check your connection.'),
@@ -194,7 +204,7 @@ class MessageLookup extends MessageLookupByLibrary {
     'queue_clear_label': MessageLookupByLibrary.simpleMessage('Are you sure you wish to clear the queue?'),
     'queue_clear_label_title': MessageLookupByLibrary.simpleMessage('Clear Queue'),
     'queue_remove_label': MessageLookupByLibrary.simpleMessage('Remove'),
-    'refresh_done': m19,
+    'refresh_done': m21,
     'refresh_feed_label': MessageLookupByLibrary.simpleMessage('Refresh episodes'),
     'refresh_feeds_failed': MessageLookupByLibrary.simpleMessage('Could not refresh feeds'),
     'refresh_feeds_tooltip': MessageLookupByLibrary.simpleMessage('Refresh feeds'),
@@ -260,6 +270,8 @@ class MessageLookup extends MessageLookupByLibrary {
     'settings_background_refresh_mobile_data_option_subtitle': MessageLookupByLibrary.simpleMessage('Allow the library to be refreshed when on mobile data'),
     'settings_background_refresh_option': MessageLookupByLibrary.simpleMessage('Background refresh'),
     'settings_background_refresh_option_subtitle': MessageLookupByLibrary.simpleMessage('Refresh episodes when the screen is off. This will increase battery usage.'),
+    'settings_bookmark_on_skip_previous': MessageLookupByLibrary.simpleMessage('Headphone previous button creates bookmark'),
+    'settings_bookmark_on_skip_previous_subtitle': MessageLookupByLibrary.simpleMessage('When off, the headphone previous button rewinds instead'),
     'settings_continuous_play_option': MessageLookupByLibrary.simpleMessage('Continuous play'),
     'settings_continuous_play_subtitle': MessageLookupByLibrary.simpleMessage('Automatically play the next episode in the podcast if the queue is empty'),
     'settings_data_divider_label': MessageLookupByLibrary.simpleMessage('DATA'),
@@ -310,7 +322,7 @@ class MessageLookup extends MessageLookupByLibrary {
     'timeline_date_unknown': MessageLookupByLibrary.simpleMessage('Unknown'),
     'timeline_date_yesterday': MessageLookupByLibrary.simpleMessage('Yesterday'),
     'timeline_failed_to_load': MessageLookupByLibrary.simpleMessage('Failed to load timeline'),
-    'timeline_showing_date': m20,
+    'timeline_showing_date': m22,
     'transcript_label': MessageLookupByLibrary.simpleMessage('Transcript'),
     'transcript_why_not_label': MessageLookupByLibrary.simpleMessage('Why not?'),
     'transcript_why_not_url': MessageLookupByLibrary.simpleMessage('https://anytimeplayer.app/docs/anytime_transcript_support_en.html'),

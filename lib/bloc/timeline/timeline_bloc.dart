@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:anytime/bloc/bloc.dart';
 import 'package:anytime/entities/episode.dart';
 import 'package:anytime/services/podcast/podcast_service.dart';
@@ -19,6 +21,10 @@ enum TimelineEvent {
 
   /// Toggle whether played episodes are shown or hidden.
   toggleShowPlayed,
+
+  /// Load enough pages to cover the date most recently passed to
+  /// [TimelineBloc.jumpToDate] and apply it as a filter.
+  jumpToDate,
 }
 
 /// The BLoC provides cursor-paginated access to all episodes from subscribed
@@ -27,12 +33,17 @@ enum TimelineEvent {
 /// ## Pagination
 ///
 /// - **Initial load**: the widget (or [resume]) sends a [TimelineEvent.refresh]
-///   to load the first page (newest 100 episodes).
+///   to load the first page (newest [pageSize] episodes).
 /// - **Infinite scroll**: the widget sends [TimelineEvent.loadMore] when the
-///   user scrolls near the bottom. The BLoC loads the next 100 episodes older
-///   than the cursor (`_cursor`, the oldest [publicationDate] seen so far).
+///   user scrolls near the bottom. The BLoC loads the next [pageSize] episodes
+///   older than the cursor (`_cursor`, the oldest [publicationDate] seen so
+///   far). The cursor query is inclusive so episodes sharing a publication
+///   date are not skipped; duplicates are filtered by guid.
 /// - **Date jump**: calling [jumpToDate] queries the offset of the given date
 ///   and loads all pages up to that point, then emits the accumulated list.
+///
+/// All events (including date jumps) are processed by a single pipeline so
+/// that operations cannot interleave and corrupt the shared page state.
 ///
 /// Output uses [BehaviorSubject] so subscribers always receive the last emitted
 /// state, even when subscribing late (e.g. after a tab switch).
@@ -41,7 +52,6 @@ class TimelineBloc extends Bloc {
   final PodcastService podcastService;
 
   final PublishSubject<TimelineEvent> _eventInput = PublishSubject<TimelineEvent>();
-  final PublishSubject<DateTime> _dateJumpInput = PublishSubject<DateTime>();
   final BehaviorSubject<BlocState<List<Episode>>> _stateOutput = BehaviorSubject<BlocState<List<Episode>>>();
 
   bool _isLoadingMore = false;
@@ -59,6 +69,14 @@ class TimelineBloc extends Bloc {
 
   /// When set (via [jumpToDate]), only episodes on or after this date are shown.
   DateTime? _dateFilter;
+
+  /// The date most recently passed to [jumpToDate], consumed by
+  /// [TimelineEvent.jumpToDate] on the shared event pipeline.
+  DateTime? _pendingJumpDate;
+
+  /// Completes when the next non-loading state is emitted; used by
+  /// [refreshAndWait] so the UI can keep its refresh indicator running.
+  Completer<void>? _refreshCompleter;
 
   DateTime? _lastFetchTime;
 
@@ -114,6 +132,22 @@ class TimelineBloc extends Bloc {
   /// Force a fresh fetch from the database (page 1) and clear any date filter.
   void refresh() => _eventInput.add(TimelineEvent.refresh);
 
+  /// Refresh page 1 and complete once a populated (or error) state has been
+  /// emitted.
+  ///
+  /// [state] is a [BehaviorSubject] and replays the previous value on
+  /// subscription, so UI code cannot rely on `state.firstWhere(...)` to know
+  /// when a refresh has finished. This Future completes only when the refresh
+  /// triggered here actually produces a result.
+  Future<void> refreshAndWait() {
+    _refreshCompleter?.complete();
+    final completer = _refreshCompleter = Completer<void>();
+
+    _eventInput.add(TimelineEvent.refresh);
+
+    return completer.future;
+  }
+
   /// Clear the active date filter and show all loaded episodes.
   void clearDateFilter() {
     _dateFilter = null;
@@ -129,14 +163,18 @@ class TimelineBloc extends Bloc {
 
   /// Jump to the timeline position for [date]. Loads pages until the target is
   /// reached, then emits so the UI can scroll to the appropriate item.
-  void jumpToDate(DateTime date) => _dateJumpInput.add(date);
+  void jumpToDate(DateTime date) {
+    _pendingJumpDate = date;
+    _eventInput.add(TimelineEvent.jumpToDate);
+  }
 
   // ---------------------------------------------------------------------------
   // Initialisation
   // ---------------------------------------------------------------------------
 
   void _init() {
-    // Regular events (refresh / loadMore / toggleShowPlayed)
+    // All events share one pipeline so refresh/loadMore/jumpToDate cannot
+    // interleave and corrupt the shared page state.
     _eventInput.switchMap<BlocState<List<Episode>>>((TimelineEvent event) {
       switch (event) {
         case TimelineEvent.refresh:
@@ -146,13 +184,24 @@ class TimelineBloc extends Bloc {
         case TimelineEvent.toggleShowPlayed:
           _showPlayed = !_showPlayed;
           return _emitFromCache();
+        case TimelineEvent.jumpToDate:
+          return _jumpToDate(_pendingJumpDate!);
       }
-    }).listen((state) => _stateOutput.add(state));
+    }).listen((state) {
+      _stateOutput.add(state);
+      _completeRefreshWait(state);
+    });
+  }
 
-    // Date-jump events
-    _dateJumpInput.switchMap<BlocState<List<Episode>>>((DateTime date) {
-      return _jumpToDate(date);
-    }).listen((state) => _stateOutput.add(state));
+  /// Completes a pending [refreshAndWait] Future once a real result is emitted.
+  void _completeRefreshWait(BlocState<List<Episode>> state) {
+    final completer = _refreshCompleter;
+
+    if (completer == null || completer.isCompleted) return;
+    if (state is BlocPopulatedState<List<Episode>> || state is BlocErrorState<List<Episode>>) {
+      _refreshCompleter = null;
+      completer.complete();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -160,14 +209,18 @@ class TimelineBloc extends Bloc {
   // ---------------------------------------------------------------------------
 
   /// Clears state (including any date filter) and loads the first page.
+  /// The previous list is kept in the loading state so the UI can show it
+  /// underneath the refresh indicator instead of a blank spinner.
   Stream<BlocState<List<Episode>>> _refresh() async* {
+    final previous = List<Episode>.from(_allEpisodes);
+
     _allEpisodes.clear();
     _dateFilter = null;
     _cursor = null;
     _hasMore = true;
     _isLoadingMore = false;
 
-    yield BlocLoadingState<List<Episode>>();
+    yield BlocLoadingState<List<Episode>>(_sorted(previous));
 
     try {
       await _fetchPage();
@@ -202,7 +255,9 @@ class TimelineBloc extends Bloc {
   }
 
   /// Shared helper: fetches one page and appends to [_allEpisodes].
-  /// Uses [_cursor] as the "before" bound, and updates it afterwards.
+  /// Uses [_cursor] as the (inclusive) "before" bound, and updates it
+  /// afterwards. Episodes already loaded are skipped so that an inclusive
+  /// cursor cannot produce duplicates.
   Future<void> _fetchPage() async {
     final before = _cursor ?? DateTime.now().add(const Duration(days: 1));
     final page = await podcastService.loadEpisodesBefore(before, limit: pageSize);
@@ -212,14 +267,19 @@ class TimelineBloc extends Bloc {
       return;
     }
 
-    _allEpisodes.addAll(page);
+    final known = _allEpisodes.map((episode) => episode.guid).toSet();
+    final fresh = page.where((episode) => !known.contains(episode.guid)).toList();
+
+    _allEpisodes.addAll(fresh);
 
     // Update cursor to the oldest episode in this page.
     // loadEpisodesBefore returns newest-first, so last is the oldest.
     _cursor = page.last.publicationDate;
 
-    // If we got fewer than pageSize, there are no more pages.
-    if (page.length < pageSize) {
+    // If we got fewer than pageSize, there are no more pages. If everything
+    // was already known (a full page sharing the cursor timestamp), stop too —
+    // otherwise the same page would be fetched forever.
+    if (page.length < pageSize || fresh.isEmpty) {
       _hasMore = false;
     }
   }
@@ -304,8 +364,9 @@ class TimelineBloc extends Bloc {
 
   @override
   void dispose() {
+    _refreshCompleter?.complete();
+    _refreshCompleter = null;
     _eventInput.close();
-    _dateJumpInput.close();
     _stateOutput.close();
     super.dispose();
   }

@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:anytime/bloc/timeline/timeline_bloc.dart';
 import 'package:anytime/entities/episode.dart';
 import 'package:anytime/services/podcast/podcast_service.dart';
@@ -310,6 +312,141 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 100));
 
       expect(states.any((s) => s is BlocErrorState), isTrue);
+    });
+
+    test('loadMore does not duplicate episodes sharing the cursor timestamp', () async {
+      // The repository query is inclusive on the cursor date, so the next page
+      // may repeat the last episode of the previous page.
+      final page1 = List.generate(
+        20,
+        (i) => Episode(
+          guid: 'ep-$i',
+          podcast: 'Test',
+          title: 'Episode $i',
+          publicationDate: DateTime(2026, 7, 30 - i),
+          duration: 1000,
+        ),
+      );
+      final page2 = [
+        page1.last, // repeated boundary episode
+        Episode(
+          guid: 'ep-older-1',
+          podcast: 'Test',
+          title: 'Older 1',
+          publicationDate: DateTime(2026, 7, 9),
+          duration: 1000,
+        ),
+        Episode(
+          guid: 'ep-older-2',
+          podcast: 'Test',
+          title: 'Older 2',
+          publicationDate: DateTime(2026, 7, 8),
+          duration: 1000,
+        ),
+      ];
+
+      int callCount = 0;
+      final service = FakePodcastService(
+        loadBefore: (_, __) async {
+          callCount++;
+          return callCount == 1 ? page1 : page2;
+        },
+        countSince: (_) async => 22,
+      );
+      final bloc = TimelineBloc(podcastService: service);
+      addTearDown(() => bloc.dispose());
+
+      final states = <BlocState>[];
+      bloc.state.listen((state) {
+        states.add(state);
+      });
+
+      bloc.event(TimelineEvent.refresh);
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      bloc.event(TimelineEvent.loadMore);
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      final results = (states.last as BlocPopulatedState<List<Episode>>).results!;
+      expect(results.length, 22);
+      expect(results.map((e) => e.guid).toSet().length, 22);
+      expect(bloc.hasMore, isFalse);
+    });
+
+    test('refreshAndWait completes only after the refresh result is emitted', () async {
+      final gate = Completer<List<Episode>>();
+      final service = FakePodcastService(
+        loadBefore: (_, __) => gate.future,
+        countSince: (_) async => 0,
+      );
+      final bloc = TimelineBloc(podcastService: service);
+      addTearDown(() => bloc.dispose());
+
+      bloc.state.listen((_) {});
+
+      var completed = false;
+      final future = bloc.refreshAndWait().then((_) => completed = true);
+
+      // The replayed BehaviourSubject value must not complete the wait.
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(completed, isFalse);
+
+      gate.complete([
+        Episode(
+          guid: 'ep-1',
+          podcast: 'Test',
+          title: 'Episode 1',
+          publicationDate: DateTime(2026, 7, 15),
+          duration: 1000,
+        ),
+      ]);
+
+      await future;
+      expect(completed, isTrue);
+    });
+
+    test('toggleShowPlayed reveals played episodes that are hidden by default', () async {
+      final episodes = [
+        Episode(
+          guid: 'unplayed',
+          podcast: 'Test',
+          title: 'Unplayed',
+          publicationDate: DateTime(2026, 7, 15),
+          duration: 1000,
+        ),
+        Episode(
+          guid: 'played',
+          podcast: 'Test',
+          title: 'Played',
+          publicationDate: DateTime(2026, 7, 14),
+          duration: 1000,
+          played: true,
+        ),
+      ];
+
+      final service = FakePodcastService(
+        loadBefore: (_, __) async => episodes,
+        countSince: (_) async => 2,
+      );
+      final bloc = TimelineBloc(podcastService: service);
+      addTearDown(() => bloc.dispose());
+
+      final states = <BlocState>[];
+      bloc.state.listen((state) {
+        states.add(state);
+      });
+
+      bloc.event(TimelineEvent.refresh);
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      expect((states.last as BlocPopulatedState<List<Episode>>).results!.length, 1);
+      expect(bloc.hasHiddenPlayed, isTrue);
+
+      bloc.event(TimelineEvent.toggleShowPlayed);
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      expect((states.last as BlocPopulatedState<List<Episode>>).results!.length, 2);
+      expect(bloc.hasHiddenPlayed, isFalse);
     });
   });
 }

@@ -193,7 +193,7 @@ class SembastRepository extends Repository {
     final beforeMs = beforeDate.millisecondsSinceEpoch.toString();
 
     final finder = Finder(
-      filter: Filter.lessThan('publicationDate', beforeMs),
+      filter: Filter.lessThanOrEquals('publicationDate', beforeMs),
       sortOrders: [SortOrder('publicationDate', false)],
       limit: limit,
     );
@@ -201,9 +201,7 @@ class SembastRepository extends Repository {
     final List<RecordSnapshot<int, Map<String, Object?>>> recordSnapshots =
         await _episodeStore.find(await _db, finder: finder);
 
-    return recordSnapshots
-        .map((snapshot) => Episode.fromMap(snapshot.key, snapshot.value))
-        .toList();
+    return recordSnapshots.map((snapshot) => Episode.fromMap(snapshot.key, snapshot.value)).toList();
   }
 
   @override

@@ -1500,5 +1500,29 @@
     "description": "Title of refresh progress dialog",
     "type": "text",
     "placeholders": {}
+  },
+  "timeline_date_unknown": "未知",
+  "@timeline_date_unknown": {
+    "description": "Timeline section label for episodes without a publication date",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_date_today": "今天",
+  "@timeline_date_today": {
+    "description": "Timeline section label for episodes published today",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_date_yesterday": "昨天",
+  "@timeline_date_yesterday": {
+    "description": "Timeline section label for episodes published yesterday",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_date_this_week": "本周",
+  "@timeline_date_this_week": {
+    "description": "Timeline section label for episodes published in the last seven days",
+    "type": "text",
+    "placeholders": {}
   }
 }

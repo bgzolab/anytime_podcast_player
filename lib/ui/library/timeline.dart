@@ -161,34 +161,42 @@ class _TimelineState extends State<Timeline> {
   }) {
     if (episodes == null || episodes.isEmpty) {
       final hasHidden = bloc.hasHiddenPlayed;
-      return SliverFillRemaining(
-        hasScrollBody: false,
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Icon(
-                hasHidden ? Icons.visibility_off : Icons.timeline,
-                size: 75,
-                color: Theme.of(context).primaryColor,
+      final hasFilter = bloc.dateFilter != null;
+
+      return SliverMainAxisGroup(
+        slivers: <Widget>[
+          // Keep the filter banner so an empty date filter can be cleared.
+          if (hasFilter) SliverToBoxAdapter(child: _buildFilterBanner(context, bloc)),
+          // Keep the toolbar so the played-visibility toggle stays reachable.
+          SliverToBoxAdapter(child: _buildToolbar(context, bloc, isLoadingMore)),
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  Icon(
+                    hasHidden ? Icons.visibility_off : Icons.timeline,
+                    size: 75,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  const Padding(padding: EdgeInsets.only(top: 16.0)),
+                  Text(
+                    hasHidden ? L.of(context)!.timeline_all_played_message : L.of(context)!.no_episodes_message,
+                    style: Theme.of(context).textTheme.titleLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
-              const Padding(padding: EdgeInsets.only(top: 16.0)),
-              Text(
-                hasHidden
-                    ? L.of(context)!.timeline_all_played_message
-                    : L.of(context)!.no_episodes_message,
-                style: Theme.of(context).textTheme.titleLarge,
-                textAlign: TextAlign.center,
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       );
     }
 
-    final items = _buildGroupedItems(episodes);
+    final items = _buildGroupedItems(context, episodes);
 
     final queueBloc = Provider.of<QueueBloc>(context);
 
@@ -330,11 +338,11 @@ class _TimelineState extends State<Timeline> {
               icon: Icon(
                 showPlayed ? Icons.visibility : Icons.visibility_off,
                 size: 20.0,
-                color: showPlayed
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.secondary,
+                color: showPlayed ? theme.colorScheme.primary : theme.colorScheme.secondary,
               ),
-              tooltip: showPlayed ? L.of(context)!.hide_played_episodes_tooltip : L.of(context)!.show_played_episodes_tooltip,
+              tooltip: showPlayed
+                  ? L.of(context)!.hide_played_episodes_tooltip
+                  : L.of(context)!.show_played_episodes_tooltip,
               onPressed: () => bloc.event(TimelineEvent.toggleShowPlayed),
               visualDensity: VisualDensity.compact,
             ),
@@ -364,12 +372,12 @@ class _TimelineState extends State<Timeline> {
   // ---------------------------------------------------------------------------
 
   /// Groups [episodes] by date bucket and returns a flat list of display items.
-  List<_TimelineItem> _buildGroupedItems(List<Episode> episodes) {
+  List<_TimelineItem> _buildGroupedItems(BuildContext context, List<Episode> episodes) {
     final items = <_TimelineItem>[];
     String? lastBucket;
 
     for (final episode in episodes) {
-      final bucket = _dateBucket(episode.publicationDate);
+      final bucket = _dateBucket(context, episode.publicationDate);
 
       if (bucket != lastBucket) {
         items.add(_TimelineItem.header(bucket));
@@ -383,17 +391,17 @@ class _TimelineState extends State<Timeline> {
   }
 
   /// Returns a human-readable date bucket label for the given [date].
-  String _dateBucket(DateTime? date) {
-    if (date == null) return 'Unknown';
+  String _dateBucket(BuildContext context, DateTime? date) {
+    if (date == null) return L.of(context)!.timeline_date_unknown;
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final dateDay = DateTime(date.year, date.month, date.day);
     final diff = today.difference(dateDay).inDays;
 
-    if (diff == 0) return 'Today';
-    if (diff == 1) return 'Yesterday';
-    if (diff <= 7) return 'This Week';
+    if (diff == 0) return L.of(context)!.timeline_date_today;
+    if (diff == 1) return L.of(context)!.timeline_date_yesterday;
+    if (diff <= 7) return L.of(context)!.timeline_date_this_week;
 
     return DateFormat.yMMMd().format(date);
   }
@@ -462,61 +470,68 @@ class _TimelineState extends State<Timeline> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
-        return StreamBuilder<RefreshProgress>(
-          stream: stream,
-          builder: (context, snapshot) {
-            final progress = snapshot.data;
+        // Prevent the Android back button from dismissing the dialog while the
+        // refresh is in flight: dismissing disposes the StreamBuilder below,
+        // which cancels the progress stream and can leave the library stuck in
+        // its refreshing state.
+        return PopScope(
+          canPop: false,
+          child: StreamBuilder<RefreshProgress>(
+            stream: stream,
+            builder: (context, snapshot) {
+              final progress = snapshot.data;
 
-            if (progress == null) {
-              return AlertDialog(
-                content: Row(
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(width: 16),
-                    Text(L.of(context)!.starting_refresh),
-                  ],
-                ),
-              );
-            }
-
-            if (progress.finished) {
-              // Auto-dismiss and reload timeline.
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                Navigator.of(dialogContext).pop();
-                bloc.event(TimelineEvent.refresh);
-              });
-
-              return AlertDialog(
-                content: Row(
-                  children: [
-                    const Icon(Icons.check_circle, color: Colors.green),
-                    const SizedBox(width: 16),
-                    Text(L.of(context)!.refresh_done(progress.total)),
-                  ],
-                ),
-              );
-            }
-
-            final value = progress.total > 0 ? progress.completed / progress.total : 0.0;
-
-            return AlertDialog(
-              title: Text(L.of(context)!.refreshing_feeds_title),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${progress.completed + 1} / ${progress.total}: ${progress.currentSource}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+              if (progress == null) {
+                return AlertDialog(
+                  content: Row(
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(width: 16),
+                      Text(L.of(context)!.starting_refresh),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  LinearProgressIndicator(value: value),
-                ],
-              ),
-            );
-          },
+                );
+              }
+
+              if (progress.finished) {
+                // Auto-dismiss and reload timeline.
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  Navigator.of(dialogContext).pop();
+                  bloc.event(TimelineEvent.refresh);
+                });
+
+                return AlertDialog(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.green),
+                      const SizedBox(width: 16),
+                      Text(L.of(context)!.refresh_done(progress.total)),
+                    ],
+                  ),
+                );
+              }
+
+              final value = progress.total > 0 ? progress.completed / progress.total : 0.0;
+
+              return AlertDialog(
+                title: Text(L.of(context)!.refreshing_feeds_title),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${progress.completed + 1} / ${progress.total}: ${progress.currentSource}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 12),
+                    LinearProgressIndicator(value: value),
+                  ],
+                ),
+              );
+            },
+          ),
         );
       },
     );

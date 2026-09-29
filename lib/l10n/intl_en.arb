@@ -695,13 +695,13 @@
     "type": "text",
     "placeholders_order": [],
     "placeholders": {}
-   },
-   "search_transcript_label": "Search transcript",
-   "@search_transcript_label": {
-     "description": "Hint text for transcript search box",
-     "type": "text",
-     "placeholders_order": [],
-     "placeholders": {}
+  },
+  "search_transcript_label": "Search transcript",
+  "@search_transcript_label": {
+    "description": "Hint text for transcript search box",
+    "type": "text",
+    "placeholders_order": [],
+    "placeholders": {}
   },
   "auto_scroll_transcript_label": "Follow transcript",
   "@auto_scroll_transcript_label": {
@@ -723,34 +723,34 @@
     "type": "text",
     "placeholders_order": [],
     "placeholders": {}
- },
+  },
   "semantics_podcast_details_header": "Podcast details and episodes page",
   "@semantics_podcast_details_header": {
     "description": "Describes podcast details page",
     "type": "text",
     "placeholders_order": [],
     "placeholders": {}
-   },
-   "semantics_layout_option_list": "List layout",
-   "@semantics_layout_option_list": {
-     "description": "Describes list layout button",
-     "type": "text",
-     "placeholders_order": [],
-     "placeholders": {}
-   },
-   "semantics_layout_option_compact_grid": "Compact grid layout",
-   "@semantics_layout_option_compact_grid": {
-     "description": "Describes compact grid layout button",
-     "type": "text",
-     "placeholders_order": [],
-     "placeholders": {}
-   },
-   "semantics_layout_option_grid": "Grid layout",
-   "@semantics_layout_option_grid": {
-     "description": "Describes grid layout button",
-     "type": "text",
-     "placeholders_order": [],
-     "placeholders": {}
+  },
+  "semantics_layout_option_list": "List layout",
+  "@semantics_layout_option_list": {
+    "description": "Describes list layout button",
+    "type": "text",
+    "placeholders_order": [],
+    "placeholders": {}
+  },
+  "semantics_layout_option_compact_grid": "Compact grid layout",
+  "@semantics_layout_option_compact_grid": {
+    "description": "Describes compact grid layout button",
+    "type": "text",
+    "placeholders_order": [],
+    "placeholders": {}
+  },
+  "semantics_layout_option_grid": "Grid layout",
+  "@semantics_layout_option_grid": {
+    "description": "Describes grid layout button",
+    "type": "text",
+    "placeholders_order": [],
+    "placeholders": {}
   },
   "semantics_mini_player_header": "Mini player. Swipe right to play/pause button. Activate to open main player window",
   "@semantics_mini_player_header": {
@@ -1100,12 +1100,12 @@
     "description": "For current sleep setting",
     "type": "text",
     "placeholders": {}
-   },
-   "scrim_episode_details_selector": "Dismiss episode details",
-   "@scrim_episode_details_selector": {
-     "description": "Replaces default scrim label for episode details bottom sheet.",
-     "type": "text",
-     "placeholders": {}
+  },
+  "scrim_episode_details_selector": "Dismiss episode details",
+  "@scrim_episode_details_selector": {
+    "description": "Replaces default scrim label for episode details bottom sheet.",
+    "type": "text",
+    "placeholders": {}
   },
   "scrim_episode_sort_selector": "Dismiss episode sort",
   "@scrim_episode_sort_selector": {
@@ -1497,5 +1497,111 @@
     "type": "text",
     "placeholders": {}
   },
-  "@@locale": "en"
+  "@@locale": "en",
+  "settings_default_tab_label": "Default tab",
+  "@settings_default_tab_label": {
+    "description": "Label for the default tab setting",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_failed_to_load": "Failed to load timeline",
+  "@timeline_failed_to_load": {
+    "description": "Error message when timeline fails to load",
+    "type": "text",
+    "placeholders": {}
+  },
+  "retry_button_label": "Retry",
+  "@retry_button_label": {
+    "description": "Retry button label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_all_played_message": "All episodes are played. Tap the visibility icon above to show them.",
+  "@timeline_all_played_message": {
+    "description": "Displayed when all timeline episodes have been played",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_showing_date": "Showing {dateStr}",
+  "@timeline_showing_date": {
+    "description": "Shown when timeline is filtered to a specific date",
+    "type": "text",
+    "placeholders": {
+      "dateStr": {}
+    }
+  },
+  "clear_button_label": "Clear",
+  "@clear_button_label": {
+    "description": "Clear button label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "hide_played_episodes_tooltip": "Hide played episodes",
+  "@hide_played_episodes_tooltip": {
+    "description": "Tooltip for hiding played episodes",
+    "type": "text",
+    "placeholders": {}
+  },
+  "show_played_episodes_tooltip": "Show played episodes",
+  "@show_played_episodes_tooltip": {
+    "description": "Tooltip for showing played episodes",
+    "type": "text",
+    "placeholders": {}
+  },
+  "refresh_feeds_tooltip": "Refresh feeds",
+  "@refresh_feeds_tooltip": {
+    "description": "Tooltip for refresh feeds button",
+    "type": "text",
+    "placeholders": {}
+  },
+  "jump_to_date_tooltip": "Jump to date in timeline",
+  "@jump_to_date_tooltip": {
+    "description": "Help text for date picker in timeline",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_date_unknown": "Unknown",
+  "@timeline_date_unknown": {
+    "description": "Timeline section label for episodes without a publication date",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_date_today": "Today",
+  "@timeline_date_today": {
+    "description": "Timeline section label for episodes published today",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_date_yesterday": "Yesterday",
+  "@timeline_date_yesterday": {
+    "description": "Timeline section label for episodes published yesterday",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_date_this_week": "This Week",
+  "@timeline_date_this_week": {
+    "description": "Timeline section label for episodes published in the last seven days",
+    "type": "text",
+    "placeholders": {}
+  },
+  "starting_refresh": "Starting refresh…",
+  "@starting_refresh": {
+    "description": "Shown while refresh is starting",
+    "type": "text",
+    "placeholders": {}
+  },
+  "refresh_done": "Done! Updated {total} sources",
+  "@refresh_done": {
+    "description": "Shown when refresh completes",
+    "type": "text",
+    "placeholders": {
+      "total": {}
+    }
+  },
+  "refreshing_feeds_title": "Refreshing feeds",
+  "@refreshing_feeds_title": {
+    "description": "Title of refresh progress dialog",
+    "type": "text",
+    "placeholders": {}
+  }
 }

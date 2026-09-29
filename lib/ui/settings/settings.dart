@@ -71,11 +71,11 @@ class _SettingsState extends State<Settings> {
                         setState(() => settingsBloc.setDefaultTab(value));
                       }
                     },
-                    items: const [
-                      DropdownMenuItem(value: 0, child: Text('Timeline')),
-                      DropdownMenuItem(value: 1, child: Text('Library')),
-                      DropdownMenuItem(value: 2, child: Text('Discover')),
-                      DropdownMenuItem(value: 3, child: Text('Downloads')),
+                    items: [
+                      DropdownMenuItem(value: 0, child: Text(L.of(context)!.timeline)),
+                      DropdownMenuItem(value: 1, child: Text(L.of(context)!.library)),
+                      DropdownMenuItem(value: 2, child: Text(L.of(context)!.discover)),
+                      DropdownMenuItem(value: 3, child: Text(L.of(context)!.downloads)),
                     ],
                   ),
                 ),

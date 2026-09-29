@@ -45,6 +45,8 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static m11(weeks) => "${Intl.plural(weeks, one: '1w ago', other: '${weeks}w ago')}";
 
+  static m19(total) => "Done! Updated ${total} sources";
+
   static m12(episodes) => "${Intl.plural(episodes, one: '1 new episode', other: '${episodes} new episodes')}";
 
   static m13(episodes) => "${Intl.plural(episodes, one: '1 unplayed episode', other: '${episodes} unplayed episodes')}";
@@ -58,6 +60,8 @@ class MessageLookup extends MessageLookupByLibrary {
   static m17(minutes) => "${minutes} minutes";
 
   static m18(seconds) => "${seconds} seconds";
+
+  static m20(dateStr) => "Showing ${dateStr}";
 
   @override
   final Map<String, dynamic> messages = _notInlinedMessages(_notInlinedMessages);
@@ -77,6 +81,7 @@ class MessageLookup extends MessageLookupByLibrary {
     'cancel_download_button_label': MessageLookupByLibrary.simpleMessage('Cancel download'),
     'cancel_option_label': MessageLookupByLibrary.simpleMessage('Cancel'),
     'chapters_label': MessageLookupByLibrary.simpleMessage('Chapters'),
+    'clear_button_label': MessageLookupByLibrary.simpleMessage('Clear'),
     'clear_queue_button_label': MessageLookupByLibrary.simpleMessage('CLEAR QUEUE'),
     'clear_search_button_label': MessageLookupByLibrary.simpleMessage('Clear search text'),
     'close_button_label': MessageLookupByLibrary.simpleMessage('Close'),
@@ -127,6 +132,8 @@ class MessageLookup extends MessageLookupByLibrary {
     'fast_forward_button_label': MessageLookupByLibrary.simpleMessage('Fast-forward episode 30 seconds'),
     'feedback_menu_item_label': MessageLookupByLibrary.simpleMessage('Feedback'),
     'go_back_button_label': MessageLookupByLibrary.simpleMessage('Go Back'),
+    'hide_played_episodes_tooltip': MessageLookupByLibrary.simpleMessage('Hide played episodes'),
+    'jump_to_date_tooltip': MessageLookupByLibrary.simpleMessage('Jump to date in timeline'),
     'label_episode_actions': MessageLookupByLibrary.simpleMessage('Episode Actions'),
     'label_megabytes': MessageLookupByLibrary.simpleMessage('megabytes'),
     'label_megabytes_abbr': MessageLookupByLibrary.simpleMessage('mb'),
@@ -187,8 +194,12 @@ class MessageLookup extends MessageLookupByLibrary {
     'queue_clear_label': MessageLookupByLibrary.simpleMessage('Are you sure you wish to clear the queue?'),
     'queue_clear_label_title': MessageLookupByLibrary.simpleMessage('Clear Queue'),
     'queue_remove_label': MessageLookupByLibrary.simpleMessage('Remove'),
+    'refresh_done': m19,
     'refresh_feed_label': MessageLookupByLibrary.simpleMessage('Refresh episodes'),
+    'refresh_feeds_tooltip': MessageLookupByLibrary.simpleMessage('Refresh feeds'),
+    'refreshing_feeds_title': MessageLookupByLibrary.simpleMessage('Refreshing feeds'),
     'resume_button_label': MessageLookupByLibrary.simpleMessage('Resume episode'),
+    'retry_button_label': MessageLookupByLibrary.simpleMessage('Retry'),
     'rewind_button_label': MessageLookupByLibrary.simpleMessage('Rewind episode 10 seconds'),
     'scrim_episode_details_selector': MessageLookupByLibrary.simpleMessage('Dismiss episode details'),
     'scrim_episode_filter_selector': MessageLookupByLibrary.simpleMessage('Dismiss episode filter'),
@@ -251,6 +262,7 @@ class MessageLookup extends MessageLookupByLibrary {
     'settings_continuous_play_option': MessageLookupByLibrary.simpleMessage('Continuous play'),
     'settings_continuous_play_subtitle': MessageLookupByLibrary.simpleMessage('Automatically play the next episode in the podcast if the queue is empty'),
     'settings_data_divider_label': MessageLookupByLibrary.simpleMessage('DATA'),
+    'settings_default_tab_label': MessageLookupByLibrary.simpleMessage('Default tab'),
     'settings_delete_played_label': MessageLookupByLibrary.simpleMessage('Delete downloaded episodes once played'),
     'settings_download_sd_card_label': MessageLookupByLibrary.simpleMessage('Download episodes to SD card'),
     'settings_download_switch_card': MessageLookupByLibrary.simpleMessage('New downloads will be saved to the SD card. Existing downloads will remain on internal storage.'),
@@ -275,10 +287,12 @@ class MessageLookup extends MessageLookupByLibrary {
     'share_episode_option_label': MessageLookupByLibrary.simpleMessage('Share episode'),
     'share_podcast_option_label': MessageLookupByLibrary.simpleMessage('Share podcast'),
     'show_notes_label': MessageLookupByLibrary.simpleMessage('Show notes'),
+    'show_played_episodes_tooltip': MessageLookupByLibrary.simpleMessage('Show played episodes'),
     'sleep_episode_label': MessageLookupByLibrary.simpleMessage('End of episode'),
     'sleep_minute_label': m14,
     'sleep_off_label': MessageLookupByLibrary.simpleMessage('Off'),
     'sleep_timer_label': MessageLookupByLibrary.simpleMessage('Sleep Timer'),
+    'starting_refresh': MessageLookupByLibrary.simpleMessage('Starting refresh…'),
     'stop_download_button_label': MessageLookupByLibrary.simpleMessage('Stop'),
     'stop_download_confirmation': MessageLookupByLibrary.simpleMessage('Are you sure you wish to stop this download and delete the episode?'),
     'stop_download_title': MessageLookupByLibrary.simpleMessage('Stop Download'),
@@ -289,6 +303,13 @@ class MessageLookup extends MessageLookupByLibrary {
     'time_semantic_minutes': m17,
     'time_semantic_seconds': m18,
     'timeline': MessageLookupByLibrary.simpleMessage('Timeline'),
+    'timeline_all_played_message': MessageLookupByLibrary.simpleMessage('All episodes are played. Tap the visibility icon above to show them.'),
+    'timeline_date_this_week': MessageLookupByLibrary.simpleMessage('This Week'),
+    'timeline_date_today': MessageLookupByLibrary.simpleMessage('Today'),
+    'timeline_date_unknown': MessageLookupByLibrary.simpleMessage('Unknown'),
+    'timeline_date_yesterday': MessageLookupByLibrary.simpleMessage('Yesterday'),
+    'timeline_failed_to_load': MessageLookupByLibrary.simpleMessage('Failed to load timeline'),
+    'timeline_showing_date': m20,
     'transcript_label': MessageLookupByLibrary.simpleMessage('Transcript'),
     'transcript_why_not_label': MessageLookupByLibrary.simpleMessage('Why not?'),
     'transcript_why_not_url': MessageLookupByLibrary.simpleMessage('https://anytimeplayer.app/docs/anytime_transcript_support_en.html'),

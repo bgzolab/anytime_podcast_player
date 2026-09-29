@@ -2503,6 +2503,46 @@ class L {
         );
   }
 
+  String get timeline_date_unknown {
+    return message('timeline_date_unknown') ??
+        Intl.message(
+          'Unknown',
+          name: 'timeline_date_unknown',
+          desc: 'Timeline section label for episodes without a publication date',
+          locale: localeName,
+        );
+  }
+
+  String get timeline_date_today {
+    return message('timeline_date_today') ??
+        Intl.message(
+          'Today',
+          name: 'timeline_date_today',
+          desc: 'Timeline section label for episodes published today',
+          locale: localeName,
+        );
+  }
+
+  String get timeline_date_yesterday {
+    return message('timeline_date_yesterday') ??
+        Intl.message(
+          'Yesterday',
+          name: 'timeline_date_yesterday',
+          desc: 'Timeline section label for episodes published yesterday',
+          locale: localeName,
+        );
+  }
+
+  String get timeline_date_this_week {
+    return message('timeline_date_this_week') ??
+        Intl.message(
+          'This Week',
+          name: 'timeline_date_this_week',
+          desc: 'Timeline section label for episodes published in the last seven days',
+          locale: localeName,
+        );
+  }
+
   String get starting_refresh {
     return message('starting_refresh') ??
         Intl.message(
@@ -2539,7 +2579,8 @@ class AnytimeLocalisationsDelegate extends LocalizationsDelegate<L> {
   const AnytimeLocalisationsDelegate();
 
   @override
-  bool isSupported(Locale locale) => ['en', 'es', 'de', 'gl', 'it', 'nl', 'ru', 'tr', 'vi', 'zh_Hans'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      ['en', 'es', 'de', 'gl', 'it', 'nl', 'ru', 'tr', 'vi', 'zh_Hans'].contains(locale.languageCode);
 
   @override
   Future<L> load(Locale locale) => L.load(locale, const {});
@@ -2562,7 +2603,8 @@ class EmbeddedLocalisationsDelegate extends LocalizationsDelegate<L> {
   EmbeddedLocalisationsDelegate({@required this.messages = const {}});
 
   @override
-  bool isSupported(Locale locale) => ['en', 'es', 'de', 'gl', 'it', 'nl', 'ru', 'tr', 'vi', 'zh_Hans'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      ['en', 'es', 'de', 'gl', 'it', 'nl', 'ru', 'tr', 'vi', 'zh_Hans'].contains(locale.languageCode);
 
   @override
   Future<L> load(Locale locale) => L.load(locale, messages);

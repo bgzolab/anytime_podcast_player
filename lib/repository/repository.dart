@@ -27,6 +27,14 @@ abstract class Repository {
   /// Episodes
   Future<List<Episode>> findAllEpisodes();
 
+  /// Returns up to [limit] episodes whose [publicationDate] is strictly before
+  /// [beforeDate], sorted newest-first. Used for cursor-based pagination.
+  Future<List<Episode>> findEpisodesBefore(DateTime beforeDate, {int limit = 100});
+
+  /// Returns the number of episodes whose [publicationDate] is on or after
+  /// [sinceDate]. Used to calculate the scroll offset for date-jump.
+  Future<int> countEpisodesSince(DateTime sinceDate);
+
   Future<Episode?> findEpisodeById(int id);
 
   Future<Episode?> findEpisodeByGuid(String guid);

@@ -459,7 +459,7 @@
     "type": "text",
     "placeholders": {}
   },
-  "show_notes_label": "Show notes",
+  "show_notes_label": "节目笔记",
   "@show_notes_label": {
     "description": "Set show notes icon label",
     "type": "text",
@@ -846,6 +846,688 @@
   "layout_selector_unplayed_episodes": "显示未播数量",
   "@layout_selector_unplayed_episodes": {
     "description": "Layout selector. Highlight unplayed episodes option.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline": "时间线",
+  "@timeline": {
+    "description": "Timeline tab label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "no_episodes_message": "暂无单集",
+  "@no_episodes_message": {
+    "description": "Displayed when the timeline has no episodes",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmarks_label": "书签",
+  "@bookmarks_label": {
+    "description": "Bookmarks tab/section label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmark_add_button_label": "添加书签",
+  "@bookmark_add_button_label": {
+    "description": "Bookmark button tooltip",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmark_added_snackbar": "书签已添加于 {timestamp}",
+  "@bookmark_added_snackbar": {
+    "description": "Snackbar after adding bookmark",
+    "type": "text",
+    "placeholders": {
+      "timestamp": {}
+    }
+  },
+  "no_bookmarks_message": "暂无书签",
+  "@no_bookmarks_message": {
+    "description": "Empty state for bookmarks",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmark_delete_label": "删除书签",
+  "@bookmark_delete_label": {
+    "description": "Accessibility label for delete action",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmark_seek_label": "跳转到 {timestamp}",
+  "@bookmark_seek_label": {
+    "description": "Accessibility label for bookmark seek",
+    "type": "text",
+    "placeholders": {
+      "timestamp": {}
+    }
+  },
+  "settings_bookmark_on_skip_previous": "耳机上一曲按钮创建书签",
+  "@settings_bookmark_on_skip_previous": {
+    "description": "Setting to control headphone previous button behavior",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_bookmark_on_skip_previous_subtitle": "关闭时，耳机上一曲按钮将改为倒退",
+  "@settings_bookmark_on_skip_previous_subtitle": {
+    "description": "Subtitle for headphone previous button setting",
+    "type": "text",
+    "placeholders": {}
+  },
+  "open_up_next_hint": "打开待播队列",
+  "@open_up_next_hint": {
+    "description": "Hint displayed on open up next queue from main window",
+    "type": "text",
+    "placeholders": {}
+  },
+  "playing_next_queue_label": "即将播放",
+  "@playing_next_queue_label": {
+    "description": "Playing next label on queue",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_continuous_play_option": "连续播放",
+  "@settings_continuous_play_option": {
+    "description": "Continuous play toggle switch label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_continuous_play_subtitle": "当队列为空时，自动播放该播客的下一集",
+  "@settings_continuous_play_subtitle": {
+    "description": "Continuous play toggle switch subtitle",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_background_refresh_option": "后台刷新",
+  "@settings_background_refresh_option": {
+    "description": "Background episode update toggle switch label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_background_refresh_option_subtitle": "在屏幕关闭时刷新单集。这会增加电池消耗。",
+  "@settings_background_refresh_option_subtitle": {
+    "description": "Background episode update toggle switch subtitle",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_refresh_notification_option": "刷新通知",
+  "@settings_refresh_notification_option": {
+    "description": "Enable update notification setting",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_refresh_notification_option_subtitle": "在刷新单集时显示通知图标。",
+  "@settings_refresh_notification_option_subtitle": {
+    "description": "Background episode update toggle switch subtitle",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_background_refresh_mobile_data_option": "使用移动数据时刷新",
+  "@settings_background_refresh_mobile_data_option": {
+    "description": "Background episode update when on mobile data toggle switch label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_background_refresh_mobile_data_option_subtitle": "允许在使用移动数据时刷新播客库",
+  "@settings_background_refresh_mobile_data_option_subtitle": {
+    "description": "Background episode update toggle when on mobile switch subtitle",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_podcast_management_divider_label": "播客管理",
+  "@settings_podcast_management_divider_label": {
+    "description": "Settings divider label for podcast management options",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_notification_divider_label": "通知",
+  "@settings_notification_divider_label": {
+    "description": "Settings divider label for notification options",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_default_tab_label": "默认标签页",
+  "@settings_default_tab_label": {
+    "description": "Label for the default tab setting",
+    "type": "text",
+    "placeholders": {}
+  },
+  "update_library_option": "刷新播客库",
+  "@update_library_option": {
+    "description": "Option label for manually triggering library refresh",
+    "type": "text",
+    "placeholders": {}
+  },
+  "share_podcast_option_label": "分享播客",
+  "@share_podcast_option_label": {
+    "description": "Context menu option to share the current podcast",
+    "type": "text",
+    "placeholders": {}
+  },
+  "share_episode_option_label": "分享单集",
+  "@share_episode_option_label": {
+    "description": "Context menu option to share the current podcast episode",
+    "type": "text",
+    "placeholders": {}
+  },
+  "open_show_website_label": "打开节目网站",
+  "@open_show_website_label": {
+    "description": "Open show website in browser",
+    "type": "text",
+    "placeholders": {}
+  },
+  "refresh_feed_label": "刷新节目",
+  "@refresh_feed_label": {
+    "description": "Menu item to refresh episodes",
+    "type": "text",
+    "placeholders": {}
+  },
+  "episode_filter_started_label": "已开始",
+  "@episode_filter_started_label": {
+    "description": "Only show episodes that have been started",
+    "type": "text",
+    "placeholders": {}
+  },
+  "episode_filter_played_label": "已播放",
+  "@episode_filter_played_label": {
+    "description": "Only show episodes that have been played",
+    "type": "text",
+    "placeholders": {}
+  },
+  "episode_filter_unplayed_label": "未播放",
+  "@episode_filter_unplayed_label": {
+    "description": "Only show episodes that have not been played",
+    "type": "text",
+    "placeholders": {}
+  },
+  "episode_filter_no_episodes_title_label": "未找到单集",
+  "@episode_filter_no_episodes_title_label": {
+    "description": "No Episodes title",
+    "type": "text",
+    "placeholders": {}
+  },
+  "episode_filter_no_episodes_title_description": "未找到单集",
+  "@episode_filter_no_episodes_title_description": {
+    "description": "This podcast has no episodes matching your search criteria and filter",
+    "type": "text",
+    "placeholders": {}
+  },
+  "episode_filter_clear_filters_button_label": "清除筛选",
+  "@episode_filter_clear_filters_button_label": {
+    "description": "Clear filters button",
+    "type": "text",
+    "placeholders": {}
+  },
+  "episode_filter_semantic_label": "单集筛选",
+  "@episode_filter_semantic_label": {
+    "description": "Episode filter semantic label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "episode_sort_semantic_label": "单集排序",
+  "@episode_sort_semantic_label": {
+    "description": "Episode sort semantic label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "episode_sort_latest_first_label": "最新优先",
+  "@episode_sort_latest_first_label": {
+    "description": "Episode latest first sort",
+    "type": "text",
+    "placeholders": {}
+  },
+  "episode_sort_earliest_first_label": "最早优先",
+  "@episode_sort_earliest_first_label": {
+    "description": "Episode earliest first sort",
+    "type": "text",
+    "placeholders": {}
+  },
+  "episode_sort_alphabetical_ascending_label": "字母 A-Z",
+  "@episode_sort_alphabetical_ascending_label": {
+    "description": "Episode alphabetical ascending",
+    "type": "text",
+    "placeholders": {}
+  },
+  "episode_sort_alphabetical_descending_label": "字母 Z-A",
+  "@episode_sort_alphabetical_descending_label": {
+    "description": "Episode alphabetical descending",
+    "type": "text",
+    "placeholders": {}
+  },
+  "sleep_episode_label": "本集结束时",
+  "@sleep_episode_label": {
+    "description": "Describes end of episode sleep label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "sleep_minute_label": "{minutes} 分钟",
+  "@sleep_minute_label": {
+    "description": "Describes the number of minutes to sleep",
+    "type": "text",
+    "placeholders": {
+      "minutes": {}
+    }
+  },
+  "sleep_timer_label": "睡眠定时器",
+  "@sleep_timer_label": {
+    "description": "Describes sleep timer label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "auto_scroll_transcript_label": "跟随转写",
+  "@auto_scroll_transcript_label": {
+    "description": "Auto scroll switch label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "transcript_why_not_url": "https://anytimeplayer.app/docs/anytime_transcript_support_en.html",
+  "@transcript_why_not_url": {
+    "description": "Language specific link",
+    "type": "text",
+    "placeholders": {}
+  },
+  "scrim_layout_selector": "关闭布局选择器",
+  "@scrim_layout_selector": {
+    "description": "Replaces default scrim label for layout selector bottom sheet.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "now_playing_episode_position": "单集位置",
+  "@now_playing_episode_position": {
+    "description": "Episode position slider control label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "now_playing_episode_time_remaining": "剩余时间",
+  "@now_playing_episode_time_remaining": {
+    "description": "Episode time remaining slider control label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "resume_button_label": "继续播放",
+  "@resume_button_label": {
+    "description": "Semantic label for the resume button",
+    "type": "text",
+    "placeholders": {}
+  },
+  "play_download_button_label": "播放已下载的单集",
+  "@play_download_button_label": {
+    "description": "Semantic label for the play downloaded episode button",
+    "type": "text",
+    "placeholders": {}
+  },
+  "cancel_download_button_label": "取消下载",
+  "@cancel_download_button_label": {
+    "description": "Semantic label for the play cancel download button",
+    "type": "text",
+    "placeholders": {}
+  },
+  "episode_details_button_label": "显示单集信息",
+  "@episode_details_button_label": {
+    "description": "Semantic label for the show info button.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "scrim_sleep_timer_selector": "关闭睡眠定时器选择器",
+  "@scrim_sleep_timer_selector": {
+    "description": "Replaces default scrim label for custom.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "scrim_speed_selector": "关闭播放速度选择器",
+  "@scrim_speed_selector": {
+    "description": "Replaces default scrim label for custom.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "scrim_episode_details_selector": "关闭单集详情",
+  "@scrim_episode_details_selector": {
+    "description": "Replaces default scrim label for episode details bottom sheet.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "scrim_episode_sort_selector": "关闭单集排序",
+  "@scrim_episode_sort_selector": {
+    "description": "Replaces default scrim label for episode sort bottom sheet.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "scrim_episode_filter_selector": "关闭单集筛选",
+  "@scrim_episode_filter_selector": {
+    "description": "Replaces default scrim label for episode filter bottom sheet.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "search_episodes_label": "搜索单集",
+  "@search_episodes_label": {
+    "description": "Hint text for episode search box",
+    "type": "text",
+    "placeholders": {}
+  },
+  "layout_selector_highlight_new_episodes": "高亮新单集",
+  "@layout_selector_highlight_new_episodes": {
+    "description": "Layout selector. Highlight new episodes option.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "layout_selector_sort_by": "排序方式",
+  "@layout_selector_sort_by": {
+    "description": "Layout selector. Sort by option.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "layout_selector_sort_by_alphabetical": "字母顺序",
+  "@layout_selector_sort_by_alphabetical": {
+    "description": "Layout selector. Sort by alphabetical option.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "layout_selector_sort_by_followed": "关注时间",
+  "@layout_selector_sort_by_followed": {
+    "description": "Layout selector. Sort by followed option.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "layout_selector_sort_by_unplayed": "未播放",
+  "@layout_selector_sort_by_unplayed": {
+    "description": "Layout selector. Sort by unplayed option.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "layout_selector_list_view": "列表视图",
+  "@layout_selector_list_view": {
+    "description": "Layout selector, list view icon",
+    "type": "text",
+    "placeholders": {}
+  },
+  "layout_selector_grid_view": "网格视图",
+  "@layout_selector_grid_view": {
+    "description": "Layout selector, grid view icon",
+    "type": "text",
+    "placeholders": {}
+  },
+  "layout_selector_compact_grid_view": "紧凑网格视图",
+  "@layout_selector_compact_grid_view": {
+    "description": "Layout selector, compact grid view icon",
+    "type": "text",
+    "placeholders": {}
+  },
+  "alert_sync_title_label": "播客库更新",
+  "@alert_sync_title_label": {
+    "description": "Alert title during library sync.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "alert_sync_title_body": "Anytime 正在更新您的播客库",
+  "@alert_sync_title_body": {
+    "description": "Alert body during library sync.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "podcast_context_play_latest_episode_label": "播放最新单集",
+  "@podcast_context_play_latest_episode_label": {
+    "description": "Context menu and semantic label for playing next episode",
+    "type": "text",
+    "placeholders": {}
+  },
+  "podcast_context_queue_latest_episode_label": "将最新单集添加到队列",
+  "@podcast_context_queue_latest_episode_label": {
+    "description": "Context menu and semantic label for queueing next episode",
+    "type": "text",
+    "placeholders": {}
+  },
+  "label_podcast_actions": "播客操作",
+  "@label_podcast_actions": {
+    "description": "Podcast Actions title",
+    "type": "text",
+    "placeholders": {}
+  },
+  "podcast_context_play_next_episode_label": "播放下一集未播放的单集",
+  "@podcast_context_play_next_episode_label": {
+    "description": "Context menu and semantic label for playing next unplayed episode",
+    "type": "text",
+    "placeholders": {}
+  },
+  "podcast_context_queue_next_episode_label": "将下一集未播放的单集添加到队列",
+  "@podcast_context_queue_next_episode_label": {
+    "description": "Context menu and semantic label for queueing next unplayed episode",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_auto_update_episodes_24hour": "每 24 小时",
+  "@settings_auto_update_episodes_24hour": {
+    "description": "Option label for auto updating of episodes",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_auto_update_episodes_48hour": "每 2 天",
+  "@settings_auto_update_episodes_48hour": {
+    "description": "Option label for auto updating of episodes",
+    "type": "text",
+    "placeholders": {}
+  },
+  "episode_time_now": "刚刚",
+  "@episode_time_now": {
+    "description": "Episode has just been released",
+    "type": "text",
+    "placeholders": {}
+  },
+  "label_megabytes": "兆字节",
+  "@label_megabytes": {
+    "description": "Megabytes label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "label_megabytes_abbr": "MB",
+  "@label_megabytes_abbr": {
+    "description": "Megabytes label abbreviation",
+    "type": "text",
+    "placeholders": {}
+  },
+  "label_episode_actions": "单集操作",
+  "@label_episode_actions": {
+    "description": "Episode Actions title",
+    "type": "text",
+    "placeholders": {}
+  },
+  "library_sort_alphabetical_label": "字母顺序",
+  "@library_sort_alphabetical_label": {
+    "description": "Option label for sorting the library alphabetically",
+    "type": "text",
+    "placeholders": {}
+  },
+  "library_sort_date_followed_label": "关注时间",
+  "@library_sort_date_followed_label": {
+    "description": "Option label for sorting the library by date followed",
+    "type": "text",
+    "placeholders": {}
+  },
+  "library_sort_unplayed_count_label": "未播放单集数",
+  "@library_sort_unplayed_count_label": {
+    "description": "Option label for sorting the library by unplayed count",
+    "type": "text",
+    "placeholders": {}
+  },
+  "library_sort_latest_episodes_label": "最新单集",
+  "@library_sort_latest_episodes_label": {
+    "description": "Option label for sorting the library by latest count",
+    "type": "text",
+    "placeholders": {}
+  },
+  "podcast_options_overflow_menu_semantic_label": "选项菜单",
+  "@podcast_options_overflow_menu_semantic_label": {
+    "description": "Podcast details overflow menu",
+    "type": "text",
+    "placeholders": {}
+  },
+  "semantic_announce_searching": "正在搜索，请稍候。",
+  "@semantic_announce_searching": {
+    "description": "Spoken when search in progress.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "semantic_playing_options_expand_label": "打开播放选项滑块",
+  "@semantic_playing_options_expand_label": {
+    "description": "Placed on options handle when screen reader enabled.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "semantic_playing_options_collapse_label": "关闭播放选项滑块",
+  "@semantic_playing_options_collapse_label": {
+    "description": "Placed on options handle when screen reader enabled.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "semantic_podcast_artwork_label": "播客封面",
+  "@semantic_podcast_artwork_label": {
+    "description": "Placed around podcast image on main player",
+    "type": "text",
+    "placeholders": {}
+  },
+  "semantic_chapter_link_label": "章节网页链接",
+  "@semantic_chapter_link_label": {
+    "description": "Placed around chapter link",
+    "type": "text",
+    "placeholders": {}
+  },
+  "semantic_current_chapter_label": "当前章节",
+  "@semantic_current_chapter_label": {
+    "description": "Placed around chapter",
+    "type": "text",
+    "placeholders": {}
+  },
+  "semantics_mini_player_header": "迷你播放器。向右滑动到播放/暂停按钮。点击打开主播放器窗口",
+  "@semantics_mini_player_header": {
+    "description": "Describes the mini player",
+    "type": "text",
+    "placeholders": {}
+  },
+  "semantics_episode_tile_collapsed": "单集列表项。显示图片、摘要和主要控制按钮。",
+  "@semantics_episode_tile_collapsed": {
+    "description": "Describes episode tile options when collapsed",
+    "type": "text",
+    "placeholders": {}
+  },
+  "semantics_episode_tile_expanded": "单集列表项。显示描述、主要控制按钮和附加控制按钮。",
+  "@semantics_episode_tile_expanded": {
+    "description": "Describes episode tile options when expanded",
+    "type": "text",
+    "placeholders": {}
+  },
+  "semantics_episode_tile_collapsed_hint": "展开以显示更多详情和附加选项",
+  "@semantics_episode_tile_collapsed_hint": {
+    "description": "Describes episode tile options when collapsed",
+    "type": "text",
+    "placeholders": {}
+  },
+  "semantics_episode_tile_expanded_hint": "折叠以显示摘要、下载和播放控制",
+  "@semantics_episode_tile_expanded_hint": {
+    "description": "Describes episode tile options when expanded",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_failed_to_load": "加载时间线失败",
+  "@timeline_failed_to_load": {
+    "description": "Error message when timeline fails to load",
+    "type": "text",
+    "placeholders": {}
+  },
+  "retry_button_label": "重试",
+  "@retry_button_label": {
+    "description": "Retry button label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_all_played_message": "所有单集均已播放。点击上方的显示图标以查看。",
+  "@timeline_all_played_message": {
+    "description": "Displayed when all timeline episodes have been played",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_showing_date": "显示 {dateStr}",
+  "@timeline_showing_date": {
+    "description": "Shown when timeline is filtered to a specific date",
+    "type": "text",
+    "placeholders": {
+      "dateStr": {}
+    }
+  },
+  "clear_button_label": "清除",
+  "@clear_button_label": {
+    "description": "Clear button label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "hide_played_episodes_tooltip": "隐藏已播放的单集",
+  "@hide_played_episodes_tooltip": {
+    "description": "Tooltip for hiding played episodes",
+    "type": "text",
+    "placeholders": {}
+  },
+  "show_played_episodes_tooltip": "显示已播放的单集",
+  "@show_played_episodes_tooltip": {
+    "description": "Tooltip for showing played episodes",
+    "type": "text",
+    "placeholders": {}
+  },
+  "refresh_feeds_tooltip": "刷新节目",
+  "@refresh_feeds_tooltip": {
+    "description": "Tooltip for refresh feeds button",
+    "type": "text",
+    "placeholders": {}
+  },
+  "jump_to_date_tooltip": "跳转到时间线中的日期",
+  "@jump_to_date_tooltip": {
+    "description": "Help text for date picker in timeline",
+    "type": "text",
+    "placeholders": {}
+  },
+  "starting_refresh": "正在开始刷新…",
+  "@starting_refresh": {
+    "description": "Shown while refresh is starting",
+    "type": "text",
+    "placeholders": {}
+  },
+  "refresh_done": "完成！已更新 {total} 个来源",
+  "@refresh_done": {
+    "description": "Shown when refresh completes",
+    "type": "text",
+    "placeholders": {
+      "total": {}
+    }
+  },
+  "refreshing_feeds_title": "正在刷新节目",
+  "@refreshing_feeds_title": {
+    "description": "Title of refresh progress dialog",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_date_unknown": "未知",
+  "@timeline_date_unknown": {
+    "description": "Timeline section label for episodes without a publication date",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_date_today": "今天",
+  "@timeline_date_today": {
+    "description": "Timeline section label for episodes published today",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_date_yesterday": "昨天",
+  "@timeline_date_yesterday": {
+    "description": "Timeline section label for episodes published yesterday",
+    "type": "text",
+    "placeholders": {}
+  },
+  "timeline_date_this_week": "本周",
+  "@timeline_date_this_week": {
+    "description": "Timeline section label for episodes published in the last seven days",
+    "type": "text",
+    "placeholders": {}
+  },
+  "refresh_feeds_failed": "无法刷新节目源",
+  "@refresh_feeds_failed": {
+    "description": "Error shown when refreshing podcast feeds fails",
     "type": "text",
     "placeholders": {}
   }

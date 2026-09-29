@@ -36,6 +36,7 @@ class SettingsBloc extends Bloc {
   final BehaviorSubject<bool> _backgroundUpdate = BehaviorSubject<bool>();
   final BehaviorSubject<bool> _backgroundUpdateMobileData = BehaviorSubject<bool>();
   final BehaviorSubject<bool> _updateNotification = BehaviorSubject<bool>();
+  final BehaviorSubject<int> _defaultTab = BehaviorSubject<int>();
 
   var _currentSettings = AppSettings.sensibleDefaults();
 
@@ -77,6 +78,7 @@ class SettingsBloc extends Bloc {
       backgroundUpdate: settingsService.backgroundUpdate,
       backgroundUpdateMobileData: settingsService.backgroundUpdateMobileData,
       updatesNotification: settingsService.updateNotification,
+      defaultTab: settingsService.defaultTab,
     );
 
     _settings.add(_currentSettings);
@@ -203,6 +205,12 @@ class SettingsBloc extends Bloc {
       settingsService.backgroundUpdateMobileData = backgroundUpdatesMobileData;
     });
 
+    _defaultTab.listen((int tab) {
+      _currentSettings = _currentSettings.copyWith(defaultTab: tab);
+      _settings.add(_currentSettings);
+      settingsService.defaultTab = tab;
+    });
+
     _updateNotification.listen((updateNotification) {
       _currentSettings = _currentSettings.copyWith(updatesNotification: updateNotification);
       _settings.add(_currentSettings);
@@ -266,6 +274,8 @@ class SettingsBloc extends Bloc {
 
   void Function(bool) get updateNotification => _updateNotification.add;
 
+  void Function(int) get setDefaultTab => _defaultTab.add;
+
   AppSettings get currentSettings => _settings.value;
 
   @override
@@ -288,6 +298,7 @@ class SettingsBloc extends Bloc {
     _layoutCount.close();
     _backgroundUpdate.close();
     _updateNotification.close();
+    _defaultTab.close();
     _settings.close();
   }
 }

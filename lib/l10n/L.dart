@@ -86,6 +86,26 @@ class L {
         );
   }
 
+  String get timeline {
+    return message('timeline') ??
+        Intl.message(
+          'Timeline',
+          name: 'timeline',
+          desc: 'Timeline tab label',
+          locale: localeName,
+        );
+  }
+
+  String get no_episodes_message {
+    return message('no_episodes_message') ??
+        Intl.message(
+          'No episodes yet',
+          name: 'no_episodes_message',
+          desc: 'Displayed when the timeline has no episodes',
+          locale: localeName,
+        );
+  }
+
   /// Podcasts
   String get subscribe_button_label {
     return message('subscribe_button_label') ??
@@ -1798,6 +1818,16 @@ class L {
         );
   }
 
+  String get settings_default_tab_label {
+    return message('settings_default_tab_label') ??
+        Intl.message(
+          'Default tab',
+          name: 'settings_default_tab_label',
+          desc: 'Label for the default tab setting',
+          locale: localeName,
+        );
+  }
+
   String get settings_continuous_play_option {
     return message('settings_continuous_play_option') ??
         Intl.message(
@@ -2380,13 +2410,187 @@ class L {
           locale: localeName,
         );
   }
+
+  /// Timeline
+  String get timeline_failed_to_load {
+    return message('timeline_failed_to_load') ??
+        Intl.message(
+          'Failed to load timeline',
+          name: 'timeline_failed_to_load',
+          desc: 'Error message when timeline fails to load',
+          locale: localeName,
+        );
+  }
+
+  String get retry_button_label {
+    return message('retry_button_label') ??
+        Intl.message(
+          'Retry',
+          name: 'retry_button_label',
+          desc: 'Retry button label',
+          locale: localeName,
+        );
+  }
+
+  String get timeline_all_played_message {
+    return message('timeline_all_played_message') ??
+        Intl.message(
+          'All episodes are played. Tap the visibility icon above to show them.',
+          name: 'timeline_all_played_message',
+          desc: 'Displayed when all timeline episodes have been played',
+          locale: localeName,
+        );
+  }
+
+  String timeline_showing_date(String dateStr) {
+    return message('timeline_showing_date') ??
+        Intl.message(
+          'Showing $dateStr',
+          args: [dateStr],
+          name: 'timeline_showing_date',
+          desc: 'Shown when timeline is filtered to a specific date',
+          locale: localeName,
+        );
+  }
+
+  String get clear_button_label {
+    return message('clear_button_label') ??
+        Intl.message(
+          'Clear',
+          name: 'clear_button_label',
+          desc: 'Clear button label',
+          locale: localeName,
+        );
+  }
+
+  String get hide_played_episodes_tooltip {
+    return message('hide_played_episodes_tooltip') ??
+        Intl.message(
+          'Hide played episodes',
+          name: 'hide_played_episodes_tooltip',
+          desc: 'Tooltip for hiding played episodes',
+          locale: localeName,
+        );
+  }
+
+  String get show_played_episodes_tooltip {
+    return message('show_played_episodes_tooltip') ??
+        Intl.message(
+          'Show played episodes',
+          name: 'show_played_episodes_tooltip',
+          desc: 'Tooltip for showing played episodes',
+          locale: localeName,
+        );
+  }
+
+  String get refresh_feeds_tooltip {
+    return message('refresh_feeds_tooltip') ??
+        Intl.message(
+          'Refresh feeds',
+          name: 'refresh_feeds_tooltip',
+          desc: 'Tooltip for refresh feeds button',
+          locale: localeName,
+        );
+  }
+
+  String get jump_to_date_tooltip {
+    return message('jump_to_date_tooltip') ??
+        Intl.message(
+          'Jump to date in timeline',
+          name: 'jump_to_date_tooltip',
+          desc: 'Help text for date picker in timeline',
+          locale: localeName,
+        );
+  }
+
+  String get timeline_date_unknown {
+    return message('timeline_date_unknown') ??
+        Intl.message(
+          'Unknown',
+          name: 'timeline_date_unknown',
+          desc: 'Timeline section label for episodes without a publication date',
+          locale: localeName,
+        );
+  }
+
+  String get timeline_date_today {
+    return message('timeline_date_today') ??
+        Intl.message(
+          'Today',
+          name: 'timeline_date_today',
+          desc: 'Timeline section label for episodes published today',
+          locale: localeName,
+        );
+  }
+
+  String get timeline_date_yesterday {
+    return message('timeline_date_yesterday') ??
+        Intl.message(
+          'Yesterday',
+          name: 'timeline_date_yesterday',
+          desc: 'Timeline section label for episodes published yesterday',
+          locale: localeName,
+        );
+  }
+
+  String get timeline_date_this_week {
+    return message('timeline_date_this_week') ??
+        Intl.message(
+          'This Week',
+          name: 'timeline_date_this_week',
+          desc: 'Timeline section label for episodes published in the last seven days',
+          locale: localeName,
+        );
+  }
+
+  String get starting_refresh {
+    return message('starting_refresh') ??
+        Intl.message(
+          'Starting refresh…',
+          name: 'starting_refresh',
+          desc: 'Shown while refresh is starting',
+          locale: localeName,
+        );
+  }
+
+  String refresh_done(int total) {
+    return message('refresh_done') ??
+        Intl.message(
+          'Done! Updated $total sources',
+          args: [total],
+          name: 'refresh_done',
+          desc: 'Shown when refresh completes',
+          locale: localeName,
+        );
+  }
+
+  String get refreshing_feeds_title {
+    return message('refreshing_feeds_title') ??
+        Intl.message(
+          'Refreshing feeds',
+          name: 'refreshing_feeds_title',
+          desc: 'Title of refresh progress dialog',
+          locale: localeName,
+        );
+  }
+
+  String get refresh_feeds_failed {
+    return message('refresh_feeds_failed') ??
+        Intl.message(
+          'Could not refresh feeds',
+          name: 'refresh_feeds_failed',
+          desc: 'Error shown when refreshing podcast feeds fails',
+          locale: localeName,
+        );
+  }
 }
 
 class AnytimeLocalisationsDelegate extends LocalizationsDelegate<L> {
   const AnytimeLocalisationsDelegate();
 
   @override
-  bool isSupported(Locale locale) => ['en', 'es', 'de', 'gl', 'it', 'nl', 'ru', 'tr', 'vi', 'zh_Hans'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      ['en', 'es', 'de', 'gl', 'it', 'nl', 'ru', 'tr', 'vi', 'zh_Hans'].contains(locale.languageCode);
 
   @override
   Future<L> load(Locale locale) => L.load(locale, const {});
@@ -2409,7 +2613,8 @@ class EmbeddedLocalisationsDelegate extends LocalizationsDelegate<L> {
   EmbeddedLocalisationsDelegate({@required this.messages = const {}});
 
   @override
-  bool isSupported(Locale locale) => ['en', 'es', 'de', 'gl', 'it', 'nl', 'ru', 'tr', 'vi', 'zh_Hans'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      ['en', 'es', 'de', 'gl', 'it', 'nl', 'ru', 'tr', 'vi', 'zh_Hans'].contains(locale.languageCode);
 
   @override
   Future<L> load(Locale locale) => L.load(locale, messages);

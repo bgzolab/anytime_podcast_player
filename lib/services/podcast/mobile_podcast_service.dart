@@ -615,6 +615,16 @@ class MobilePodcastService extends PodcastService {
   }
 
   @override
+  Future<List<Episode>> loadEpisodesBefore(DateTime beforeDate, {int limit = 100}) async {
+    return repository.findEpisodesBefore(beforeDate, limit: limit);
+  }
+
+  @override
+  Future<int> countEpisodesSince(DateTime sinceDate) async {
+    return repository.countEpisodesSince(sinceDate);
+  }
+
+  @override
   Future<void> deleteDownload(Episode episode) async {
     // If this episode is currently downloading, cancel the download first.
     if (episode.downloadState == DownloadState.downloaded) {
@@ -859,6 +869,65 @@ class MobilePodcastService extends PodcastService {
         _log.fine('Feed update not due until $updateDue');
       }
     });
+  }
+
+  @override
+  Stream<RefreshProgress> refreshFeedsWithProgress() async* {
+    // Check connectivity first.
+    final connectivityResult = await Connectivity().checkConnectivity();
+    final hasConnectivity = !connectivityResult.contains(ConnectivityResult.none);
+    final allowConnectivity = connectivityResult.contains(ConnectivityResult.wifi) ||
+        (settingsService.backgroundUpdateMobileData && connectivityResult.contains(ConnectivityResult.mobile));
+
+    if (!hasConnectivity || !allowConnectivity) {
+      _log.fine('No suitable connectivity for feed refresh');
+      yield const RefreshProgress(total: 0, completed: 0, currentSource: '', finished: true);
+      return;
+    }
+
+    _libraryState.add(LibraryRefreshingState());
+
+    try {
+      final subs = await subscriptions();
+      subs.sort((a, b) => a.lastUpdated.compareTo(b.lastUpdated));
+
+      final total = subs.length;
+      var completed = 0;
+      var newOrUpdatedEpisodes = false;
+
+      for (var i = 0; i < total; i++) {
+        final sub = subs[i];
+        yield RefreshProgress(total: total, completed: completed, currentSource: sub.title);
+
+        try {
+          final p = await loadPodcast(podcast: sub, ignoreCache: true, highlightNewEpisodes: true)
+              .timeout(const Duration(seconds: 5));
+
+          if (p != null && (p.newEpisodes > 0 || p.updatedEpisodes)) {
+            newOrUpdatedEpisodes = true;
+          }
+        } catch (e) {
+          _log.warning('Failed to refresh ${sub.title}: $e');
+        }
+
+        completed++;
+      }
+
+      if (newOrUpdatedEpisodes) {
+        _libraryState.add(LibraryUpdatedState());
+      }
+
+      settingsService.lastFeedRefresh = DateTime.now();
+
+      yield RefreshProgress(total: total, completed: completed, currentSource: '', finished: true);
+    } finally {
+      // Always leave the library in a ready state — even when the refresh
+      // fails or the consumer cancels the stream — otherwise the whole app is
+      // stuck in "refreshing" and the library menu stays disabled.
+      if (_libraryState.value is! LibraryReadyState) {
+        _libraryState.add(LibraryReadyState());
+      }
+    }
   }
 
   /// Remove HTML padding from the content. The padding may look fine within

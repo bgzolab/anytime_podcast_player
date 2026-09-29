@@ -74,5 +74,8 @@ class MockSettingsService extends SettingsService {
   DateTime lastFeedRefresh = DateTime.utc(1970, 1, 1);
 
   @override
+  int defaultTab = 0;
+
+  @override
   Stream<String> get settingsListener => PublishSubject<String>().stream;
 }

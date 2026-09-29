@@ -4,6 +4,7 @@
 
 import 'dart:io';
 
+import 'package:anytime/entities/bookmark.dart';
 import 'package:anytime/entities/downloadable.dart';
 import 'package:anytime/entities/episode.dart';
 import 'package:anytime/entities/podcast.dart';
@@ -29,25 +30,13 @@ void main() {
     persistenceService = SembastRepository(cleanup: false);
 
     podcast1 = Podcast(
-        title: 'Podcast 1',
-        description: '1st p1',
-        guid: 'http://p1.com',
-        link: 'http://p1.com',
-        url: 'http://p1.com');
+        title: 'Podcast 1', description: '1st p1', guid: 'http://p1.com', link: 'http://p1.com', url: 'http://p1.com');
 
     podcast2 = Podcast(
-        title: 'Podcast 2',
-        description: '2nd p1',
-        guid: 'http://p2.com',
-        link: 'http://p2.com',
-        url: 'http://p2.com');
+        title: 'Podcast 2', description: '2nd p1', guid: 'http://p2.com', link: 'http://p2.com', url: 'http://p2.com');
 
     podcast3 = Podcast(
-        title: 'Podcast 3',
-        description: '3rd p1',
-        guid: 'http://p3.com',
-        link: 'http://p3.com',
-        url: 'http://p3.com');
+        title: 'Podcast 3', description: '3rd p1', guid: 'http://p3.com', link: 'http://p3.com', url: 'http://p3.com');
   });
 
   tearDown(() async {
@@ -652,7 +641,6 @@ void main() {
       await persistenceService!.savePodcast(podcast1);
     });
 
-
     test('Delete all episodes for a p1', () async {
       /// Save > 100 episodes (to test chunking)
       var episodes = <Episode>[];
@@ -939,21 +927,24 @@ void main() {
       /// Earliest first
       orderedEpisodes.sort((a, b) => a.publicationDate!.compareTo(b.publicationDate!));
 
-      episodes = await persistenceService!.findEpisodesByPodcastGuid(podcast1.guid!, sort: PodcastEpisodeSort.earliestFirst);
+      episodes =
+          await persistenceService!.findEpisodesByPodcastGuid(podcast1.guid!, sort: PodcastEpisodeSort.earliestFirst);
 
       expect(listEquals(episodes, orderedEpisodes), true);
 
       /// Alphabetical
       orderedEpisodes.sort((a, b) => a.title!.compareTo(b.title!));
 
-      episodes = await persistenceService!.findEpisodesByPodcastGuid(podcast1.guid!, sort: PodcastEpisodeSort.alphabeticalAscending);
+      episodes = await persistenceService!
+          .findEpisodesByPodcastGuid(podcast1.guid!, sort: PodcastEpisodeSort.alphabeticalAscending);
 
       expect(listEquals(episodes, orderedEpisodes), true);
 
       /// Alphabetical descending
       orderedEpisodes.sort((a, b) => b.title!.compareTo(a.title!));
 
-      episodes = await persistenceService!.findEpisodesByPodcastGuid(podcast1.guid!, sort: PodcastEpisodeSort.alphabeticalDescending);
+      episodes = await persistenceService!
+          .findEpisodesByPodcastGuid(podcast1.guid!, sort: PodcastEpisodeSort.alphabeticalDescending);
 
       expect(listEquals(episodes, orderedEpisodes), true);
     });
@@ -1008,15 +999,18 @@ void main() {
       await persistenceService!.savePodcast(podcast1);
 
       // Played episodes
-      var episodes = await persistenceService!.findEpisodesByPodcastGuid(podcast1.guid!, filter: PodcastEpisodeFilter.played);
+      var episodes =
+          await persistenceService!.findEpisodesByPodcastGuid(podcast1.guid!, filter: PodcastEpisodeFilter.played);
 
       expect(episodes.length, 2);
 
-      episodes = await persistenceService!.findEpisodesByPodcastGuid(podcast1.guid!, filter: PodcastEpisodeFilter.notPlayed);
+      episodes =
+          await persistenceService!.findEpisodesByPodcastGuid(podcast1.guid!, filter: PodcastEpisodeFilter.notPlayed);
 
       expect(episodes.length, 3);
 
-      episodes = await persistenceService!.findEpisodesByPodcastGuid(podcast1.guid!, filter: PodcastEpisodeFilter.started);
+      episodes =
+          await persistenceService!.findEpisodesByPodcastGuid(podcast1.guid!, filter: PodcastEpisodeFilter.started);
 
       expect(episodes.length, 1);
 
@@ -1737,6 +1731,55 @@ void main() {
 
       expect(episode1 == podcast1.episodes[0], true);
       expect(episode2 == podcast1.episodes[1], true);
+    });
+  });
+
+  group('Bookmark persistence', () {
+    test('Bookmarks are sorted numerically by position', () async {
+      await persistenceService!.saveBookmark(Bookmark(
+        episodeGuid: 'ep-bookmark',
+        episodeTitle: 'Episode 1',
+        podcastName: 'Podcast 1',
+        positionMs: 10000,
+        createdAt: DateTime(2026, 7, 18),
+      ));
+      await persistenceService!.saveBookmark(Bookmark(
+        episodeGuid: 'ep-bookmark',
+        episodeTitle: 'Episode 1',
+        podcastName: 'Podcast 1',
+        positionMs: 9000,
+        createdAt: DateTime(2026, 7, 18),
+      ));
+
+      final bookmarks = await persistenceService!.findBookmarksByEpisodeGuid('ep-bookmark');
+
+      // 9000 must come before 10000 — a lexicographic comparison would invert
+      // these ("10000" < "9000").
+      expect(bookmarks.map((b) => b.positionMs).toList(), [9000, 10000]);
+    });
+
+    test('saveBookmark updates an existing bookmark by id', () async {
+      final saved = await persistenceService!.saveBookmark(Bookmark(
+        episodeGuid: 'ep-update',
+        episodeTitle: 'Episode 1',
+        positionMs: 1000,
+        note: 'first',
+        createdAt: DateTime(2026, 7, 18),
+      ));
+
+      await persistenceService!.saveBookmark(Bookmark(
+        id: saved.id,
+        episodeGuid: 'ep-update',
+        episodeTitle: 'Episode 1',
+        positionMs: 1000,
+        note: 'updated',
+        createdAt: DateTime(2026, 7, 18),
+      ));
+
+      final bookmarks = await persistenceService!.findBookmarksByEpisodeGuid('ep-update');
+
+      expect(bookmarks.length, 1);
+      expect(bookmarks.first.note, 'updated');
     });
   });
 }

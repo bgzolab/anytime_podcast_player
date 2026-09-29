@@ -148,6 +148,36 @@ class L {
         );
   }
 
+  String get bookmarks_load_failed {
+    return message('bookmarks_load_failed') ??
+        Intl.message(
+          'Could not load bookmarks',
+          name: 'bookmarks_load_failed',
+          desc: 'Error state when bookmarks fail to load',
+          locale: localeName,
+        );
+  }
+
+  String get unknown_podcast {
+    return message('unknown_podcast') ??
+        Intl.message(
+          'Unknown Podcast',
+          name: 'unknown_podcast',
+          desc: 'Fallback name for a bookmark whose podcast is unknown',
+          locale: localeName,
+        );
+  }
+
+  String get unknown_episode {
+    return message('unknown_episode') ??
+        Intl.message(
+          'Unknown Episode',
+          name: 'unknown_episode',
+          desc: 'Fallback name for a bookmark whose episode is unknown',
+          locale: localeName,
+        );
+  }
+
   String get bookmark_delete_label {
     return message('bookmark_delete_label') ??
         Intl.message(

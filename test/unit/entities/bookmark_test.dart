@@ -25,9 +25,10 @@ void main() {
       expect(map['episodeTitle'], 'Test Episode');
       expect(map['podcastName'], 'Test Podcast');
       expect(map['podcastGuid'], 'pod-1');
-      expect(map['positionMs'], '30000');
+      // Stored as numbers so Sembast sorts them numerically.
+      expect(map['positionMs'], 30000);
       expect(map['note'], 'Important moment');
-      expect(map['createdAt'], DateTime(2026, 7, 18, 14, 30).millisecondsSinceEpoch.toString());
+      expect(map['createdAt'], DateTime(2026, 7, 18, 14, 30).millisecondsSinceEpoch);
     });
 
     test('fromMap() round-trips correctly', () {
@@ -107,6 +108,22 @@ void main() {
       expect(bookmark.episodeGuid, 'ep-1');
       expect(bookmark.positionMs, 5000);
       expect(bookmark.createdAt, isNotNull);
+    });
+
+    test('fromMap parses string values written by earlier versions', () {
+      final map = <String, dynamic>{
+        'episodeGuid': 'ep-1',
+        'episodeTitle': 'Test Episode',
+        'podcastName': 'Test Podcast',
+        'podcastGuid': 'pod-1',
+        'positionMs': '9000',
+        'note': null,
+        'createdAt': DateTime(2026, 7, 18).millisecondsSinceEpoch.toString(),
+      };
+
+      final bookmark = Bookmark.fromMap(1, map);
+      expect(bookmark.positionMs, 9000);
+      expect(bookmark.createdAt.millisecondsSinceEpoch, DateTime(2026, 7, 18).millisecondsSinceEpoch);
     });
   });
 }

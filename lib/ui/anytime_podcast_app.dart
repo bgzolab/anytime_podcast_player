@@ -166,6 +166,7 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        Provider<Repository>.value(value: widget.repository),
         Provider<SearchBloc>(
           create: (_) => SearchBloc(
             podcastService: widget.podcastService!,
@@ -310,18 +311,24 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
 
     /// Wire headphone "previous track" button to create a bookmark.
     final settingsBloc = Provider.of<SettingsBloc>(context, listen: false);
-    widget.audioPlayerService?.onSkipToPrevious = () {
+    widget.audioPlayerService?.onSkipToPrevious = () async {
       if (!settingsBloc.currentSettings.bookmarkOnSkipPrevious) {
-        // Setting is off — fall back to default rewind behavior.
-        widget.audioPlayerService?.rewind();
-        return;
+        // Setting is off — let the handler fall back to its rewind behaviour.
+        return false;
       }
+
       final episode = widget.audioPlayerService?.nowPlaying;
-      final positionMs = widget.audioPlayerService?.playPosition?.value.position.inMilliseconds;
-      if (episode != null && positionMs != null) {
-        bookmarkBloc.event(BookmarkCreateEvent(episode: episode, positionMs: positionMs));
-        BookmarkSound.play();
-      }
+      final positionState = widget.audioPlayerService?.playPosition?.valueOrNull;
+
+      if (episode == null || positionState == null) return false;
+
+      bookmarkBloc.event(BookmarkCreateEvent(
+        episode: episode,
+        positionMs: positionState.position.inMilliseconds,
+      ));
+      BookmarkSound.play();
+
+      return true;
     };
 
     /// Handle deep links

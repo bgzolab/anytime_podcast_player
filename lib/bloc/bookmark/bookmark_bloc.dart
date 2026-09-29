@@ -51,8 +51,9 @@ class BookmarkBloc extends Bloc {
   final PublishSubject<BookmarkEvent> _eventInput = PublishSubject<BookmarkEvent>();
   final BehaviorSubject<BlocState<List<Bookmark>>> _stateOutput = BehaviorSubject<BlocState<List<Bookmark>>>();
 
-  /// The episode GUID of the currently active fetch-by-episode request.
-  /// Used to re-fetch after create/delete operations.
+  /// The episode GUID of the currently active fetch-by-episode request, or
+  /// `null` when the last request was a fetch-all. Used to re-fetch the same
+  /// scope after create/delete operations.
   String? _currentEpisodeGuid;
 
   BookmarkBloc({
@@ -70,6 +71,9 @@ class BookmarkBloc extends Bloc {
   void _init() {
     _eventInput.switchMap<BlocState<List<Bookmark>>>((BookmarkEvent event) {
       if (event is BookmarkFetchAllEvent) {
+        // Reset the scope so create/delete refresh the full list again.
+        _currentEpisodeGuid = null;
+
         return _fetchAll();
       } else if (event is BookmarkFetchByEpisodeEvent) {
         _currentEpisodeGuid = event.episodeGuid;
@@ -117,14 +121,11 @@ class BookmarkBloc extends Bloc {
 
       await repository.saveBookmark(bookmark);
 
-      // Re-fetch bookmarks for the current episode so the UI updates.
-      if (_currentEpisodeGuid != null) {
-        final bookmarks = await repository.findBookmarksByEpisodeGuid(_currentEpisodeGuid!);
-        yield BlocPopulatedState<List<Bookmark>>(results: bookmarks);
-      } else {
-        final bookmarks = await repository.findAllBookmarks();
-        yield BlocPopulatedState<List<Bookmark>>(results: bookmarks);
-      }
+      // Re-fetch the same scope that the UI is currently showing so the list
+      // the user sees is updated (all bookmarks, or one episode's).
+      final bookmarks = await _refetch();
+
+      yield BlocPopulatedState<List<Bookmark>>(results: bookmarks);
     } catch (e) {
       log.severe('Failed to create bookmark: $e');
       yield BlocErrorState<List<Bookmark>>();
@@ -135,18 +136,25 @@ class BookmarkBloc extends Bloc {
     try {
       await repository.deleteBookmark(event.bookmark);
 
-      // Re-fetch bookmarks for the current episode so the UI updates.
-      if (_currentEpisodeGuid != null) {
-        final bookmarks = await repository.findBookmarksByEpisodeGuid(_currentEpisodeGuid!);
-        yield BlocPopulatedState<List<Bookmark>>(results: bookmarks);
-      } else {
-        final bookmarks = await repository.findAllBookmarks();
-        yield BlocPopulatedState<List<Bookmark>>(results: bookmarks);
-      }
+      // Re-fetch the same scope that the UI is currently showing so a deleted
+      // row cannot remain in the list (which would break Dismissible).
+      final bookmarks = await _refetch();
+
+      yield BlocPopulatedState<List<Bookmark>>(results: bookmarks);
     } catch (e) {
       log.severe('Failed to delete bookmark: $e');
       yield BlocErrorState<List<Bookmark>>();
     }
+  }
+
+  /// Loads bookmarks using the most recent query scope: all bookmarks when the
+  /// last request was a fetch-all, otherwise the bookmarks of that episode.
+  Future<List<Bookmark>> _refetch() {
+    final episodeGuid = _currentEpisodeGuid;
+
+    if (episodeGuid == null) return repository.findAllBookmarks();
+
+    return repository.findBookmarksByEpisodeGuid(episodeGuid);
   }
 
   @override

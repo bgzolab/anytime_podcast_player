@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:anytime/core/environment.dart';
-import 'package:flutter/foundation.dart';
 import 'package:anytime/core/utils.dart';
 import 'package:anytime/entities/chapter.dart';
 import 'package:anytime/entities/downloadable.dart';
@@ -120,7 +119,7 @@ class DefaultAudioPlayerService extends AudioPlayerService {
           repository: repository,
           settings: settingsService,
           podcastService: podcastService,
-          onSkipToPrevious: () => onSkipToPrevious?.call(),
+          onSkipToPrevious: () async => await onSkipToPrevious?.call() ?? false,
         ),
         config: const AudioServiceConfig(
           androidResumeOnClick: true,
@@ -1061,7 +1060,7 @@ class _DefaultAudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     action: MediaAction.fastForward,
   );
 
-  VoidCallback? onSkipToPrevious;
+  Future<bool> Function()? onSkipToPrevious;
 
   _DefaultAudioPlayerHandler({
     required this.repository,
@@ -1252,11 +1251,9 @@ class _DefaultAudioPlayerHandler extends BaseAudioHandler with SeekHandler {
 
   @override
   Future<void> skipToPrevious() async {
-    if (onSkipToPrevious != null) {
-      onSkipToPrevious!();
-    } else {
-      await rewind();
-    }
+    final handled = await onSkipToPrevious?.call() ?? false;
+
+    if (!handled) await rewind();
   }
 
   @override

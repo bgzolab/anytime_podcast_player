@@ -68,7 +68,8 @@ class AppSettings {
   /// True if showing a status icon in the notification bar during fetch is enabled
   final bool updatesNotification;
 
-  /// The default tab shown on app start (0=Timeline, 1=Library, 2=Discover, 3=Downloads).
+  /// The default tab shown on app start
+  /// (0=Timeline, 1=Library, 2=Discover, 3=Downloads, 4=Bookmarks).
   final int defaultTab;
 
   /// If true, the headphone "previous track" button creates a bookmark
@@ -124,7 +125,7 @@ class AppSettings {
         backgroundUpdateMobileData = false,
         updatesNotification = false,
         defaultTab = 0,
-        bookmarkOnSkipPrevious = true;
+        bookmarkOnSkipPrevious = false;
 
   AppSettings copyWith({
     String? theme,

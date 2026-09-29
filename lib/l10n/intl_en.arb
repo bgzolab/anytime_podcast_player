@@ -1661,5 +1661,23 @@
     "description": "Subtitle for headphone previous button setting",
     "type": "text",
     "placeholders": {}
+  },
+  "bookmarks_load_failed": "Could not load bookmarks",
+  "@bookmarks_load_failed": {
+    "description": "Error state when bookmarks fail to load",
+    "type": "text",
+    "placeholders": {}
+  },
+  "unknown_podcast": "Unknown Podcast",
+  "@unknown_podcast": {
+    "description": "Fallback name for a bookmark whose podcast is unknown",
+    "type": "text",
+    "placeholders": {}
+  },
+  "unknown_episode": "Unknown Episode",
+  "@unknown_episode": {
+    "description": "Fallback name for a bookmark whose episode is unknown",
+    "type": "text",
+    "placeholders": {}
   }
 }

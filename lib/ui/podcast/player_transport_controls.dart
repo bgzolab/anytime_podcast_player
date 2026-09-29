@@ -120,8 +120,8 @@ class _BookmarkButtonState extends State<BookmarkButton> with SingleTickerProvid
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
     final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
 
-    final positionState = audioBloc.playPosition?.value;
-    final episode = audioBloc.nowPlaying?.value;
+    final positionState = audioBloc.playPosition?.valueOrNull;
+    final episode = audioBloc.nowPlaying?.valueOrNull;
 
     if (positionState == null || episode == null) return;
 

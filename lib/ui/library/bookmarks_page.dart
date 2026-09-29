@@ -6,8 +6,10 @@ import 'package:anytime/bloc/bookmark/bookmark_bloc.dart';
 import 'package:anytime/bloc/podcast/audio_bloc.dart';
 import 'package:anytime/entities/bookmark.dart';
 import 'package:anytime/l10n/L.dart';
+import 'package:anytime/repository/repository.dart';
 import 'package:anytime/state/bloc_state.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:provider/provider.dart';
 
 /// Displays all bookmarked episodes grouped by podcast → episode.
@@ -47,7 +49,7 @@ class _BookmarksPageState extends State<BookmarksPage> {
         if (snapshot.data is BlocErrorState) {
           return SliverFillRemaining(
             hasScrollBody: false,
-            child: Center(child: Text(L.of(context)!.no_bookmarks_message)),
+            child: Center(child: Text(L.of(context)!.bookmarks_load_failed)),
           );
         }
 
@@ -87,10 +89,11 @@ class _BookmarksPageState extends State<BookmarksPage> {
     // Group: podcastName → episodeGuid → _EpisodeBookmarks
     final podcastMap = <String, Map<String, _EpisodeBookmarks>>{};
     for (final b in bookmarks) {
-      final podcastName = b.podcastName ?? 'Unknown Podcast';
+      final podcastName = b.podcastName ?? L.of(context)!.unknown_podcast;
       podcastMap
           .putIfAbsent(podcastName, () => {})
-          .putIfAbsent(b.episodeGuid, () => _EpisodeBookmarks(episodeTitle: b.episodeTitle ?? 'Unknown Episode'))
+          .putIfAbsent(
+              b.episodeGuid, () => _EpisodeBookmarks(episodeTitle: b.episodeTitle ?? L.of(context)!.unknown_episode))
           .bookmarks
           .add(b);
     }
@@ -269,7 +272,29 @@ class _BookmarkTile extends StatelessWidget {
     return '$h:$m:$s';
   }
 
-  String _formatDate(DateTime date) => '${date.month}/${date.day}/${date.year}';
+  String _formatDate(BuildContext context, DateTime date) =>
+      DateFormat.yMMMd(Localizations.localeOf(context).toLanguageTag()).format(date);
+
+  /// Plays the bookmark: seeks when its episode is already playing, otherwise
+  /// starts that episode from the bookmarked position.
+  Future<void> _openBookmark(BuildContext context) async {
+    final audioBloc = Provider.of<AudioBloc>(context, listen: false);
+    final nowPlaying = audioBloc.nowPlaying?.valueOrNull;
+
+    if (nowPlaying?.guid == bookmark.episodeGuid) {
+      audioBloc.transitionPosition(bookmark.positionMs / 1000.0);
+
+      return;
+    }
+
+    final repository = Provider.of<Repository>(context, listen: false);
+    final episode = await repository.findEpisodeByGuid(bookmark.episodeGuid);
+
+    if (episode == null) return;
+
+    episode.position = bookmark.positionMs;
+    audioBloc.play(episode);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -283,7 +308,10 @@ class _BookmarkTile extends StatelessWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 16.0),
         color: Colors.red,
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: Semantics(
+          label: L.of(context)!.bookmark_delete_label,
+          child: const Icon(Icons.delete, color: Colors.white),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.only(left: 42.0),
@@ -304,22 +332,17 @@ class _BookmarkTile extends StatelessWidget {
               if (bookmark.note != null && bookmark.note!.isNotEmpty)
                 Text(bookmark.note!, maxLines: 1, overflow: TextOverflow.ellipsis),
               Text(
-                _formatDate(bookmark.createdAt),
+                _formatDate(context, bookmark.createdAt),
                 style: theme.textTheme.bodySmall?.copyWith(color: theme.disabledColor),
               ),
             ],
           ),
           trailing: IconButton(
             icon: const Icon(Icons.play_circle_outline, size: 22.0),
-            onPressed: () {
-              final audioBloc = Provider.of<AudioBloc>(context, listen: false);
-              audioBloc.transitionPosition(bookmark.positionMs / 1000.0);
-            },
+            tooltip: L.of(context)!.bookmark_seek_label(_formatPosition(bookmark.positionMs)),
+            onPressed: () => _openBookmark(context),
           ),
-          onTap: () {
-            final audioBloc = Provider.of<AudioBloc>(context, listen: false);
-            audioBloc.transitionPosition(bookmark.positionMs / 1000.0);
-          },
+          onTap: () => _openBookmark(context),
         ),
       ),
     );

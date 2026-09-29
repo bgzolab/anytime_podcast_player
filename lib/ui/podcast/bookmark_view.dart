@@ -31,7 +31,7 @@ class _BookmarkViewState extends State<BookmarkView> {
   void _fetchForCurrentEpisode() {
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
     final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
-    final episode = audioBloc.nowPlaying?.value;
+    final episode = audioBloc.nowPlaying?.valueOrNull;
 
     if (episode != null && episode.guid != _currentEpisodeGuid) {
       _currentEpisodeGuid = episode.guid;
@@ -63,7 +63,7 @@ class _BookmarkViewState extends State<BookmarkView> {
             }
 
             if (snapshot.data is BlocErrorState) {
-              return Center(child: Text(L.of(context)!.no_bookmarks_message));
+              return Center(child: Text(L.of(context)!.bookmarks_load_failed));
             }
 
             final state = snapshot.data;
@@ -121,22 +121,26 @@ class _BookmarkViewState extends State<BookmarkView> {
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 16.0),
             color: Colors.red,
-            child: const Icon(Icons.delete, color: Colors.white),
+            child: Semantics(
+              label: L.of(context)!.bookmark_delete_label,
+              child: const Icon(Icons.delete, color: Colors.white),
+            ),
           ),
           child: ListTile(
             leading: Icon(Icons.bookmark, color: Theme.of(context).primaryColor),
             title: Text(
               _formatPosition(bookmark.positionMs),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
+                fontWeight: FontWeight.bold,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
             subtitle: bookmark.note != null && bookmark.note!.isNotEmpty
                 ? Text(bookmark.note!, maxLines: 1, overflow: TextOverflow.ellipsis)
                 : null,
             trailing: IconButton(
               icon: const Icon(Icons.play_circle_outline),
+              tooltip: L.of(context)!.bookmark_seek_label(_formatPosition(bookmark.positionMs)),
               onPressed: () {
                 audioBloc.transitionPosition(bookmark.positionMs / 1000.0);
               },

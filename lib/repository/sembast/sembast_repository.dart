@@ -901,14 +901,15 @@ class SembastRepository extends Repository {
 
   @override
   Future<Bookmark> saveBookmark(Bookmark bookmark) async {
-    final finder = bookmark.id == null
-        ? Finder(filter: Filter.equals('episodeGuid', bookmark.episodeGuid))
-        : Finder(filter: Filter.byKey(bookmark.id));
+    if (bookmark.id == null) {
+      bookmark.id = await _bookmarkStore.add(await _db, bookmark.toMap());
 
-    final RecordSnapshot<int, Map<String, Object?>>? snapshot =
-        await _bookmarkStore.findFirst(await _db, finder: finder);
+      return bookmark;
+    }
 
-    if (snapshot == null || bookmark.id == null) {
+    final finder = Finder(filter: Filter.byKey(bookmark.id));
+
+    if (await _bookmarkStore.findFirst(await _db, finder: finder) == null) {
       bookmark.id = await _bookmarkStore.add(await _db, bookmark.toMap());
     } else {
       await _bookmarkStore.update(await _db, bookmark.toMap(), finder: finder);

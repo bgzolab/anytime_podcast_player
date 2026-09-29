@@ -283,7 +283,7 @@ class MobileSettingsService extends SettingsService {
   }
 
   @override
-  bool get bookmarkOnSkipPrevious => _sharedPreferences.getBool('bookmarkOnSkipPrevious') ?? true;
+  bool get bookmarkOnSkipPrevious => _sharedPreferences.getBool('bookmarkOnSkipPrevious') ?? false;
 
   @override
   set bookmarkOnSkipPrevious(bool value) {

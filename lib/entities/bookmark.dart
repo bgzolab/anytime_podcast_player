@@ -46,10 +46,20 @@ class Bookmark {
       'episodeTitle': episodeTitle,
       'podcastName': podcastName,
       'podcastGuid': podcastGuid,
-      'positionMs': positionMs.toString(),
+      // Stored as numbers so that Sembast sorts them numerically.
+      'positionMs': positionMs,
       'note': note,
-      'createdAt': createdAt.millisecondsSinceEpoch.toString(),
+      'createdAt': createdAt.millisecondsSinceEpoch,
     };
+  }
+
+  /// Parses a stored number, tolerating the string representation used by
+  /// earlier versions of the bookmark store.
+  static int _asInt(Object? value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+
+    return int.parse(value.toString());
   }
 
   static Bookmark fromMap(int? key, Map<String, dynamic> map) {
@@ -59,11 +69,11 @@ class Bookmark {
       episodeTitle: map['episodeTitle'] as String?,
       podcastName: map['podcastName'] as String?,
       podcastGuid: map['podcastGuid'] as String?,
-      positionMs: int.parse(map['positionMs'] as String),
+      positionMs: _asInt(map['positionMs']),
       note: map['note'] as String?,
       createdAt: map['createdAt'] == null || map['createdAt'] == 'null'
           ? DateTime.now()
-          : DateTime.fromMillisecondsSinceEpoch(int.parse(map['createdAt'] as String)),
+          : DateTime.fromMillisecondsSinceEpoch(_asInt(map['createdAt'])),
     );
   }
 

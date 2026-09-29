@@ -300,5 +300,45 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 100));
       expect((states.last as BookmarkListState).scope, BookmarkScope.all);
     });
+
+    test('delete refreshes both the all scope and the active episode scope', () async {
+      final scopedRepository = FakeRepository();
+      await scopedRepository.saveBookmark(Bookmark(
+        episodeGuid: 'ep-1',
+        episodeTitle: 'Episode 1',
+        positionMs: 1000,
+        createdAt: DateTime(2026, 7, 1),
+      ));
+      await scopedRepository.saveBookmark(Bookmark(
+        episodeGuid: 'ep-2',
+        episodeTitle: 'Episode 2',
+        positionMs: 2000,
+        createdAt: DateTime(2026, 7, 2),
+      ));
+
+      final bloc = BookmarkBloc(repository: scopedRepository);
+      addTearDown(() => bloc.dispose());
+
+      final states = <BlocState<List<Bookmark>>>[];
+      bloc.state.listen(states.add);
+
+      bloc.event(BookmarkFetchByEpisodeEvent(episodeGuid: 'ep-1'));
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      final episodeScoped = states.last as BookmarkListState;
+      expect(episodeScoped.scope, BookmarkScope.episode);
+
+      bloc.event(BookmarkDeleteEvent(bookmark: episodeScoped.results!.first));
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // The bookmarks overview (all scope) must also be refreshed, or a
+      // dismissed row would remain in its list.
+      final allStates = states.whereType<BookmarkListState>().where((s) => s.scope == BookmarkScope.all);
+      expect(allStates, isNotEmpty);
+      expect(allStates.last.results!.length, 1);
+
+      final episodeStates = states.whereType<BookmarkListState>().where((s) => s.scope == BookmarkScope.episode);
+      expect(episodeStates.last.results, isEmpty);
+    });
   });
 }

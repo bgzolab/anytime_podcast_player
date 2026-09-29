@@ -41,6 +41,10 @@ class _BookmarkViewState extends State<BookmarkView> {
 
     if (episode != null && episode.guid != _currentEpisodeGuid) {
       _currentEpisodeGuid = episode.guid;
+      // Don't keep showing the previous episode's bookmarks: they belong to a
+      // different episode and tapping one would seek the wrong position.
+      _bookmarks = null;
+      _error = false;
       bookmarkBloc.event(BookmarkFetchByEpisodeEvent(episodeGuid: episode.guid));
     }
   }
@@ -83,6 +87,10 @@ class _BookmarkViewState extends State<BookmarkView> {
 
         if (episode != null && episode.guid != _currentEpisodeGuid) {
           _currentEpisodeGuid = episode.guid;
+          // Clear the previous episode's bookmarks while the new fetch is in
+          // flight; otherwise they can be tapped and seek the wrong position.
+          _bookmarks = null;
+          _error = false;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
 

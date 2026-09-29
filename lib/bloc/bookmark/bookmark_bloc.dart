@@ -122,9 +122,11 @@ class BookmarkBloc extends Bloc {
 
       await repository.saveBookmark(bookmark);
 
-      // Re-fetch the same scope that the UI is currently showing so the list
-      // the user sees is updated (all bookmarks, or one episode's).
-      yield await _refetch();
+      // Refresh every scope that may have an observer: the all-bookmarks list
+      // and, when active, the episode-scoped list. Each view filters for its
+      // own scope, so a single-scope refresh would leave the other view stale
+      // (e.g. a dismissed Dismissible still in the tree).
+      yield* _refreshScopes();
     } catch (e) {
       log.severe('Failed to create bookmark: $e');
       yield _errorState();
@@ -135,27 +137,28 @@ class BookmarkBloc extends Bloc {
     try {
       await repository.deleteBookmark(event.bookmark);
 
-      // Re-fetch the same scope that the UI is currently showing so a deleted
-      // row cannot remain in the list (which would break Dismissible).
-      yield await _refetch();
+      yield* _refreshScopes();
     } catch (e) {
       log.severe('Failed to delete bookmark: $e');
       yield _errorState();
     }
   }
 
-  /// Loads bookmarks using the most recent query scope: all bookmarks when the
-  /// last request was a fetch-all, otherwise the bookmarks of that episode.
-  Future<BlocState<List<Bookmark>>> _refetch() async {
+  /// Emits refreshed bookmark states for every scope that may be observed:
+  /// always the all-bookmarks scope, plus the active episode scope when one
+  /// has been requested.
+  Stream<BlocState<List<Bookmark>>> _refreshScopes() async* {
+    yield BookmarkListState(scope: BookmarkScope.all, results: await repository.findAllBookmarks());
+
     final episodeGuid = _currentEpisodeGuid;
 
-    if (episodeGuid == null) {
-      final bookmarks = await repository.findAllBookmarks();
-      return BookmarkListState(scope: BookmarkScope.all, results: bookmarks);
+    if (episodeGuid != null) {
+      yield BookmarkListState(
+        scope: BookmarkScope.episode,
+        episodeGuid: episodeGuid,
+        results: await repository.findBookmarksByEpisodeGuid(episodeGuid),
+      );
     }
-
-    final bookmarks = await repository.findBookmarksByEpisodeGuid(episodeGuid);
-    return BookmarkListState(scope: BookmarkScope.episode, episodeGuid: episodeGuid, results: bookmarks);
   }
 
   /// Error state for the scope that was last requested.

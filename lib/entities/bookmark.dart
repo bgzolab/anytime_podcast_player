@@ -66,7 +66,7 @@ class Bookmark {
   static Bookmark fromMap(int? key, Map<String, dynamic> map) {
     return Bookmark(
       id: key,
-      episodeGuid: map['episodeGuid'] as String,
+      episodeGuid: map['episodeGuid'] as String? ?? '',
       episodeTitle: map['episodeTitle'] as String?,
       podcastName: map['podcastName'] as String?,
       podcastGuid: map['podcastGuid'] as String?,

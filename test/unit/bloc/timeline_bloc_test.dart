@@ -524,5 +524,62 @@ void main() {
       expect((states.last as BlocPopulatedState<List<Episode>>).results!.length, 20);
       expect(bloc.hasMore, isTrue);
     });
+
+    test('toggleShowPlayed during an in-flight loadMore does not cancel it', () async {
+      final page1 = List.generate(
+        20,
+        (i) => Episode(
+          guid: 'ep-$i',
+          podcast: 'Test',
+          title: 'Episode $i',
+          publicationDate: DateTime(2026, 7, 30 - i),
+          duration: 1000,
+        ),
+      );
+      final page2 = List.generate(
+        20,
+        (i) => Episode(
+          guid: 'ep-${i + 20}',
+          podcast: 'Test',
+          title: 'Episode ${i + 20}',
+          publicationDate: DateTime(2026, 7, 10 - i),
+          duration: 1000,
+        ),
+      );
+
+      final gate = Completer<List<Episode>>();
+      int callCount = 0;
+      final service = FakePodcastService(
+        loadBefore: (_, __) {
+          callCount++;
+
+          return callCount == 1 ? Future.value(page1) : gate.future;
+        },
+        countSince: (_) async => 40,
+      );
+      final bloc = TimelineBloc(podcastService: service);
+      addTearDown(() => bloc.dispose());
+
+      final states = <BlocState>[];
+      bloc.state.listen(states.add);
+
+      bloc.refresh();
+      await Future.delayed(const Duration(milliseconds: 30));
+      expect((states.last as BlocPopulatedState<List<Episode>>).results!.length, 20);
+
+      bloc.loadMore();
+      await Future.delayed(const Duration(milliseconds: 10));
+
+      // Cache-only events must not cancel the in-flight page load; otherwise
+      // the loaded page would never be emitted.
+      bloc.event(TimelineEvent.toggleShowPlayed);
+
+      gate.complete(page2);
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      final last = states.last as BlocPopulatedState<List<Episode>>;
+      expect(last.results!.length, 40);
+      expect(bloc.showPlayed, isTrue);
+    });
   });
 }

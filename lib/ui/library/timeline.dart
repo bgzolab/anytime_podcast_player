@@ -391,17 +391,23 @@ class _TimelineState extends State<Timeline> {
   }
 
   /// Returns a human-readable date bucket label for the given [date].
+  ///
+  /// Uses calendar-day comparisons rather than elapsed hours so that DST
+  /// transitions cannot reclassify a day.
   String _dateBucket(BuildContext context, DateTime? date) {
     if (date == null) return L.of(context)!.timeline_date_unknown;
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final dateDay = DateTime(date.year, date.month, date.day);
-    final diff = today.difference(dateDay).inDays;
 
-    if (diff == 0) return L.of(context)!.timeline_date_today;
-    if (diff == 1) return L.of(context)!.timeline_date_yesterday;
-    if (diff > 1 && diff <= 7) return L.of(context)!.timeline_date_this_week;
+    if (dateDay == today) return L.of(context)!.timeline_date_today;
+
+    final yesterday = DateTime(now.year, now.month, now.day - 1);
+    if (dateDay == yesterday) return L.of(context)!.timeline_date_yesterday;
+
+    final weekAgo = DateTime(now.year, now.month, now.day - 6);
+    if (dateDay.isAfter(weekAgo) && dateDay.isBefore(today)) return L.of(context)!.timeline_date_this_week;
 
     return DateFormat.yMMMd().format(date);
   }

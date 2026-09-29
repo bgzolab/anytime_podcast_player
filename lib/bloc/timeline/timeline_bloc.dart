@@ -55,6 +55,11 @@ class TimelineBloc extends Bloc {
   final PodcastService podcastService;
 
   final PublishSubject<TimelineEvent> _eventInput = PublishSubject<TimelineEvent>(sync: true);
+
+  /// Cache-only events (show-played toggle, clear date filter). Kept separate
+  /// from [_eventInput] so they cannot cancel an in-flight page operation.
+  final PublishSubject<TimelineEvent> _cacheEventInput = PublishSubject<TimelineEvent>(sync: true);
+
   final BehaviorSubject<BlocState<List<Episode>>> _stateOutput = BehaviorSubject<BlocState<List<Episode>>>();
 
   bool _showPlayed = false;
@@ -119,7 +124,21 @@ class TimelineBloc extends Bloc {
   // ---------------------------------------------------------------------------
 
   /// Add a [TimelineEvent] to the input sink.
-  void Function(TimelineEvent) get event => _eventInput.add;
+  ///
+  /// Cache-only events (show-played toggle, clearing a date filter) are routed
+  /// away from the page-operation pipeline: they must not cancel an in-flight
+  /// refresh/loadMore/jumpToDate, which would swallow that operation's result.
+  void Function(TimelineEvent) get event => (event) {
+        switch (event) {
+          case TimelineEvent.toggleShowPlayed:
+          case TimelineEvent.clearDateFilter:
+            _cacheEventInput.add(event);
+          case TimelineEvent.refresh:
+          case TimelineEvent.loadMore:
+          case TimelineEvent.jumpToDate:
+            _eventInput.add(event);
+        }
+      };
 
   /// Stream of [BlocState] changes. Uses [BehaviorSubject] so late subscribers
   /// always get the last emitted state (no blank screen).
@@ -167,7 +186,7 @@ class TimelineBloc extends Bloc {
   }
 
   /// Clear the active date filter and show the episodes already loaded.
-  void clearDateFilter() => _eventInput.add(TimelineEvent.clearDateFilter);
+  void clearDateFilter() => _cacheEventInput.add(TimelineEvent.clearDateFilter);
 
   /// Load the next page if available (no-op while another page operation is
   /// in flight, at the end of the list, or with a date filter active).
@@ -191,38 +210,55 @@ class TimelineBloc extends Bloc {
   // ---------------------------------------------------------------------------
 
   void _init() {
-    // All events share one pipeline so refresh/loadMore/jumpToDate cannot
-    // interleave and corrupt the shared page state.
+    // Page operations share one switchMap pipeline so a new operation cancels
+    // the previous one and they cannot corrupt the shared page state.
     _eventInput.switchMap<BlocState<List<Episode>>>((TimelineEvent event) {
       switch (event) {
         case TimelineEvent.refresh:
           return _refresh();
         case TimelineEvent.loadMore:
           return _loadMore();
-        case TimelineEvent.toggleShowPlayed:
-          _showPlayed = !_showPlayed;
-          return _emitFromCache();
         case TimelineEvent.jumpToDate:
           return _jumpToDate(_pendingJumpDate!);
+        case TimelineEvent.toggleShowPlayed:
         case TimelineEvent.clearDateFilter:
-          _dateFilter = null;
-          return _emitFromCache();
+          // Routed to _cacheEventInput by the [event] getter; unreachable here.
+          return const Stream<BlocState<List<Episode>>>.empty();
       }
     }).listen((state) {
       _stateOutput.add(state);
-      _completeRefreshWait(state);
+    });
+
+    // Cache-only events re-emit the current list immediately, without touching
+    // the page-operation pipeline.
+    _cacheEventInput.listen((event) {
+      if (event == TimelineEvent.toggleShowPlayed) {
+        _showPlayed = !_showPlayed;
+      } else if (event == TimelineEvent.clearDateFilter) {
+        _dateFilter = null;
+      } else {
+        return;
+      }
+
+      if (_allEpisodes.isNotEmpty) {
+        _stateOutput.add(BlocPopulatedState<List<Episode>>(results: _sorted(_allEpisodes)));
+      } else {
+        _stateOutput.add(BlocDefaultState<List<Episode>>());
+      }
     });
   }
 
-  /// Completes a pending [refreshAndWait] Future once a real result is emitted.
-  void _completeRefreshWait(BlocState<List<Episode>> state) {
+  /// Completes a pending [refreshAndWait] Future.
+  ///
+  /// Called when the refresh operation that started it finishes (or is
+  /// cancelled); cache-only emissions must not complete it early.
+  void _completeRefreshWait() {
     final completer = _refreshCompleter;
 
     if (completer == null || completer.isCompleted) return;
-    if (state is BlocPopulatedState<List<Episode>> || state is BlocErrorState<List<Episode>>) {
-      _refreshCompleter = null;
-      completer.complete();
-    }
+
+    _refreshCompleter = null;
+    completer.complete();
   }
 
   // ---------------------------------------------------------------------------
@@ -258,6 +294,8 @@ class TimelineBloc extends Bloc {
 
       yield BlocErrorState<List<Episode>>();
     } finally {
+      _completeRefreshWait();
+
       if (generation == _generation) _busy = false;
     }
   }
@@ -265,16 +303,16 @@ class TimelineBloc extends Bloc {
   /// Appends the next page (older episodes). Shows a background-loading
   /// indicator while fetching so the UI stays responsive.
   Stream<BlocState<List<Episode>>> _loadMore() async* {
-    if (_cursor == null || _allEpisodes.isEmpty) return;
-
     final generation = ++_generation;
 
     _busy = true;
 
-    // Keep the current list visible while loading in the background.
-    yield BlocBackgroundLoadingState<List<Episode>>(_sorted(_allEpisodes));
-
     try {
+      if (_cursor == null || _allEpisodes.isEmpty) return;
+
+      // Keep the current list visible while loading in the background.
+      yield BlocBackgroundLoadingState<List<Episode>>(_sorted(_allEpisodes));
+
       await _fetchPage(generation);
       if (generation != _generation) return;
 
@@ -386,15 +424,6 @@ class TimelineBloc extends Bloc {
   // Sorting & cache helpers
   // ---------------------------------------------------------------------------
 
-  /// Re-emits the current [_allEpisodes] with the active sort direction.
-  Stream<BlocState<List<Episode>>> _emitFromCache() async* {
-    if (_allEpisodes.isNotEmpty) {
-      yield BlocPopulatedState<List<Episode>>(results: _sorted(_allEpisodes));
-    } else {
-      yield BlocDefaultState<List<Episode>>();
-    }
-  }
-
   /// Returns a new sorted list from [episodes] according to [_sortDescending].
   /// If [_dateFilter] is set, only episodes from **that calendar day**
   /// (year/month/day) are included.
@@ -432,6 +461,7 @@ class TimelineBloc extends Bloc {
     _refreshCompleter?.complete();
     _refreshCompleter = null;
     _eventInput.close();
+    _cacheEventInput.close();
     _stateOutput.close();
     super.dispose();
   }

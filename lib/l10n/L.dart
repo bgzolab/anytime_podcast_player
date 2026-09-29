@@ -7,6 +7,27 @@ import 'package:intl/intl.dart';
 
 import 'messages_all.dart';
 
+/// Languages supported by the bundled message catalogues.
+///
+/// `zh` is accepted because Flutter resolves Simplified Chinese to [Locale]
+/// values whose language code is `zh` (or `zh_Hans`); both delegates normalise
+/// it to `zh_Hans` when loading.
+const List<String> _supportedLanguageCodes = ['en', 'es', 'de', 'gl', 'it', 'nl', 'ru', 'tr', 'vi', 'zh_Hans'];
+
+/// Whether [languageCode] is covered by the bundled message catalogues.
+bool isSupportedLanguageCode(String languageCode) =>
+    _supportedLanguageCodes.contains(languageCode) || languageCode == 'zh';
+
+/// Normalises a locale name reported by the platform for Simplified Chinese
+/// (`zh`, `zh_CN`, `zh_Hans`, …) to the single Chinese catalogue the app ships.
+///
+/// Not part of the generated localisation code; the generated message lookups
+/// only know about `zh_Hans`.
+String normaliseZhLocaleName(String name) => name.toLowerCase().startsWith('zh') ? 'zh_Hans' : name;
+
+/// [Locale] equivalent of [normaliseZhLocaleName].
+Locale normaliseZhLocale(Locale locale) => locale.languageCode == 'zh' ? const Locale('zh_Hans', '') : locale;
+
 class L {
   L(this.localeName, this.overrides);
 
@@ -2712,11 +2733,10 @@ class AnytimeLocalisationsDelegate extends LocalizationsDelegate<L> {
   const AnytimeLocalisationsDelegate();
 
   @override
-  bool isSupported(Locale locale) =>
-      ['en', 'es', 'de', 'gl', 'it', 'nl', 'ru', 'tr', 'vi', 'zh_Hans'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => isSupportedLanguageCode(locale.languageCode);
 
   @override
-  Future<L> load(Locale locale) => L.load(locale, const {});
+  Future<L> load(Locale locale) => L.load(normaliseZhLocale(locale), const {});
 
   @override
   bool shouldReload(AnytimeLocalisationsDelegate old) => false;
@@ -2736,11 +2756,10 @@ class EmbeddedLocalisationsDelegate extends LocalizationsDelegate<L> {
   EmbeddedLocalisationsDelegate({@required this.messages = const {}});
 
   @override
-  bool isSupported(Locale locale) =>
-      ['en', 'es', 'de', 'gl', 'it', 'nl', 'ru', 'tr', 'vi', 'zh_Hans'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => isSupportedLanguageCode(locale.languageCode);
 
   @override
-  Future<L> load(Locale locale) => L.load(locale, messages);
+  Future<L> load(Locale locale) => L.load(normaliseZhLocale(locale), messages);
 
   @override
   bool shouldReload(EmbeddedLocalisationsDelegate old) => false;

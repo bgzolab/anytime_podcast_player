@@ -143,9 +143,12 @@ class SqliteRepository extends Repository {
     final db = await _db;
     final beforeMs = beforeDate.millisecondsSinceEpoch;
 
+    // Inclusive bound: the timeline de-duplicates pages by key, and an
+    // exclusive bound would silently skip episodes sharing the cursor's
+    // publication date.
     final rows = await db.query(
       'episode',
-      where: 'publicationDate < ?',
+      where: 'publicationDate <= ?',
       whereArgs: [beforeMs],
       orderBy: 'publicationDate DESC',
       limit: limit,
@@ -570,7 +573,9 @@ class SqliteRepository extends Repository {
   // Private helpers
   // ---------------------------------------------------------------------------
 
-  /// Converts List/Map values in [map] to JSON strings for SQLite storage.
+  /// Converts List/Map values in [map] to JSON strings for SQLite storage and
+  /// normalises the 'true'/'false' strings entities use for booleans into the
+  /// integers the schema expects.
   Map<String, dynamic> _sanitizeForSqlite(Map<String, dynamic> map) {
     final sanitized = <String, dynamic>{};
     for (var entry in map.entries) {
@@ -579,6 +584,10 @@ class SqliteRepository extends Repository {
         sanitized[entry.key] = jsonEncode(value);
       } else if (value is bool) {
         sanitized[entry.key] = value ? 1 : 0;
+      } else if (value is String && _intToBoolStringFields.contains(entry.key)) {
+        // Entities serialise booleans as 'true'/'false'; store them as integers
+        // so SQL filters such as `played = 1` match.
+        sanitized[entry.key] = value == 'true' ? 1 : 0;
       } else {
         sanitized[entry.key] = value;
       }
@@ -617,9 +626,15 @@ class SqliteRepository extends Repository {
   /// Fields that fromMap() expects as String but SQLite stores as INTEGER.
   /// Based on actual cast types in Episode.fromMap and Podcast.fromMap.
   static const _intToStringFields = {
-    'subscribedDate', 'publicationDate', 'season', 'episode',
-    'duration', 'position', 'downloadPercentage',
-    'positionMs', 'createdAt',
+    'subscribedDate',
+    'publicationDate',
+    'season',
+    'episode',
+    'duration',
+    'position',
+    'downloadPercentage',
+    'positionMs',
+    'createdAt',
   };
 
   /// Fields that need int→'true'/'false' String conversion (Episode.played).
@@ -627,10 +642,14 @@ class SqliteRepository extends Repository {
 
   /// Fields stored as JSON text that fromMap() expects as List.
   static const _jsonListFields = {
-    'chapters', 'transcriptUrls', 'persons', 'person',
-    'funding', 'subtitles', 'q',
+    'chapters',
+    'transcriptUrls',
+    'persons',
+    'person',
+    'funding',
+    'subtitles',
+    'q',
   };
-
 
   /// Converts a database row to an [Episode], parsing nested JSON fields.
   Episode _episodeFromRow(Map<String, dynamic> r) {

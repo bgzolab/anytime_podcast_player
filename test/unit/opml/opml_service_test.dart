@@ -13,6 +13,7 @@ import 'package:anytime/services/podcast/opml_service.dart';
 import 'package:anytime/services/podcast/podcast_service.dart';
 import 'package:anytime/state/opml_state.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 import '../mocks/mock_notification_service.dart';
@@ -21,8 +22,9 @@ import '../mocks/mock_podcast_api.dart';
 import '../mocks/mock_settings_service.dart';
 
 void main() {
-  // sqflite needs native SQLite — skip on desktop test runners.
-  final bool skipTests = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+  // Run SQLite on the Dart VM (desktop tests and CI) instead of a device.
+  sqfliteFfiInit();
+  databaseFactory = databaseFactoryFfi;
 
   final api = MockPodcastApi();
   final mockPath = MockPathProvder();
@@ -33,7 +35,6 @@ void main() {
   late Repository repository;
 
   setUp(() async {
-    if (skipTests) return;
     TestWidgetsFlutterBinding.ensureInitialized();
     PathProviderPlatform.instance = mockPath;
     repository = SqliteRepository(databaseName: dbName);
@@ -50,9 +51,7 @@ void main() {
   });
 
   tearDown(() async {
-    if (!skipTests) {
-      await repository.close();
-    }
+    await repository.close();
 
     var f = File('${Directory.systemTemp.path}/$dbName');
 
@@ -77,5 +76,5 @@ void main() {
     expect(subs.length, 1);
     expect(subs[0].title, 'Podcast Load Test 1');
     expect(subs[0].url, 'test_resources/podcast1.rss');
-  }, skip: skipTests);
+  });
 }

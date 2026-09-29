@@ -2,21 +2,24 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-@Skip('SQLite tests require a real device/emulator — sqflite needs native SQLite')
-library;
-
+import 'package:anytime/entities/bookmark.dart';
 import 'package:anytime/entities/downloadable.dart';
 import 'package:anytime/entities/episode.dart';
 import 'package:anytime/entities/podcast.dart';
 import 'package:anytime/entities/transcript.dart';
 import 'package:anytime/repository/sqlite/sqlite_repository.dart';
 import 'package:flutter/foundation.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 import '../mocks/mock_path_provider.dart';
 
 void main() {
+  // Run SQLite on the Dart VM (desktop tests and CI) instead of a device.
+  sqfliteFfiInit();
+  databaseFactory = databaseFactoryFfi;
+
   MockPathProvder mockPath;
   SqliteRepository? persistenceService;
 
@@ -29,18 +32,10 @@ void main() {
     persistenceService = SqliteRepository(databaseName: 'test_${DateTime.now().microsecondsSinceEpoch}.sqlite');
 
     podcast1 = Podcast(
-        title: 'Podcast 1',
-        description: '1st p1',
-        guid: 'http://p1.com',
-        link: 'http://p1.com',
-        url: 'http://p1.com');
+        title: 'Podcast 1', description: '1st p1', guid: 'http://p1.com', link: 'http://p1.com', url: 'http://p1.com');
 
     podcast2 = Podcast(
-        title: 'Podcast 2',
-        description: '2nd p1',
-        guid: 'http://p2.com',
-        link: 'http://p2.com',
-        url: 'http://p2.com');
+        title: 'Podcast 2', description: '2nd p1', guid: 'http://p2.com', link: 'http://p2.com', url: 'http://p2.com');
   });
 
   tearDown(() async {
@@ -60,16 +55,56 @@ void main() {
     });
 
     test('Retrieve existing Podcasts with episodes and unplayed count', () async {
+      // Fixtures are in newest-first order, matching the default episode sort
+      // applied by the repository when it loads a podcast.
       podcast1.episodes = <Episode>[
-        Episode(guid: 'EP001', title: 'Episode 1', pguid: podcast1.guid, podcast: podcast1.title, played: true),
-        Episode(guid: 'EP002', title: 'Episode 2', pguid: podcast1.guid, podcast: podcast1.title, played: false),
+        Episode(
+            guid: 'EP002',
+            title: 'Episode 2',
+            pguid: podcast1.guid,
+            podcast: podcast1.title,
+            position: 100,
+            played: true,
+            publicationDate: DateTime.now().subtract(const Duration(hours: 2))),
+        Episode(
+            guid: 'EP001',
+            title: 'Episode 1',
+            pguid: podcast1.guid,
+            podcast: podcast1.title,
+            played: false,
+            publicationDate: DateTime.now().subtract(const Duration(hours: 3))),
       ];
 
       podcast2.episodes = <Episode>[
-        Episode(guid: 'EP003', title: 'Episode 3', pguid: podcast2.guid, podcast: podcast2.title, played: true),
-        Episode(guid: 'EP004', title: 'Episode 4', pguid: podcast2.guid, podcast: podcast2.title, played: true),
-        Episode(guid: 'EP005', title: 'Episode 5', pguid: podcast2.guid, podcast: podcast2.title, played: false),
-        Episode(guid: 'EP006', title: 'Episode 6', pguid: podcast2.guid, podcast: podcast2.title, played: false),
+        Episode(
+            guid: 'EP004',
+            title: 'Episode 4',
+            pguid: podcast2.guid,
+            podcast: podcast2.title,
+            position: 100,
+            played: true,
+            publicationDate: DateTime.now().subtract(const Duration(days: 1))),
+        Episode(
+            guid: 'EP003',
+            title: 'Episode 3',
+            pguid: podcast2.guid,
+            podcast: podcast2.title,
+            played: true,
+            publicationDate: DateTime.now().subtract(const Duration(days: 2))),
+        Episode(
+            guid: 'EP002',
+            title: 'Episode 2',
+            pguid: podcast2.guid,
+            podcast: podcast2.title,
+            played: false,
+            publicationDate: DateTime.now().subtract(const Duration(days: 3))),
+        Episode(
+            guid: 'EP001',
+            title: 'Episode 1',
+            pguid: podcast2.guid,
+            podcast: podcast2.title,
+            played: false,
+            publicationDate: DateTime.now().subtract(const Duration(days: 4))),
       ];
 
       await persistenceService!.savePodcast(podcast1);
@@ -183,6 +218,86 @@ void main() {
       var loadedEpisode = await persistenceService!.findEpisodeById(episode.id!);
       expect(loadedEpisode, isNotNull);
       expect(loadedEpisode!.transcriptId, transcript.id);
+    });
+  });
+
+  group('Bookmark persistence', () {
+    test('Bookmarks are sorted numerically by position', () async {
+      await persistenceService!.saveBookmark(Bookmark(
+        episodeGuid: 'ep-bookmark',
+        episodeTitle: 'Episode 1',
+        podcastName: 'Podcast 1',
+        positionMs: 10000,
+        createdAt: DateTime(2026, 7, 18),
+      ));
+      await persistenceService!.saveBookmark(Bookmark(
+        episodeGuid: 'ep-bookmark',
+        episodeTitle: 'Episode 1',
+        podcastName: 'Podcast 1',
+        positionMs: 9000,
+        createdAt: DateTime(2026, 7, 18),
+      ));
+
+      final bookmarks = await persistenceService!.findBookmarksByEpisodeGuid('ep-bookmark');
+
+      // 9000 must come before 10000 — a lexicographic comparison would invert
+      // these ("10000" < "9000").
+      expect(bookmarks.map((b) => b.positionMs).toList(), [9000, 10000]);
+    });
+
+    test('saveBookmark updates an existing bookmark by id', () async {
+      final saved = await persistenceService!.saveBookmark(Bookmark(
+        episodeGuid: 'ep-update',
+        episodeTitle: 'Episode 1',
+        positionMs: 1000,
+        note: 'first',
+        createdAt: DateTime(2026, 7, 18),
+      ));
+
+      await persistenceService!.saveBookmark(Bookmark(
+        id: saved.id,
+        episodeGuid: 'ep-update',
+        episodeTitle: 'Episode 1',
+        positionMs: 1000,
+        note: 'updated',
+        createdAt: DateTime(2026, 7, 18),
+      ));
+
+      final bookmarks = await persistenceService!.findBookmarksByEpisodeGuid('ep-update');
+
+      expect(bookmarks.length, 1);
+      expect(bookmarks.first.note, 'updated');
+    });
+  });
+
+  group('Timeline pagination', () {
+    test('findEpisodesBefore includes episodes sharing the cursor date', () async {
+      final newest = DateTime(2026, 7, 18, 12);
+      final shared = newest.subtract(const Duration(minutes: 1));
+
+      podcast1.episodes = <Episode>[
+        Episode(
+            guid: 'EP001', title: 'Episode 1', pguid: podcast1.guid, podcast: podcast1.title, publicationDate: newest),
+        Episode(
+            guid: 'EP002', title: 'Episode 2', pguid: podcast1.guid, podcast: podcast1.title, publicationDate: shared),
+        Episode(
+            guid: 'EP003', title: 'Episode 3', pguid: podcast1.guid, podcast: podcast1.title, publicationDate: shared),
+      ];
+
+      await persistenceService!.savePodcast(podcast1);
+
+      // First page: newest episode plus one of the two sharing a date.
+      final page1 = await persistenceService!.findEpisodesBefore(DateTime.now(), limit: 2);
+      expect(page1.length, 2);
+      expect(page1.first.guid, 'EP001');
+
+      // The cursor sits on the shared date; the next page must still see the
+      // episodes with that exact timestamp (inclusive bound), otherwise they
+      // would be unreachable.
+      final cursor = page1.last.publicationDate!;
+      final page2 = await persistenceService!.findEpisodesBefore(cursor, limit: 10);
+
+      expect(page2.map((e) => e.guid).toSet().containsAll({'EP002', 'EP003'}), isTrue);
     });
   });
 }

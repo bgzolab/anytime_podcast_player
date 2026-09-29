@@ -64,6 +64,7 @@ dev_dependencies:
   flutter_lints: ^4.0.0
   flutter_test:
     sdk: flutter
+  sqflite_common_ffi: ^2.4.0+3
 
 flutter_icons:
   image_path_android: "assets/images/anytime-logo.png"

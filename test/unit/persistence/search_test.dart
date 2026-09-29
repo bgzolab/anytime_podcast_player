@@ -9,19 +9,20 @@ import 'package:anytime/entities/episode.dart';
 import 'package:anytime/entities/podcast.dart';
 import 'package:anytime/repository/sqlite/sqlite_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 import '../mocks/mock_path_provider.dart';
 
 void main() {
-  // sqflite needs native SQLite — skip on desktop test runners.
-  final bool skipTests = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+  // Run SQLite on the Dart VM (desktop tests and CI) instead of a device.
+  sqfliteFfiInit();
+  databaseFactory = databaseFactoryFfi;
 
   MockPathProvder mockPath;
   SqliteRepository? repository;
 
   setUp(() async {
-    if (skipTests) return;
     mockPath = MockPathProvder();
     PathProviderPlatform.instance = mockPath;
     repository = SqliteRepository();
@@ -42,7 +43,6 @@ void main() {
 
   group('searchEpisodes', () {
     test('returns episodes with matching title', () async {
-      if (skipTests) return;
       final podcast = Podcast(
         title: 'Test Podcast',
         description: 'A test podcast',
@@ -73,7 +73,7 @@ void main() {
       final results = await repository!.searchEpisodes('hello');
       expect(results.length, 1);
       expect(results[0].title, 'Hello World Episode');
-    }, skip: skipTests);
+    });
 
     test('returns empty list when no match', () async {
       final podcast = Podcast(
@@ -97,7 +97,7 @@ void main() {
 
       final results = await repository!.searchEpisodes('nonexistent');
       expect(results.length, 0);
-    }, skip: skipTests);
+    });
 
     test('case-insensitive matching', () async {
       final podcast = Podcast(
@@ -122,7 +122,7 @@ void main() {
       final results = await repository!.searchEpisodes('HELLO');
       expect(results.length, 1);
       expect(results[0].title, 'Hello World Episode');
-    }, skip: skipTests);
+    });
   });
 
   group('searchPodcasts', () {
@@ -147,7 +147,7 @@ void main() {
       final results = await repository!.searchPodcasts('tech');
       expect(results.length, 1);
       expect(results[0].title, 'Tech News Daily');
-    }, skip: skipTests);
+    });
 
     test('returns empty list when no match', () async {
       final podcast = Podcast(
@@ -161,7 +161,7 @@ void main() {
 
       final results = await repository!.searchPodcasts('nonexistent');
       expect(results.length, 0);
-    }, skip: skipTests);
+    });
 
     test('case-insensitive matching', () async {
       final podcast = Podcast(
@@ -176,7 +176,7 @@ void main() {
       final results = await repository!.searchPodcasts('TECH');
       expect(results.length, 1);
       expect(results[0].title, 'Tech News Daily');
-    }, skip: skipTests);
+    });
   });
 
   group('searchDownloads', () {
@@ -213,7 +213,7 @@ void main() {
       final results = await repository!.searchDownloads('downloaded');
       expect(results.length, 1);
       expect(results[0].title, 'Downloaded Episode');
-    }, skip: skipTests);
+    });
 
     test('returns empty list when no match', () async {
       final podcast = Podcast(
@@ -238,7 +238,7 @@ void main() {
 
       final results = await repository!.searchDownloads('nonexistent');
       expect(results.length, 0);
-    }, skip: skipTests);
+    });
   });
 
   group('searchBookmarks', () {
@@ -255,7 +255,7 @@ void main() {
       final results = await repository!.searchBookmarks('hello');
       expect(results.length, 1);
       expect(results[0].episodeTitle, 'Hello World Episode');
-    }, skip: skipTests);
+    });
 
     test('returns bookmarks matching podcast name', () async {
       final bookmark = Bookmark(
@@ -270,7 +270,7 @@ void main() {
       final results = await repository!.searchBookmarks('tech');
       expect(results.length, 1);
       expect(results[0].podcastName, 'Tech News Daily');
-    }, skip: skipTests);
+    });
 
     test('returns bookmarks matching note', () async {
       final bookmark = Bookmark(
@@ -286,7 +286,7 @@ void main() {
       final results = await repository!.searchBookmarks('important');
       expect(results.length, 1);
       expect(results[0].note, 'Important timestamp');
-    }, skip: skipTests);
+    });
 
     test('returns empty list when no match', () async {
       final bookmark = Bookmark(
@@ -300,6 +300,6 @@ void main() {
 
       final results = await repository!.searchBookmarks('nonexistent');
       expect(results.length, 0);
-    }, skip: skipTests);
+    });
   });
 }

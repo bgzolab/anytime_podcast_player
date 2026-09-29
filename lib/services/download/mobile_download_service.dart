@@ -120,6 +120,12 @@ class MobileDownloadService extends DownloadService {
 
         final taskId = await downloadManager.enqueueTask(episode.contentUrl!, downloadPath, filename);
 
+        if (taskId == null) {
+          log.warning('Unable to download episode (${episode.title}): download manager is unavailable on this platform');
+
+          return false;
+        }
+
         // Update the episode with download data
         episode.filepath = episodePath;
         episode.filename = filename;

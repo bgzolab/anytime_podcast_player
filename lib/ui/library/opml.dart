@@ -62,9 +62,9 @@ class _OPMLSelectState extends State<OPMLSelect> {
             ElevatedButton(
               onPressed: () async {
                 final navigator = Navigator.of(context);
-                var result = (await FilePicker.platform.pickFiles())!;
+                final result = await FilePicker.platform.pickFiles();
 
-                if (result.count > 0) {
+                if (result != null && result.count > 0) {
                   var file = result.files.first;
 
                   await navigator.push(

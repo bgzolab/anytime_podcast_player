@@ -43,6 +43,7 @@ class DefaultAudioPlayerService extends AudioPlayerService {
 
   late AudioHandler _audioHandler;
   var _initialised = false;
+  var _initialising = true;
   var _cold = false;
   var _playbackSpeed = 1.0;
   var _trimSilence = false;
@@ -132,10 +133,18 @@ class DefaultAudioPlayerService extends AudioPlayerService {
 
       _audioHandler = value;
       _initialised = true;
-      _handleAudioServiceTransitions();
-      _loadQueue();
     } catch (e, stack) {
       log.warning('Platform audio service is unavailable; playback is disabled', e, stack);
+    }
+
+    _initialising = false;
+
+    // Queue state is independent of the platform audio service, so it is
+    // loaded even when playback is unavailable on this platform.
+    _loadQueue();
+
+    if (_initialised) {
+      _handleAudioServiceTransitions();
     }
   }
 
@@ -146,6 +155,15 @@ class DefaultAudioPlayerService extends AudioPlayerService {
   /// notified through the existing playback error channel.
   bool _audioUnavailable({bool notify = false}) {
     if (_initialised) return false;
+
+    // Requests that arrive while the platform audio service is still
+    // initialising are ignored without an error notification; only platforms
+    // that definitely failed to initialise report an error to the user.
+    if (_initialising) {
+      log.fine('Audio service is still initialising; playback action ignored');
+
+      return true;
+    }
 
     log.warning('Audio service is unavailable on this platform; playback action ignored');
 

@@ -621,7 +621,9 @@ class MobilePodcastService extends PodcastService {
       if (settingsService.markDeletedEpisodesAsPlayed) {
         episode.played = true;
       }
-    } else if (episode.downloadState == DownloadState.downloading && episode.downloadPercentage! < 100) {
+    } else if (episode.downloadState == DownloadState.downloading &&
+        episode.downloadPercentage! < 100 &&
+        episode.downloadTaskId != null) {
       try {
         await FlutterDownloader.cancel(taskId: episode.downloadTaskId!);
       } on MissingPluginException catch (e) {

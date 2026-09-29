@@ -101,34 +101,72 @@ class DefaultAudioPlayerService extends AudioPlayerService {
     required this.settingsService,
     required this.podcastService,
   }) {
-    AudioService.init(
-      builder: () => _DefaultAudioPlayerHandler(
-        repository: repository,
-        settings: settingsService,
-        podcastService: podcastService,
-      ),
-      config: const AudioServiceConfig(
-        androidResumeOnClick: true,
-        androidNotificationChannelName: 'Anytime Podcast Player',
-        androidNotificationIcon: 'drawable/ic_stat_name',
-        androidNotificationOngoing: false,
-        androidStopForegroundOnPause: true,
-        rewindInterval: Duration(seconds: 10),
-        fastForwardInterval: Duration(seconds: 30),
-      ),
-    ).then((value) {
+    _initialiseAudioService();
+  }
+
+  /// Initialises the platform audio service.
+  ///
+  /// `audio_service`/`just_audio` have no Windows implementation, so
+  /// initialisation fails there. The failure is logged and the service is left
+  /// in a safe, non-playing state so the rest of the app keeps working;
+  /// playback requests are answered with an error notification (code 501)
+  /// instead of crashing on an uninitialised handler.
+  Future<void> _initialiseAudioService() async {
+    try {
+      final value = await AudioService.init(
+        builder: () => _DefaultAudioPlayerHandler(
+          repository: repository,
+          settings: settingsService,
+          podcastService: podcastService,
+        ),
+        config: const AudioServiceConfig(
+          androidResumeOnClick: true,
+          androidNotificationChannelName: 'Anytime Podcast Player',
+          androidNotificationIcon: 'drawable/ic_stat_name',
+          androidNotificationOngoing: false,
+          androidStopForegroundOnPause: true,
+          rewindInterval: Duration(seconds: 10),
+          fastForwardInterval: Duration(seconds: 30),
+        ),
+      );
+
       _audioHandler = value;
       _initialised = true;
       _handleAudioServiceTransitions();
       _loadQueue();
-    });
+    } catch (e, stack) {
+      log.warning('Platform audio service is unavailable; playback is disabled', e, stack);
+    }
+  }
+
+  /// Returns true when the platform audio service is unavailable (e.g. Windows,
+  /// where `audio_service`/`just_audio` have no implementation).
+  ///
+  /// Playback actions are ignored safely; when [notify] is true the user is
+  /// notified through the existing playback error channel.
+  bool _audioUnavailable({bool notify = false}) {
+    if (_initialised) return false;
+
+    log.warning('Audio service is unavailable on this platform; playback action ignored');
+
+    if (notify) {
+      _playbackError.add(501);
+    }
+
+    return true;
   }
 
   @override
-  Future<void> pause() async => _audioHandler.pause();
+  Future<void> pause() async {
+    if (_audioUnavailable()) return;
+
+    await _audioHandler.pause();
+  }
 
   @override
   Future<void> play() {
+    if (_audioUnavailable(notify: true)) return Future.value();
+
     if (_cold) {
       _cold = false;
 
@@ -188,6 +226,14 @@ class DefaultAudioPlayerService extends AudioPlayerService {
   /// If we have a downloaded copy of the requested episode we will use that; otherwise we will stream the
   /// episode directly.
   Future<void> _playNextEpisode({required Episode episode, bool? resume, bool fresh = false}) async {
+    if (episode.guid != '' && !_initialised) {
+      // The platform audio service is unavailable (e.g. Windows); notify the
+      // user instead of silently doing nothing.
+      _audioUnavailable(notify: true);
+
+      return;
+    }
+
     if (episode.guid != '' && _initialised) {
       var uri = (await _generateEpisodeUri(episode))!;
 
@@ -260,13 +306,23 @@ class DefaultAudioPlayerService extends AudioPlayerService {
   }
 
   @override
-  Future<void> rewind() => _audioHandler.rewind();
+  Future<void> rewind() async {
+    if (_audioUnavailable()) return;
+
+    await _audioHandler.rewind();
+  }
 
   @override
-  Future<void> fastForward() => _audioHandler.fastForward();
+  Future<void> fastForward() async {
+    if (_audioUnavailable()) return;
+
+    await _audioHandler.fastForward();
+  }
 
   @override
   Future<void> seek({required int position}) async {
+    if (_audioUnavailable()) return;
+
     var currentMediaItem = _audioHandler.mediaItem.value;
     var duration = currentMediaItem?.duration ?? const Duration(seconds: 1);
     var p = Duration(seconds: position);
@@ -291,7 +347,11 @@ class DefaultAudioPlayerService extends AudioPlayerService {
   }
 
   @override
-  Future<void> setPlaybackSpeed(double speed) => _audioHandler.setSpeed(speed);
+  Future<void> setPlaybackSpeed(double speed) async {
+    if (_audioUnavailable()) return;
+
+    await _audioHandler.setSpeed(speed);
+  }
 
   @override
   Future<void> addUpNextEpisode(Episode episode) async {
@@ -342,6 +402,9 @@ class DefaultAudioPlayerService extends AudioPlayerService {
   Future<void> stop() async {
     _currentEpisode = null;
     _updateEpisodeState();
+
+    if (_audioUnavailable()) return;
+
     await _audioHandler.stop();
   }
 
@@ -412,7 +475,7 @@ class DefaultAudioPlayerService extends AudioPlayerService {
           _cold = true;
         }
       }
-    } else {
+    } else if (_initialised) {
       final playbackState = _audioHandler.playbackState.value;
       final basicState = playbackState.processingState;
 
@@ -463,6 +526,8 @@ class DefaultAudioPlayerService extends AudioPlayerService {
   }
 
   Future<void> _persistState() async {
+    if (!_initialised) return;
+
     var currentPosition = _audioHandler.playbackState.value.position.inMilliseconds;
 
     /// We only need to persist if we are paused.
@@ -478,6 +543,8 @@ class DefaultAudioPlayerService extends AudioPlayerService {
 
   @override
   Future<void> trimSilence(bool trim) {
+    if (_audioUnavailable()) return Future.value();
+
     return _audioHandler.customAction('trim', <String, dynamic>{
       'value': trim,
     });
@@ -485,6 +552,8 @@ class DefaultAudioPlayerService extends AudioPlayerService {
 
   @override
   Future<void> volumeBoost(bool boost) {
+    if (_audioUnavailable()) return Future.value();
+
     return _audioHandler.customAction('boost', <String, dynamic>{
       'value': boost,
     });
@@ -747,6 +816,8 @@ class DefaultAudioPlayerService extends AudioPlayerService {
   /// podcast to continue playing where it left off if played at a later
   /// time.
   Future<void> _saveCurrentEpisodePosition({bool complete = false}) async {
+    if (!_initialised) return;
+
     if (_currentEpisode != null) {
       // The episode may have been updated elsewhere - re-fetch it.
       var currentPosition = _audioHandler.playbackState.value.position.inMilliseconds;

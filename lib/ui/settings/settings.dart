@@ -298,6 +298,8 @@ class _SettingsState extends State<Settings> {
     super.initState();
 
     hasExternalStorage().then((value) {
+      if (!mounted) return;
+
       setState(() {
         sdcard = value;
       });

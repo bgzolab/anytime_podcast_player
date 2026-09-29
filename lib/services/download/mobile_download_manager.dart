@@ -22,6 +22,10 @@ class MobileDownloaderManager implements DownloadManager {
   final downloadController = StreamController<DownloadProgress>();
   var _lastUpdateTime = 0;
 
+  /// False on platforms without a `flutter_downloader` implementation (e.g.
+  /// Windows). All download actions are then ignored safely.
+  var _supported = true;
+
   @override
   Stream<DownloadProgress> get downloadProgress => downloadController.stream;
 
@@ -36,6 +40,8 @@ class MobileDownloaderManager implements DownloadManager {
       await FlutterDownloader.initialize();
     } on MissingPluginException catch (e) {
       log.warning('Download manager not available on this platform: $e');
+      _supported = false;
+
       return;
     }
 
@@ -71,6 +77,12 @@ class MobileDownloaderManager implements DownloadManager {
 
   @override
   Future<String?> enqueueTask(String url, String downloadPath, String fileName) async {
+    if (!_supported) {
+      log.warning('Download manager is not supported on this platform; ignoring download request');
+
+      return null;
+    }
+
     return await FlutterDownloader.enqueue(
       url: url,
       savedDir: downloadPath,

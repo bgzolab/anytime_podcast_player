@@ -9,6 +9,7 @@ import 'package:anytime/entities/podcast.dart';
 import 'package:anytime/entities/transcript.dart';
 import 'package:anytime/repository/repository.dart';
 import 'package:anytime/state/bloc_state.dart';
+import 'package:anytime/state/bookmark_state.dart';
 import 'package:anytime/state/episode_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -255,6 +256,49 @@ void main() {
       final testBloc = BookmarkBloc(repository: repository);
       testBloc.dispose();
       // Should not throw
+    });
+
+    test('states carry the scope of the query that produced them', () async {
+      final scopedRepository = FakeRepository();
+      await scopedRepository.saveBookmark(Bookmark(
+        episodeGuid: 'ep-1',
+        episodeTitle: 'Episode 1',
+        positionMs: 1000,
+        createdAt: DateTime(2026, 7, 1),
+      ));
+      await scopedRepository.saveBookmark(Bookmark(
+        episodeGuid: 'ep-2',
+        episodeTitle: 'Episode 2',
+        positionMs: 2000,
+        createdAt: DateTime(2026, 7, 2),
+      ));
+
+      final bloc = BookmarkBloc(repository: scopedRepository);
+      addTearDown(() => bloc.dispose());
+
+      final states = <BlocState<List<Bookmark>>>[];
+      bloc.state.listen(states.add);
+
+      bloc.event(BookmarkFetchAllEvent());
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      var state = states.last as BookmarkListState;
+      expect(state.scope, BookmarkScope.all);
+      expect(state.results!.length, 2);
+
+      bloc.event(BookmarkFetchByEpisodeEvent(episodeGuid: 'ep-1'));
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      state = states.last as BookmarkListState;
+      expect(state.scope, BookmarkScope.episode);
+      expect(state.episodeGuid, 'ep-1');
+      expect(state.results!.length, 1);
+
+      // Creating a bookmark while the episode scope is active must not replace
+      // the state with an all-scope list.
+      bloc.event(BookmarkFetchAllEvent());
+      await Future.delayed(const Duration(milliseconds: 100));
+      expect((states.last as BookmarkListState).scope, BookmarkScope.all);
     });
   });
 }

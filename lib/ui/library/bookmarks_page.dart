@@ -2,12 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:anytime/bloc/bookmark/bookmark_bloc.dart';
 import 'package:anytime/bloc/podcast/audio_bloc.dart';
 import 'package:anytime/entities/bookmark.dart';
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/repository/repository.dart';
 import 'package:anytime/state/bloc_state.dart';
+import 'package:anytime/state/bookmark_state.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:provider/provider.dart';
@@ -23,62 +26,85 @@ class BookmarksPage extends StatefulWidget {
 }
 
 class _BookmarksPageState extends State<BookmarksPage> {
+  List<Bookmark>? _bookmarks;
+  bool _error = false;
+  StreamSubscription<BlocState<List<Bookmark>>>? _subscription;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
       final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
+      _subscription = bookmarkBloc.state.listen(_onState);
       bookmarkBloc.event(BookmarkFetchAllEvent());
     });
+  }
+
+  /// Only accepts states belonging to the "all bookmarks" scope: the same BLoC
+  /// is shared with the Now Playing bookmark view, whose episode-scoped states
+  /// must not replace this page's list.
+  void _onState(BlocState<List<Bookmark>> state) {
+    if (!mounted) return;
+
+    if (state is BookmarkListState && state.scope == BookmarkScope.all) {
+      setState(() {
+        _error = false;
+        _bookmarks = state.results ?? const <Bookmark>[];
+      });
+    } else if (state is BookmarkErrorState && state.scope == BookmarkScope.all) {
+      setState(() => _error = true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
 
-    return StreamBuilder<BlocState<List<Bookmark>>>(
-      stream: bookmarkBloc.state,
-      builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data is BlocLoadingState) {
-          return const SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
+    if (_error) {
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(child: Text(L.of(context)!.bookmarks_load_failed)),
+      );
+    }
 
-        if (snapshot.data is BlocErrorState) {
-          return SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(child: Text(L.of(context)!.bookmarks_load_failed)),
-          );
-        }
+    final bookmarks = _bookmarks;
 
-        final state = snapshot.data;
-        final bookmarks = (state is BlocPopulatedState<List<Bookmark>>) ? state.results ?? [] : <Bookmark>[];
+    if (bookmarks == null) {
+      return const SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-        if (bookmarks.isEmpty) {
-          return SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.bookmarks_outlined, size: 64.0, color: Theme.of(context).disabledColor),
-                  const SizedBox(height: 16.0),
-                  Text(
-                    L.of(context)!.no_bookmarks_message,
-                    style: Theme.of(context).textTheme.titleMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+    if (bookmarks.isEmpty) {
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.bookmarks_outlined, size: 64.0, color: Theme.of(context).disabledColor),
+              const SizedBox(height: 16.0),
+              Text(
+                L.of(context)!.no_bookmarks_message,
+                style: Theme.of(context).textTheme.titleMedium,
+                textAlign: TextAlign.center,
               ),
-            ),
-          );
-        }
+            ],
+          ),
+        ),
+      );
+    }
 
-        return _buildSliverList(context, bookmarks, bookmarkBloc);
-      },
-    );
+    return _buildSliverList(context, bookmarks, bookmarkBloc);
   }
 
   Widget _buildSliverList(
@@ -290,7 +316,16 @@ class _BookmarkTile extends StatelessWidget {
     final repository = Provider.of<Repository>(context, listen: false);
     final episode = await repository.findEpisodeByGuid(bookmark.episodeGuid);
 
-    if (episode == null) return;
+    if (episode == null) {
+      // The episode may have been removed since the bookmark was created.
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(L.of(context)!.bookmark_episode_missing)),
+        );
+      }
+
+      return;
+    }
 
     episode.position = bookmark.positionMs;
     audioBloc.play(episode);

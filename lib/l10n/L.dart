@@ -178,6 +178,16 @@ class L {
         );
   }
 
+  String get bookmark_episode_missing {
+    return message('bookmark_episode_missing') ??
+        Intl.message(
+          'This episode is no longer available',
+          name: 'bookmark_episode_missing',
+          desc: 'Shown when a bookmark points at an episode that no longer exists',
+          locale: localeName,
+        );
+  }
+
   String get bookmark_delete_label {
     return message('bookmark_delete_label') ??
         Intl.message(

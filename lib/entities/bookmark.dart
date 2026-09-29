@@ -54,12 +54,13 @@ class Bookmark {
   }
 
   /// Parses a stored number, tolerating the string representation used by
-  /// earlier versions of the bookmark store.
+  /// earlier versions of the bookmark store. Corrupt or missing values fall
+  /// back to zero instead of breaking a whole query.
   static int _asInt(Object? value) {
     if (value is int) return value;
     if (value is num) return value.toInt();
 
-    return int.parse(value.toString());
+    return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 
   static Bookmark fromMap(int? key, Map<String, dynamic> map) {
@@ -101,7 +102,8 @@ class Bookmark {
       podcastGuid.hashCode ^
       positionMs.hashCode ^
       note.hashCode ^
-      createdAt.hashCode;
+      // Must match operator ==, which compares millisecond precision only.
+      createdAt.millisecondsSinceEpoch.hashCode;
 
   @override
   String toString() {

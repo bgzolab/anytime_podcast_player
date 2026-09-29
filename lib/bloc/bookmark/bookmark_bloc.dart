@@ -7,6 +7,7 @@ import 'package:anytime/entities/bookmark.dart';
 import 'package:anytime/entities/episode.dart';
 import 'package:anytime/repository/repository.dart';
 import 'package:anytime/state/bloc_state.dart';
+import 'package:anytime/state/bookmark_state.dart';
 import 'package:logging/logging.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -90,20 +91,20 @@ class BookmarkBloc extends Bloc {
   Stream<BlocState<List<Bookmark>>> _fetchAll() async* {
     try {
       final bookmarks = await repository.findAllBookmarks();
-      yield BlocPopulatedState<List<Bookmark>>(results: bookmarks);
+      yield BookmarkListState(scope: BookmarkScope.all, results: bookmarks);
     } catch (e) {
       log.severe('Failed to fetch all bookmarks: $e');
-      yield BlocErrorState<List<Bookmark>>();
+      yield BookmarkErrorState(scope: BookmarkScope.all);
     }
   }
 
   Stream<BlocState<List<Bookmark>>> _fetchByEpisode(String episodeGuid) async* {
     try {
       final bookmarks = await repository.findBookmarksByEpisodeGuid(episodeGuid);
-      yield BlocPopulatedState<List<Bookmark>>(results: bookmarks);
+      yield BookmarkListState(scope: BookmarkScope.episode, episodeGuid: episodeGuid, results: bookmarks);
     } catch (e) {
       log.severe('Failed to fetch bookmarks for episode $episodeGuid: $e');
-      yield BlocErrorState<List<Bookmark>>();
+      yield BookmarkErrorState(scope: BookmarkScope.episode, episodeGuid: episodeGuid);
     }
   }
 
@@ -123,12 +124,10 @@ class BookmarkBloc extends Bloc {
 
       // Re-fetch the same scope that the UI is currently showing so the list
       // the user sees is updated (all bookmarks, or one episode's).
-      final bookmarks = await _refetch();
-
-      yield BlocPopulatedState<List<Bookmark>>(results: bookmarks);
+      yield await _refetch();
     } catch (e) {
       log.severe('Failed to create bookmark: $e');
-      yield BlocErrorState<List<Bookmark>>();
+      yield _errorState();
     }
   }
 
@@ -138,23 +137,35 @@ class BookmarkBloc extends Bloc {
 
       // Re-fetch the same scope that the UI is currently showing so a deleted
       // row cannot remain in the list (which would break Dismissible).
-      final bookmarks = await _refetch();
-
-      yield BlocPopulatedState<List<Bookmark>>(results: bookmarks);
+      yield await _refetch();
     } catch (e) {
       log.severe('Failed to delete bookmark: $e');
-      yield BlocErrorState<List<Bookmark>>();
+      yield _errorState();
     }
   }
 
   /// Loads bookmarks using the most recent query scope: all bookmarks when the
   /// last request was a fetch-all, otherwise the bookmarks of that episode.
-  Future<List<Bookmark>> _refetch() {
+  Future<BlocState<List<Bookmark>>> _refetch() async {
     final episodeGuid = _currentEpisodeGuid;
 
-    if (episodeGuid == null) return repository.findAllBookmarks();
+    if (episodeGuid == null) {
+      final bookmarks = await repository.findAllBookmarks();
+      return BookmarkListState(scope: BookmarkScope.all, results: bookmarks);
+    }
 
-    return repository.findBookmarksByEpisodeGuid(episodeGuid);
+    final bookmarks = await repository.findBookmarksByEpisodeGuid(episodeGuid);
+    return BookmarkListState(scope: BookmarkScope.episode, episodeGuid: episodeGuid, results: bookmarks);
+  }
+
+  /// Error state for the scope that was last requested.
+  BookmarkErrorState _errorState() {
+    final episodeGuid = _currentEpisodeGuid;
+
+    return BookmarkErrorState(
+      scope: episodeGuid == null ? BookmarkScope.all : BookmarkScope.episode,
+      episodeGuid: episodeGuid,
+    );
   }
 
   @override

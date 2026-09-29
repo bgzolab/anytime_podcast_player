@@ -1679,5 +1679,11 @@
     "description": "Fallback name for a bookmark whose episode is unknown",
     "type": "text",
     "placeholders": {}
+  },
+  "bookmark_episode_missing": "This episode is no longer available",
+  "@bookmark_episode_missing": {
+    "description": "Shown when a bookmark points at an episode that no longer exists",
+    "type": "text",
+    "placeholders": {}
   }
 }

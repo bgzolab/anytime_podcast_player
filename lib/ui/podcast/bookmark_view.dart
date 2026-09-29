@@ -2,11 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:anytime/bloc/bookmark/bookmark_bloc.dart';
 import 'package:anytime/bloc/podcast/audio_bloc.dart';
 import 'package:anytime/entities/bookmark.dart';
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/state/bloc_state.dart';
+import 'package:anytime/state/bookmark_state.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -21,22 +24,50 @@ class BookmarkView extends StatefulWidget {
 
 class _BookmarkViewState extends State<BookmarkView> {
   String? _currentEpisodeGuid;
+  List<Bookmark>? _bookmarks;
+  bool _error = false;
+  StreamSubscription<BlocState<List<Bookmark>>>? _subscription;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _fetchForCurrentEpisode();
-  }
 
-  void _fetchForCurrentEpisode() {
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
     final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
+
+    _subscription ??= bookmarkBloc.state.listen(_onState);
+
     final episode = audioBloc.nowPlaying?.valueOrNull;
 
     if (episode != null && episode.guid != _currentEpisodeGuid) {
       _currentEpisodeGuid = episode.guid;
       bookmarkBloc.event(BookmarkFetchByEpisodeEvent(episodeGuid: episode.guid));
     }
+  }
+
+  /// Only accepts episode-scoped states for the episode currently on screen;
+  /// the shared BLoC's "all bookmarks" states must not be rendered here.
+  void _onState(BlocState<List<Bookmark>> state) {
+    if (!mounted) return;
+
+    if (state is BookmarkListState &&
+        state.scope == BookmarkScope.episode &&
+        state.episodeGuid == _currentEpisodeGuid) {
+      setState(() {
+        _error = false;
+        _bookmarks = state.results ?? const <Bookmark>[];
+      });
+    } else if (state is BookmarkErrorState &&
+        state.scope == BookmarkScope.episode &&
+        state.episodeGuid == _currentEpisodeGuid) {
+      setState(() => _error = true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -48,34 +79,34 @@ class _BookmarkViewState extends State<BookmarkView> {
       stream: audioBloc.nowPlaying,
       builder: (context, episodeSnapshot) {
         // Re-fetch when episode changes
-        if (episodeSnapshot.hasData && episodeSnapshot.data!.guid != _currentEpisodeGuid) {
-          _currentEpisodeGuid = episodeSnapshot.data!.guid;
+        final episode = episodeSnapshot.data;
+
+        if (episode != null && episode.guid != _currentEpisodeGuid) {
+          _currentEpisodeGuid = episode.guid;
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            bookmarkBloc.event(BookmarkFetchByEpisodeEvent(episodeGuid: episodeSnapshot.data!.guid));
+            if (!mounted) return;
+
+            bookmarkBloc.event(BookmarkFetchByEpisodeEvent(episodeGuid: episode.guid));
           });
         }
 
-        return StreamBuilder<BlocState<List<Bookmark>>>(
-          stream: bookmarkBloc.state,
-          builder: (context, snapshot) {
-            if (!snapshot.hasData || snapshot.data is BlocLoadingState) {
-              return const Center(child: CircularProgressIndicator());
-            }
+        if (episode == null) return _buildEmptyState(context);
 
-            if (snapshot.data is BlocErrorState) {
-              return Center(child: Text(L.of(context)!.bookmarks_load_failed));
-            }
+        if (_error) {
+          return Center(child: Text(L.of(context)!.bookmarks_load_failed));
+        }
 
-            final state = snapshot.data;
-            final bookmarks = (state is BlocPopulatedState<List<Bookmark>>) ? state.results ?? [] : <Bookmark>[];
+        final bookmarks = _bookmarks;
 
-            if (bookmarks.isEmpty) {
-              return _buildEmptyState(context);
-            }
+        if (bookmarks == null) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-            return _buildList(context, bookmarks, audioBloc, bookmarkBloc);
-          },
-        );
+        if (bookmarks.isEmpty) {
+          return _buildEmptyState(context);
+        }
+
+        return _buildList(context, bookmarks, audioBloc, bookmarkBloc);
       },
     );
   }

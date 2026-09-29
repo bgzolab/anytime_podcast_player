@@ -1,5 +1,5 @@
 {
-  "@@last_modified": "2026-09-29T23:52:50.371516",
+  "@@last_modified": "2026-09-30T00:24:02.387740",
   "app_title": "Anytime Podcast Player",
   "@app_title": {
     "description": "Full title for the application",
@@ -83,6 +83,12 @@
   "unknown_episode": "Unknown Episode",
   "@unknown_episode": {
     "description": "Fallback name for a bookmark whose episode is unknown",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmark_episode_missing": "This episode is no longer available",
+  "@bookmark_episode_missing": {
+    "description": "Shown when a bookmark points at an episode that no longer exists",
     "type": "text",
     "placeholders": {}
   },

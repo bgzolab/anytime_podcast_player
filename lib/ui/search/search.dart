@@ -4,7 +4,6 @@
 
 import 'dart:io';
 
-import 'package:anytime/bloc/podcast/audio_bloc.dart';
 import 'package:anytime/bloc/search/search_bloc.dart';
 import 'package:anytime/bloc/search/search_state_event.dart';
 import 'package:anytime/entities/bookmark.dart';
@@ -14,6 +13,7 @@ import 'package:anytime/l10n/L.dart';
 import 'package:anytime/repository/repository.dart';
 import 'package:anytime/ui/search/search_mode.dart';
 import 'package:anytime/ui/search/search_results.dart';
+import 'package:anytime/ui/widgets/bookmark_action.dart';
 import 'package:anytime/ui/widgets/episode_tile.dart';
 import 'package:anytime/ui/widgets/podcast_tile.dart';
 import 'package:flutter/material.dart';
@@ -52,6 +52,10 @@ class _SearchState extends State<Search> {
   bool _isLocalSearching = false;
   bool _hasSearched = false;
 
+  /// Incremented for every local search so a slower, older query cannot
+  /// overwrite the results of a newer one.
+  int _searchGeneration = 0;
+
   @override
   void initState() {
     super.initState();
@@ -82,6 +86,8 @@ class _SearchState extends State<Search> {
   }
 
   Future<void> _performLocalSearch(String term) async {
+    final generation = ++_searchGeneration;
+
     if (term.isEmpty) {
       setState(() {
         _episodeResults = [];
@@ -97,47 +103,58 @@ class _SearchState extends State<Search> {
       _hasSearched = true;
     });
 
-    final repository = widget.repository;
-    if (repository == null) {
+    final repository = widget.repository ?? Provider.of<Repository>(context, listen: false);
+
+    try {
+      switch (_mode) {
+        case SearchMode.timeline:
+          final results = await repository.searchEpisodes(term);
+          _applyLocalResults(generation, episodes: results);
+          break;
+        case SearchMode.library:
+          final results = await repository.searchPodcasts(term);
+          _applyLocalResults(generation, podcasts: results);
+          break;
+        case SearchMode.downloads:
+          final results = await repository.searchDownloads(term);
+          _applyLocalResults(generation, episodes: results);
+          break;
+        case SearchMode.bookmarks:
+          final results = await repository.searchBookmarks(term);
+          _applyLocalResults(generation, bookmarks: results);
+          break;
+        case SearchMode.discovery:
+          // Handled by SearchBloc
+          break;
+      }
+    } catch (e) {
+      if (!mounted || generation != _searchGeneration) return;
+
       setState(() {
+        _episodeResults = [];
+        _podcastResults = [];
+        _bookmarkResults = [];
         _isLocalSearching = false;
       });
-      return;
     }
+  }
 
-    switch (_mode) {
-      case SearchMode.timeline:
-        final results = await repository.searchEpisodes(term);
-        setState(() {
-          _episodeResults = results;
-          _isLocalSearching = false;
-        });
-        break;
-      case SearchMode.library:
-        final results = await repository.searchPodcasts(term);
-        setState(() {
-          _podcastResults = results;
-          _isLocalSearching = false;
-        });
-        break;
-      case SearchMode.downloads:
-        final results = await repository.searchDownloads(term);
-        setState(() {
-          _episodeResults = results;
-          _isLocalSearching = false;
-        });
-        break;
-      case SearchMode.bookmarks:
-        final results = await repository.searchBookmarks(term);
-        setState(() {
-          _bookmarkResults = results;
-          _isLocalSearching = false;
-        });
-        break;
-      case SearchMode.discovery:
-        // Handled by SearchBloc
-        break;
-    }
+  /// Applies local search results only when [generation] is still the latest
+  /// request, so a slow earlier search cannot overwrite a newer one.
+  void _applyLocalResults(
+    int generation, {
+    List<Episode>? episodes,
+    List<Podcast>? podcasts,
+    List<Bookmark>? bookmarks,
+  }) {
+    if (!mounted || generation != _searchGeneration) return;
+
+    setState(() {
+      if (episodes != null) _episodeResults = episodes;
+      if (podcasts != null) _podcastResults = podcasts;
+      if (bookmarks != null) _bookmarkResults = bookmarks;
+      _isLocalSearching = false;
+    });
   }
 
   String _getHintText(BuildContext context) {
@@ -274,7 +291,7 @@ class _SearchState extends State<Search> {
         hasScrollBody: false,
         child: _buildEmptyState(
           Icons.search,
-          L.of(context)!.no_search_results_message,
+          _mode == SearchMode.downloads ? L.of(context)!.no_downloads_found : L.of(context)!.no_episodes_found,
         ),
       );
     }
@@ -300,7 +317,7 @@ class _SearchState extends State<Search> {
         hasScrollBody: false,
         child: _buildEmptyState(
           Icons.search,
-          L.of(context)!.no_search_results_message,
+          L.of(context)!.no_podcasts_found,
         ),
       );
     }
@@ -322,21 +339,16 @@ class _SearchState extends State<Search> {
         hasScrollBody: false,
         child: _buildEmptyState(
           Icons.bookmarks_outlined,
-          L.of(context)!.no_search_results_message,
+          L.of(context)!.no_bookmarks_found,
         ),
       );
     }
-
-    final audioBloc = Provider.of<AudioBloc>(context, listen: false);
 
     return SliverList(
       delegate: SliverChildBuilderDelegate(
         (context, index) {
           final bookmark = _bookmarkResults[index];
-          return _BookmarkSearchTile(
-            bookmark: bookmark,
-            audioBloc: audioBloc,
-          );
+          return _BookmarkSearchTile(bookmark: bookmark);
         },
         childCount: _bookmarkResults.length,
       ),
@@ -368,11 +380,9 @@ class _SearchState extends State<Search> {
 /// A tile for displaying a bookmark in search results.
 class _BookmarkSearchTile extends StatelessWidget {
   final Bookmark bookmark;
-  final AudioBloc audioBloc;
 
   const _BookmarkSearchTile({
     required this.bookmark,
-    required this.audioBloc,
   });
 
   @override
@@ -388,7 +398,7 @@ class _BookmarkSearchTile extends StatelessWidget {
     return ListTile(
       leading: const Icon(Icons.bookmark, size: 32),
       title: Text(
-        bookmark.episodeTitle ?? 'Unknown Episode',
+        bookmark.episodeTitle ?? L.of(context)!.unknown_episode,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
       ),
@@ -396,14 +406,12 @@ class _BookmarkSearchTile extends StatelessWidget {
         [
           if (bookmark.podcastName != null) bookmark.podcastName!,
           positionStr,
-          if (bookmark.note != null && bookmark.note!.isNotEmpty) '📝 ${bookmark.note!}',
+          if (bookmark.note != null && bookmark.note!.isNotEmpty) bookmark.note!,
         ].join(' · '),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-      onTap: () {
-        audioBloc.transitionPosition(bookmark.positionMs / 1000.0);
-      },
+      onTap: () => openBookmark(context, bookmark),
     );
   }
 }

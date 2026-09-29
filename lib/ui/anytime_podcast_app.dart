@@ -481,24 +481,31 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                         pinned: true,
                         snap: false,
                         actions: <Widget>[
-                          IconButton(
-                            icon: Icon(
-                              Icons.search,
-                              semanticLabel: _getSearchTooltip(context, pager.page.value),
-                            ),
-                            onPressed: () async {
-                              final mode = _getSearchMode(pager.page.value);
-                              await Navigator.push(
-                                context,
-                                defaultTargetPlatform == TargetPlatform.iOS
-                                    ? MaterialPageRoute<void>(
-                                        fullscreenDialog: false,
-                                        settings: const RouteSettings(name: 'search'),
-                                        builder: (context) => Search(mode: mode, repository: widget.repository))
-                                    : SlideRightRoute(
-                                        widget: Search(mode: mode, repository: widget.repository),
-                                        settings: const RouteSettings(name: 'search'),
-                                      ),
+                          StreamBuilder<int>(
+                            stream: pager.currentPage,
+                            builder: (context, snapshot) {
+                              final page = snapshot.data ?? pager.page.value;
+
+                              return IconButton(
+                                icon: Icon(
+                                  Icons.search,
+                                  semanticLabel: _getSearchTooltip(context, page),
+                                ),
+                                onPressed: () async {
+                                  final mode = _getSearchMode(page);
+                                  await Navigator.push(
+                                    context,
+                                    defaultTargetPlatform == TargetPlatform.iOS
+                                        ? MaterialPageRoute<void>(
+                                            fullscreenDialog: false,
+                                            settings: const RouteSettings(name: 'search'),
+                                            builder: (context) => Search(mode: mode, repository: widget.repository))
+                                        : SlideRightRoute(
+                                            widget: Search(mode: mode, repository: widget.repository),
+                                            settings: const RouteSettings(name: 'search'),
+                                          ),
+                                  );
+                                },
                               );
                             },
                           ),

@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:anytime/api/podcast/mobile_podcast_api.dart';
 import 'package:anytime/api/podcast/podcast_api.dart';
 import 'package:anytime/bloc/discovery/discovery_bloc.dart';
+import 'package:anytime/bloc/bookmark/bookmark_bloc.dart';
 import 'package:anytime/bloc/podcast/audio_bloc.dart';
 import 'package:anytime/bloc/podcast/episode_bloc.dart';
 import 'package:anytime/bloc/podcast/opml_bloc.dart';
@@ -16,6 +17,7 @@ import 'package:anytime/bloc/search/search_bloc.dart';
 import 'package:anytime/bloc/settings/settings_bloc.dart';
 import 'package:anytime/bloc/timeline/timeline_bloc.dart';
 import 'package:anytime/bloc/ui/pager_bloc.dart';
+import 'package:anytime/core/bookmark_sound.dart';
 import 'package:anytime/core/environment.dart';
 import 'package:anytime/entities/feed.dart';
 import 'package:anytime/entities/podcast.dart';
@@ -36,6 +38,7 @@ import 'package:anytime/services/podcast/opml_service.dart';
 import 'package:anytime/services/podcast/podcast_service.dart';
 import 'package:anytime/services/settings/mobile_settings_service.dart';
 import 'package:anytime/state/library_state.dart';
+import 'package:anytime/ui/library/bookmarks_page.dart';
 import 'package:anytime/ui/library/discovery.dart';
 import 'package:anytime/ui/library/downloads.dart';
 import 'package:anytime/ui/library/library.dart';
@@ -163,6 +166,7 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        Provider<Repository>.value(value: widget.repository),
         Provider<SearchBloc>(
           create: (_) => SearchBloc(
             podcastService: widget.podcastService!,
@@ -221,6 +225,12 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
             podcastService: widget.podcastService!,
           ),
           dispose: (_, value) => value.dispose(),
+        ),
+        Provider<BookmarkBloc>(
+          create: (_) => BookmarkBloc(
+            repository: widget.repository,
+          ),
+          dispose: (_, value) => value.dispose(),
         )
       ],
       child: MaterialApp(
@@ -249,7 +259,10 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
         theme: theme,
         // Uncomment builder below to enable accessibility checker tool.
         // builder: (context, child) => AccessibilityTools(child: child),
-        home: const AnytimeHomePage(title: 'Anytime Podcast Player'),
+        home: AnytimeHomePage(
+          title: 'Anytime Podcast Player',
+          audioPlayerService: widget.audioPlayerService,
+        ),
       ),
     );
   }
@@ -258,11 +271,13 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
 class AnytimeHomePage extends StatefulWidget {
   final String? title;
   final bool topBarVisible;
+  final AudioPlayerService? audioPlayerService;
 
   const AnytimeHomePage({
     super.key,
     this.title,
     this.topBarVisible = true,
+    this.audioPlayerService,
   });
 
   @override
@@ -284,6 +299,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
     final podcastBloc = Provider.of<PodcastBloc>(context, listen: false);
     final timelineBloc = Provider.of<TimelineBloc>(context, listen: false);
+    final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
 
     WidgetsBinding.instance.addObserver(this);
 
@@ -291,6 +307,29 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
     audioBloc.transitionLifecycleState(LifecycleState.resume);
     podcastBloc.transitionLifecycleState(LifecycleState.resume);
     timelineBloc.transitionLifecycleState(LifecycleState.resume);
+    bookmarkBloc.transitionLifecycleState(LifecycleState.resume);
+
+    /// Wire headphone "previous track" button to create a bookmark.
+    final settingsBloc = Provider.of<SettingsBloc>(context, listen: false);
+    widget.audioPlayerService?.onSkipToPrevious = () async {
+      if (!settingsBloc.currentSettings.bookmarkOnSkipPrevious) {
+        // Setting is off — let the handler fall back to its rewind behaviour.
+        return false;
+      }
+
+      final episode = widget.audioPlayerService?.nowPlaying;
+      final positionState = widget.audioPlayerService?.playPosition?.valueOrNull;
+
+      if (episode == null || positionState == null) return false;
+
+      bookmarkBloc.event(BookmarkCreateEvent(
+        episode: episode,
+        positionMs: positionState.position.inMilliseconds,
+      ));
+      BookmarkSound.play();
+
+      return true;
+    };
 
     /// Handle deep links
     _setupLinkListener();
@@ -358,10 +397,12 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
     final podcastBloc = Provider.of<PodcastBloc>(context, listen: false);
     final timelineBloc = Provider.of<TimelineBloc>(context, listen: false);
+    final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
 
     audioBloc.transitionLifecycleState(LifecycleState.detach);
     podcastBloc.transitionLifecycleState(LifecycleState.detach);
     timelineBloc.transitionLifecycleState(LifecycleState.detach);
+    bookmarkBloc.transitionLifecycleState(LifecycleState.detach);
 
     deepLinkSubscription?.cancel();
 
@@ -374,6 +415,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
     final podcastBloc = Provider.of<PodcastBloc>(context, listen: false);
     final timelineBloc = Provider.of<TimelineBloc>(context, listen: false);
+    final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
     var settingsBloc = Provider.of<SettingsBloc>(context, listen: false);
 
     switch (state) {
@@ -381,6 +423,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
         audioBloc.transitionLifecycleState(LifecycleState.resume);
         podcastBloc.transitionLifecycleState(LifecycleState.resume);
         timelineBloc.transitionLifecycleState(LifecycleState.resume);
+        bookmarkBloc.transitionLifecycleState(LifecycleState.resume);
         if (context.mounted) {
           SettingsService? settings = await MobileSettingsService.instance();
           settingsBloc.theme(settings!.theme);
@@ -390,6 +433,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
         audioBloc.transitionLifecycleState(LifecycleState.pause);
         podcastBloc.transitionLifecycleState(LifecycleState.pause);
         timelineBloc.transitionLifecycleState(LifecycleState.pause);
+        bookmarkBloc.transitionLifecycleState(LifecycleState.pause);
         break;
       default:
         break;
@@ -610,6 +654,10 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                     icon: index == 3 ? const Icon(Icons.download) : const Icon(Icons.download_outlined),
                     label: L.of(context)!.downloads,
                   ),
+                  BottomNavigationBarItem(
+                    icon: index == 4 ? const Icon(Icons.bookmarks) : const Icon(Icons.bookmarks_outlined),
+                    label: L.of(context)!.bookmarks_label,
+                  ),
                 ],
               );
             }),
@@ -626,6 +674,10 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
       return const Discovery(
         categories: true,
       );
+    } else if (index == 3) {
+      return const Downloads();
+    } else if (index == 4) {
+      return const BookmarksPage();
     } else {
       return const Downloads();
     }

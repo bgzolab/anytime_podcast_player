@@ -119,6 +119,7 @@ class DefaultAudioPlayerService extends AudioPlayerService {
           repository: repository,
           settings: settingsService,
           podcastService: podcastService,
+          onSkipToPrevious: () async => await onSkipToPrevious?.call() ?? false,
         ),
         config: const AudioServiceConfig(
           androidResumeOnClick: true,
@@ -1059,10 +1060,13 @@ class _DefaultAudioPlayerHandler extends BaseAudioHandler with SeekHandler {
     action: MediaAction.fastForward,
   );
 
+  Future<bool> Function()? onSkipToPrevious;
+
   _DefaultAudioPlayerHandler({
     required this.repository,
     required this.settings,
     required this.podcastService,
+    this.onSkipToPrevious,
   }) {
     _initPlayer();
   }
@@ -1246,7 +1250,11 @@ class _DefaultAudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   Future<void> skipToNext() => fastForward();
 
   @override
-  Future<void> skipToPrevious() => rewind();
+  Future<void> skipToPrevious() async {
+    final handled = await onSkipToPrevious?.call() ?? false;
+
+    if (!handled) await rewind();
+  }
 
   @override
   Future<void> seek(Duration position) async {

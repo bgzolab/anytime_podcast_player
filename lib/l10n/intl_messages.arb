@@ -1,5 +1,5 @@
 {
-  "@@last_modified": "2026-09-29T22:06:12.485801",
+  "@@last_modified": "2026-09-30T00:24:02.387740",
   "app_title": "Anytime Podcast Player",
   "@app_title": {
     "description": "Full title for the application",
@@ -39,6 +39,82 @@
   "no_episodes_message": "No episodes yet",
   "@no_episodes_message": {
     "description": "Displayed when the timeline has no episodes",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmarks_label": "Bookmarks",
+  "@bookmarks_label": {
+    "description": "Bookmarks tab/section label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmark_add_button_label": "Add bookmark",
+  "@bookmark_add_button_label": {
+    "description": "Bookmark button tooltip",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmark_added_snackbar": "Bookmark added at {timestamp}",
+  "@bookmark_added_snackbar": {
+    "description": "Snackbar after adding bookmark",
+    "type": "text",
+    "placeholders": {
+      "timestamp": {}
+    }
+  },
+  "no_bookmarks_message": "No bookmarks yet",
+  "@no_bookmarks_message": {
+    "description": "Empty state for bookmarks",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmarks_load_failed": "Could not load bookmarks",
+  "@bookmarks_load_failed": {
+    "description": "Error state when bookmarks fail to load",
+    "type": "text",
+    "placeholders": {}
+  },
+  "unknown_podcast": "Unknown Podcast",
+  "@unknown_podcast": {
+    "description": "Fallback name for a bookmark whose podcast is unknown",
+    "type": "text",
+    "placeholders": {}
+  },
+  "unknown_episode": "Unknown Episode",
+  "@unknown_episode": {
+    "description": "Fallback name for a bookmark whose episode is unknown",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmark_episode_missing": "This episode is no longer available",
+  "@bookmark_episode_missing": {
+    "description": "Shown when a bookmark points at an episode that no longer exists",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmark_delete_label": "Delete bookmark",
+  "@bookmark_delete_label": {
+    "description": "Accessibility label for delete action",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmark_seek_label": "Jump to {timestamp}",
+  "@bookmark_seek_label": {
+    "description": "Accessibility label for bookmark seek",
+    "type": "text",
+    "placeholders": {
+      "timestamp": {}
+    }
+  },
+  "settings_bookmark_on_skip_previous": "Headphone previous button creates bookmark",
+  "@settings_bookmark_on_skip_previous": {
+    "description": "Setting to control headphone previous button behavior",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_bookmark_on_skip_previous_subtitle": "When off, the headphone previous button rewinds instead",
+  "@settings_bookmark_on_skip_previous_subtitle": {
+    "description": "Subtitle for headphone previous button setting",
     "type": "text",
     "placeholders": {}
   },

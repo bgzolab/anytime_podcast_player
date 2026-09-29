@@ -76,6 +76,7 @@ class _SettingsState extends State<Settings> {
                       DropdownMenuItem(value: 1, child: Text(L.of(context)!.library)),
                       DropdownMenuItem(value: 2, child: Text(L.of(context)!.discover)),
                       DropdownMenuItem(value: 3, child: Text(L.of(context)!.downloads)),
+                      DropdownMenuItem(value: 4, child: Text(L.of(context)!.bookmarks_label)),
                     ],
                   ),
                 ),
@@ -140,6 +141,16 @@ class _SettingsState extends State<Settings> {
                   trailing: Switch.adaptive(
                     value: snapshot.data!.autoPlay,
                     onChanged: (value) => setState(() => settingsBloc.autoPlay(value)),
+                  ),
+                ),
+              ),
+              MergeSemantics(
+                child: ListTile(
+                  title: Text(L.of(context)!.settings_bookmark_on_skip_previous),
+                  subtitle: Text(L.of(context)!.settings_bookmark_on_skip_previous_subtitle),
+                  trailing: Switch.adaptive(
+                    value: snapshot.data!.bookmarkOnSkipPrevious,
+                    onChanged: (value) => setState(() => settingsBloc.setBookmarkOnSkipPrevious(value)),
                   ),
                 ),
               ),

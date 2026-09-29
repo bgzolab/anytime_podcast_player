@@ -114,6 +114,11 @@ abstract class AudioPlayerService {
 
   Episode? nowPlaying;
 
+  /// Called when the user presses the "previous track" button (e.g. headphone
+  /// double-press). Return `true` when the callback handled the action; when it
+  /// returns `false` (or is null), the default rewind behaviour is used.
+  Future<bool> Function()? onSkipToPrevious;
+
   /// Event listeners
   Stream<AudioState>? playingState;
   ValueStream<PositionState>? playPosition;

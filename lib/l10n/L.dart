@@ -106,6 +106,129 @@ class L {
         );
   }
 
+  /// Bookmarks
+  String get bookmarks_label {
+    return message('bookmarks_label') ??
+        Intl.message(
+          'Bookmarks',
+          name: 'bookmarks_label',
+          desc: 'Bookmarks tab/section label',
+          locale: localeName,
+        );
+  }
+
+  String get bookmark_add_button_label {
+    return message('bookmark_add_button_label') ??
+        Intl.message(
+          'Add bookmark',
+          name: 'bookmark_add_button_label',
+          desc: 'Bookmark button tooltip',
+          locale: localeName,
+        );
+  }
+
+  String bookmark_added_snackbar(String timestamp) {
+    return message('bookmark_added_snackbar') ??
+        Intl.message(
+          'Bookmark added at $timestamp',
+          name: 'bookmark_added_snackbar',
+          desc: 'Snackbar after adding bookmark',
+          args: [timestamp],
+          locale: localeName,
+        );
+  }
+
+  String get no_bookmarks_message {
+    return message('no_bookmarks_message') ??
+        Intl.message(
+          'No bookmarks yet',
+          name: 'no_bookmarks_message',
+          desc: 'Empty state for bookmarks',
+          locale: localeName,
+        );
+  }
+
+  String get bookmarks_load_failed {
+    return message('bookmarks_load_failed') ??
+        Intl.message(
+          'Could not load bookmarks',
+          name: 'bookmarks_load_failed',
+          desc: 'Error state when bookmarks fail to load',
+          locale: localeName,
+        );
+  }
+
+  String get unknown_podcast {
+    return message('unknown_podcast') ??
+        Intl.message(
+          'Unknown Podcast',
+          name: 'unknown_podcast',
+          desc: 'Fallback name for a bookmark whose podcast is unknown',
+          locale: localeName,
+        );
+  }
+
+  String get unknown_episode {
+    return message('unknown_episode') ??
+        Intl.message(
+          'Unknown Episode',
+          name: 'unknown_episode',
+          desc: 'Fallback name for a bookmark whose episode is unknown',
+          locale: localeName,
+        );
+  }
+
+  String get bookmark_episode_missing {
+    return message('bookmark_episode_missing') ??
+        Intl.message(
+          'This episode is no longer available',
+          name: 'bookmark_episode_missing',
+          desc: 'Shown when a bookmark points at an episode that no longer exists',
+          locale: localeName,
+        );
+  }
+
+  String get bookmark_delete_label {
+    return message('bookmark_delete_label') ??
+        Intl.message(
+          'Delete bookmark',
+          name: 'bookmark_delete_label',
+          desc: 'Accessibility label for delete action',
+          locale: localeName,
+        );
+  }
+
+  String bookmark_seek_label(String timestamp) {
+    return message('bookmark_seek_label') ??
+        Intl.message(
+          'Jump to $timestamp',
+          name: 'bookmark_seek_label',
+          desc: 'Accessibility label for bookmark seek',
+          args: [timestamp],
+          locale: localeName,
+        );
+  }
+
+  String get settings_bookmark_on_skip_previous {
+    return message('settings_bookmark_on_skip_previous') ??
+        Intl.message(
+          'Headphone previous button creates bookmark',
+          name: 'settings_bookmark_on_skip_previous',
+          desc: 'Setting to control headphone previous button behavior',
+          locale: localeName,
+        );
+  }
+
+  String get settings_bookmark_on_skip_previous_subtitle {
+    return message('settings_bookmark_on_skip_previous_subtitle') ??
+        Intl.message(
+          'When off, the headphone previous button rewinds instead',
+          name: 'settings_bookmark_on_skip_previous_subtitle',
+          desc: 'Subtitle for headphone previous button setting',
+          locale: localeName,
+        );
+  }
+
   /// Podcasts
   String get subscribe_button_label {
     return message('subscribe_button_label') ??

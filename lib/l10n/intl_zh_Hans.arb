@@ -1530,5 +1530,29 @@
     "description": "Error shown when refreshing podcast feeds fails",
     "type": "text",
     "placeholders": {}
+  },
+  "bookmarks_load_failed": "无法加载书签",
+  "@bookmarks_load_failed": {
+    "description": "Error state when bookmarks fail to load",
+    "type": "text",
+    "placeholders": {}
+  },
+  "unknown_podcast": "未知播客",
+  "@unknown_podcast": {
+    "description": "Fallback name for a bookmark whose podcast is unknown",
+    "type": "text",
+    "placeholders": {}
+  },
+  "unknown_episode": "未知单集",
+  "@unknown_episode": {
+    "description": "Fallback name for a bookmark whose episode is unknown",
+    "type": "text",
+    "placeholders": {}
+  },
+  "bookmark_episode_missing": "所在单集已不存在",
+  "@bookmark_episode_missing": {
+    "description": "Shown when a bookmark points at an episode that no longer exists",
+    "type": "text",
+    "placeholders": {}
   }
 }

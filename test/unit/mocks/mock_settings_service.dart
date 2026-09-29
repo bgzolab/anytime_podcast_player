@@ -77,5 +77,8 @@ class MockSettingsService extends SettingsService {
   int defaultTab = 0;
 
   @override
+  bool bookmarkOnSkipPrevious = true;
+
+  @override
   Stream<String> get settingsListener => PublishSubject<String>().stream;
 }

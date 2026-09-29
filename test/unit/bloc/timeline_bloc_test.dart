@@ -487,5 +487,42 @@ void main() {
       expect(results.length, 20);
       expect(bloc.hasMore, isTrue);
     });
+
+    test('loadMore during an in-flight refresh is ignored', () async {
+      final gate = Completer<List<Episode>>();
+      final page = List.generate(
+        20,
+        (i) => Episode(
+          guid: 'ep-$i',
+          podcast: 'Test',
+          title: 'Episode $i',
+          publicationDate: DateTime(2026, 7, 30 - i),
+          duration: 1000,
+        ),
+      );
+
+      final service = FakePodcastService(
+        loadBefore: (_, __) => gate.future,
+        countSince: (_) async => 20,
+      );
+      final bloc = TimelineBloc(podcastService: service);
+      addTearDown(() => bloc.dispose());
+
+      final states = <BlocState>[];
+      bloc.state.listen(states.add);
+
+      bloc.refresh();
+      // The bottom loading indicator may call loadMore while the first page is
+      // still being fetched; it must not cancel the refresh and swallow the
+      // populated state (leaving the UI stuck on its loading state).
+      bloc.loadMore();
+
+      gate.complete(page);
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      expect(states.last, isA<BlocPopulatedState<List<Episode>>>());
+      expect((states.last as BlocPopulatedState<List<Episode>>).results!.length, 20);
+      expect(bloc.hasMore, isTrue);
+    });
   });
 }

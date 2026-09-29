@@ -887,39 +887,47 @@ class MobilePodcastService extends PodcastService {
 
     _libraryState.add(LibraryRefreshingState());
 
-    final subs = await subscriptions();
-    subs.sort((a, b) => a.lastUpdated.compareTo(b.lastUpdated));
+    try {
+      final subs = await subscriptions();
+      subs.sort((a, b) => a.lastUpdated.compareTo(b.lastUpdated));
 
-    final total = subs.length;
-    var completed = 0;
-    var newOrUpdatedEpisodes = false;
+      final total = subs.length;
+      var completed = 0;
+      var newOrUpdatedEpisodes = false;
 
-    for (var i = 0; i < total; i++) {
-      final sub = subs[i];
-      yield RefreshProgress(total: total, completed: completed, currentSource: sub.title);
+      for (var i = 0; i < total; i++) {
+        final sub = subs[i];
+        yield RefreshProgress(total: total, completed: completed, currentSource: sub.title);
 
-      try {
-        final p = await loadPodcast(podcast: sub, ignoreCache: true, highlightNewEpisodes: true)
-            .timeout(const Duration(seconds: 5));
+        try {
+          final p = await loadPodcast(podcast: sub, ignoreCache: true, highlightNewEpisodes: true)
+              .timeout(const Duration(seconds: 5));
 
-        if (p != null && (p.newEpisodes > 0 || p.updatedEpisodes)) {
-          newOrUpdatedEpisodes = true;
+          if (p != null && (p.newEpisodes > 0 || p.updatedEpisodes)) {
+            newOrUpdatedEpisodes = true;
+          }
+        } catch (e) {
+          _log.warning('Failed to refresh ${sub.title}: $e');
         }
-      } catch (e) {
-        _log.warning('Failed to refresh ${sub.title}: $e');
+
+        completed++;
       }
 
-      completed++;
+      if (newOrUpdatedEpisodes) {
+        _libraryState.add(LibraryUpdatedState());
+      }
+
+      settingsService.lastFeedRefresh = DateTime.now();
+
+      yield RefreshProgress(total: total, completed: completed, currentSource: '', finished: true);
+    } finally {
+      // Always leave the library in a ready state — even when the refresh
+      // fails or the consumer cancels the stream — otherwise the whole app is
+      // stuck in "refreshing" and the library menu stays disabled.
+      if (_libraryState.value is! LibraryReadyState) {
+        _libraryState.add(LibraryReadyState());
+      }
     }
-
-    if (newOrUpdatedEpisodes) {
-      _libraryState.add(LibraryUpdatedState());
-    }
-
-    _libraryState.add(LibraryReadyState());
-    settingsService.lastFeedRefresh = DateTime.now();
-
-    yield RefreshProgress(total: total, completed: completed, currentSource: '', finished: true);
   }
 
   /// Remove HTML padding from the content. The padding may look fine within

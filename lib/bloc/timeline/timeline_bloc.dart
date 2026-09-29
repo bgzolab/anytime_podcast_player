@@ -54,11 +54,16 @@ class TimelineBloc extends Bloc {
   final log = Logger('TimelineBloc');
   final PodcastService podcastService;
 
-  final PublishSubject<TimelineEvent> _eventInput = PublishSubject<TimelineEvent>();
+  final PublishSubject<TimelineEvent> _eventInput = PublishSubject<TimelineEvent>(sync: true);
   final BehaviorSubject<BlocState<List<Episode>>> _stateOutput = BehaviorSubject<BlocState<List<Episode>>>();
 
-  bool _isLoadingMore = false;
   bool _showPlayed = false;
+
+  /// True while a page operation (refresh / loadMore / jumpToDate) is in
+  /// flight. Because the pipeline uses `switchMap`, queueing a `loadMore`
+  /// during an in-flight refresh would cancel it and swallow its emitted
+  /// state; `loadMore` is therefore ignored while busy.
+  bool _busy = false;
 
   /// Accumulated episodes across all loaded pages.
   final List<Episode> _allEpisodes = [];
@@ -139,7 +144,10 @@ class TimelineBloc extends Bloc {
   DateTime? get dateFilter => _dateFilter;
 
   /// Force a fresh fetch from the database (page 1) and clear any date filter.
-  void refresh() => _eventInput.add(TimelineEvent.refresh);
+  void refresh() {
+    _busy = true;
+    _eventInput.add(TimelineEvent.refresh);
+  }
 
   /// Refresh page 1 and complete once a populated (or error) state has been
   /// emitted.
@@ -152,6 +160,7 @@ class TimelineBloc extends Bloc {
     _refreshCompleter?.complete();
     final completer = _refreshCompleter = Completer<void>();
 
+    _busy = true;
     _eventInput.add(TimelineEvent.refresh);
 
     return completer.future;
@@ -160,17 +169,20 @@ class TimelineBloc extends Bloc {
   /// Clear the active date filter and show the episodes already loaded.
   void clearDateFilter() => _eventInput.add(TimelineEvent.clearDateFilter);
 
-  /// Load the next page if available (no-op if already at the end or loading).
+  /// Load the next page if available (no-op while another page operation is
+  /// in flight, at the end of the list, or with a date filter active).
   void loadMore() {
-    if (!_isLoadingMore && _hasMore) {
-      _eventInput.add(TimelineEvent.loadMore);
-    }
+    if (_busy || !_hasMore) return;
+
+    _busy = true;
+    _eventInput.add(TimelineEvent.loadMore);
   }
 
   /// Jump to the timeline position for [date]. Loads pages until the target is
   /// reached, then emits so the UI can scroll to the appropriate item.
   void jumpToDate(DateTime date) {
     _pendingJumpDate = date;
+    _busy = true;
     _eventInput.add(TimelineEvent.jumpToDate);
   }
 
@@ -222,13 +234,14 @@ class TimelineBloc extends Bloc {
   /// underneath the refresh indicator instead of a blank spinner.
   Stream<BlocState<List<Episode>>> _refresh() async* {
     final generation = ++_generation;
+
+    _busy = true;
     final previous = List<Episode>.from(_allEpisodes);
 
     _allEpisodes.clear();
     _dateFilter = null;
     _cursor = null;
     _hasMore = true;
-    _isLoadingMore = false;
 
     yield BlocLoadingState<List<Episode>>(_sorted(previous));
 
@@ -244,6 +257,8 @@ class TimelineBloc extends Bloc {
       if (generation != _generation) return;
 
       yield BlocErrorState<List<Episode>>();
+    } finally {
+      if (generation == _generation) _busy = false;
     }
   }
 
@@ -254,7 +269,7 @@ class TimelineBloc extends Bloc {
 
     final generation = ++_generation;
 
-    _isLoadingMore = true;
+    _busy = true;
 
     // Keep the current list visible while loading in the background.
     yield BlocBackgroundLoadingState<List<Episode>>(_sorted(_allEpisodes));
@@ -272,7 +287,7 @@ class TimelineBloc extends Bloc {
       // Re-emit current data so the UI isn't stuck in a loading state.
       yield BlocPopulatedState<List<Episode>>(results: _sorted(_allEpisodes));
     } finally {
-      _isLoadingMore = false;
+      if (generation == _generation) _busy = false;
     }
   }
 
@@ -329,36 +344,41 @@ class TimelineBloc extends Bloc {
   Stream<BlocState<List<Episode>>> _jumpToDate(DateTime date) async* {
     final generation = ++_generation;
 
+    _busy = true;
     _dateFilter = date;
     yield BlocLoadingState<List<Episode>>(_sorted(_allEpisodes));
 
     try {
-      // Count how many episodes are newer than [date] to know how many pages
-      // are needed, then load pages until we reach or exceed that count.
-      final offset = await podcastService.countEpisodesSince(date);
+      try {
+        // Count how many episodes are newer than [date] to know how many pages
+        // are needed, then load pages until we reach or exceed that count.
+        final offset = await podcastService.countEpisodesSince(date);
 
-      if (generation != _generation) return;
+        if (generation != _generation) return;
 
-      // Load pages one at a time until we have enough (or run out).
-      while (_allEpisodes.length < offset + pageSize && _hasMore) {
-        final progressed = await _fetchPage(generation);
+        // Load pages one at a time until we have enough (or run out).
+        while (_allEpisodes.length < offset + pageSize && _hasMore) {
+          final progressed = await _fetchPage(generation);
 
-        if (!progressed) return;
-      }
+          if (!progressed) return;
+        }
 
-      _lastFetchTime = DateTime.now();
-      yield BlocPopulatedState<List<Episode>>(results: _sorted(_allEpisodes));
-    } catch (e) {
-      log.severe('Timeline jumpToDate failed: $e');
-
-      if (generation != _generation) return;
-
-      // If we have data, emit it anyway.
-      if (_allEpisodes.isNotEmpty) {
+        _lastFetchTime = DateTime.now();
         yield BlocPopulatedState<List<Episode>>(results: _sorted(_allEpisodes));
-      } else {
-        yield BlocErrorState<List<Episode>>();
+      } catch (e) {
+        log.severe('Timeline jumpToDate failed: $e');
+
+        if (generation != _generation) return;
+
+        // If we have data, emit it anyway.
+        if (_allEpisodes.isNotEmpty) {
+          yield BlocPopulatedState<List<Episode>>(results: _sorted(_allEpisodes));
+        } else {
+          yield BlocErrorState<List<Episode>>();
+        }
       }
+    } finally {
+      if (generation == _generation) _busy = false;
     }
   }
 

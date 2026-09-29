@@ -5,12 +5,11 @@
 import 'dart:async';
 
 import 'package:anytime/bloc/bookmark/bookmark_bloc.dart';
-import 'package:anytime/bloc/podcast/audio_bloc.dart';
 import 'package:anytime/entities/bookmark.dart';
 import 'package:anytime/l10n/L.dart';
-import 'package:anytime/repository/repository.dart';
 import 'package:anytime/state/bloc_state.dart';
 import 'package:anytime/state/bookmark_state.dart';
+import 'package:anytime/ui/widgets/bookmark_action.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:provider/provider.dart';
@@ -301,36 +300,6 @@ class _BookmarkTile extends StatelessWidget {
   String _formatDate(BuildContext context, DateTime date) =>
       DateFormat.yMMMd(Localizations.localeOf(context).toLanguageTag()).format(date);
 
-  /// Plays the bookmark: seeks when its episode is already playing, otherwise
-  /// starts that episode from the bookmarked position.
-  Future<void> _openBookmark(BuildContext context) async {
-    final audioBloc = Provider.of<AudioBloc>(context, listen: false);
-    final nowPlaying = audioBloc.nowPlaying?.valueOrNull;
-
-    if (nowPlaying?.guid == bookmark.episodeGuid) {
-      audioBloc.transitionPosition(bookmark.positionMs / 1000.0);
-
-      return;
-    }
-
-    final repository = Provider.of<Repository>(context, listen: false);
-    final episode = await repository.findEpisodeByGuid(bookmark.episodeGuid);
-
-    if (episode == null) {
-      // The episode may have been removed since the bookmark was created.
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(L.of(context)!.bookmark_episode_missing)),
-        );
-      }
-
-      return;
-    }
-
-    episode.position = bookmark.positionMs;
-    audioBloc.play(episode);
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -375,9 +344,9 @@ class _BookmarkTile extends StatelessWidget {
           trailing: IconButton(
             icon: const Icon(Icons.play_circle_outline, size: 22.0),
             tooltip: L.of(context)!.bookmark_seek_label(_formatPosition(bookmark.positionMs)),
-            onPressed: () => _openBookmark(context),
+            onPressed: () => openBookmark(context, bookmark),
           ),
-          onTap: () => _openBookmark(context),
+          onTap: () => openBookmark(context, bookmark),
         ),
       ),
     );

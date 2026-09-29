@@ -431,6 +431,126 @@ class L {
         );
   }
 
+  String get search_episodes_hint {
+    return message('search_episodes_hint') ??
+        Intl.message(
+          'Search episodes',
+          name: 'search_episodes_hint',
+          desc: 'Hint displayed on search bar when searching episodes in Timeline tab',
+          locale: localeName,
+        );
+  }
+
+  String get search_podcasts_hint {
+    return message('search_podcasts_hint') ??
+        Intl.message(
+          'Search podcasts',
+          name: 'search_podcasts_hint',
+          desc: 'Hint displayed on search bar when searching podcasts in Library tab',
+          locale: localeName,
+        );
+  }
+
+  String get search_downloads_hint {
+    return message('search_downloads_hint') ??
+        Intl.message(
+          'Search downloads',
+          name: 'search_downloads_hint',
+          desc: 'Hint displayed on search bar when searching downloads in Downloads tab',
+          locale: localeName,
+        );
+  }
+
+  String get search_bookmarks_hint {
+    return message('search_bookmarks_hint') ??
+        Intl.message(
+          'Search bookmarks',
+          name: 'search_bookmarks_hint',
+          desc: 'Hint displayed on search bar when searching bookmarks in Bookmarks tab',
+          locale: localeName,
+        );
+  }
+
+  String get search_episodes_tooltip {
+    return message('search_episodes_tooltip') ??
+        Intl.message(
+          'Search episodes',
+          name: 'search_episodes_tooltip',
+          desc: 'Tooltip for search button on Timeline tab',
+          locale: localeName,
+        );
+  }
+
+  String get search_podcasts_tooltip {
+    return message('search_podcasts_tooltip') ??
+        Intl.message(
+          'Search podcasts',
+          name: 'search_podcasts_tooltip',
+          desc: 'Tooltip for search button on Library tab',
+          locale: localeName,
+        );
+  }
+
+  String get search_downloads_tooltip {
+    return message('search_downloads_tooltip') ??
+        Intl.message(
+          'Search downloads',
+          name: 'search_downloads_tooltip',
+          desc: 'Tooltip for search button on Downloads tab',
+          locale: localeName,
+        );
+  }
+
+  String get search_bookmarks_tooltip {
+    return message('search_bookmarks_tooltip') ??
+        Intl.message(
+          'Search bookmarks',
+          name: 'search_bookmarks_tooltip',
+          desc: 'Tooltip for search button on Bookmarks tab',
+          locale: localeName,
+        );
+  }
+
+  String get no_episodes_found {
+    return message('no_episodes_found') ??
+        Intl.message(
+          'No episodes found',
+          name: 'no_episodes_found',
+          desc: 'Displayed when no episodes match the search query',
+          locale: localeName,
+        );
+  }
+
+  String get no_podcasts_found {
+    return message('no_podcasts_found') ??
+        Intl.message(
+          'No podcasts found',
+          name: 'no_podcasts_found',
+          desc: 'Displayed when no podcasts match the search query',
+          locale: localeName,
+        );
+  }
+
+  String get no_downloads_found {
+    return message('no_downloads_found') ??
+        Intl.message(
+          'No downloads found',
+          name: 'no_downloads_found',
+          desc: 'Displayed when no downloads match the search query',
+          locale: localeName,
+        );
+  }
+
+  String get no_bookmarks_found {
+    return message('no_bookmarks_found') ??
+        Intl.message(
+          'No bookmarks found',
+          name: 'no_bookmarks_found',
+          desc: 'Displayed when no bookmarks match the search query',
+          locale: localeName,
+        );
+  }
+
   String get no_podcast_details_message {
     return message('no_podcast_details_message') ??
         Intl.message(

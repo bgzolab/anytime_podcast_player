@@ -461,6 +461,8 @@ class DefaultAudioPlayerService extends AudioPlayerService {
   Future<void> suspend() async {
     _stopPositionTicker();
 
+    if (_audioUnavailable()) return;
+
     // Only persist state and stop the player when not actively playing.
     // If the user is listening, allow background playback to continue.
     // Stopping an actively playing stream would kill background audio.

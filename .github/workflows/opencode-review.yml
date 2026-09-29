@@ -6,10 +6,14 @@ on:
 
 jobs:
   opencode-review:
-    if: github.event.pull_request.user.login == 'bgzo'
+    if: github.event.pull_request.user.login == 'bgzo' && !github.event.pull_request.draft
     runs-on: ubuntu-latest
-    # 防止组件卡住时一直等到 6 小时默认上限；正常运行约 6-10 分钟
+    # 防止组件卡住时一直等到 6 小时默认上限；正常运行约 5-10 分钟
     timeout-minutes: 20
+    # 同一 PR 连续推送时，取消旧的审查，避免重复评论与配额浪费
+    concurrency:
+      group: opencode-review-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     permissions:
       # 只读 contents：即使工作区变脏，opencode action 也无法 push
       contents: read
@@ -63,7 +67,8 @@ jobs:
           }
           EOF
       - name: Run opencode
-        uses: anomalyco/opencode/github@latest
+        # 固定到 v1.18.33 对应的 commit，避免浮动 ref 带来供应链风险（审查 P1-1）
+        uses: anomalyco/opencode/github@51ef4be1d3c122f18fefb510dca8d778571f4f18 # v1.18.33
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

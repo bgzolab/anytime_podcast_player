@@ -448,5 +448,44 @@ void main() {
       expect((states.last as BlocPopulatedState<List<Episode>>).results!.length, 2);
       expect(bloc.hasHiddenPlayed, isFalse);
     });
+
+    test('overlapping refresh events do not corrupt pagination state', () async {
+      final page = List.generate(
+        20,
+        (i) => Episode(
+          guid: 'ep-$i',
+          podcast: 'Test',
+          title: 'Episode $i',
+          publicationDate: DateTime(2026, 7, 30 - i),
+          duration: 1000,
+        ),
+      );
+
+      final service = FakePodcastService(
+        loadBefore: (_, __) async {
+          await Future.delayed(const Duration(milliseconds: 20));
+
+          return page;
+        },
+        countSince: (_) async => 20,
+      );
+      final bloc = TimelineBloc(podcastService: service);
+      addTearDown(() => bloc.dispose());
+
+      final states = <BlocState>[];
+      bloc.state.listen(states.add);
+
+      // Cold start can enqueue two refreshes (lifecycle resume + initState).
+      // The in-flight fetch of the cancelled first refresh must not write its
+      // page into the shared state, or the second fetch sees only duplicates
+      // and incorrectly concludes there are no more pages.
+      bloc.event(TimelineEvent.refresh);
+      bloc.event(TimelineEvent.refresh);
+      await Future.delayed(const Duration(milliseconds: 150));
+
+      final results = (states.last as BlocPopulatedState<List<Episode>>).results!;
+      expect(results.length, 20);
+      expect(bloc.hasMore, isTrue);
+    });
   });
 }

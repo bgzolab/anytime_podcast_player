@@ -25,6 +25,9 @@ enum TimelineEvent {
   /// Load enough pages to cover the date most recently passed to
   /// [TimelineBloc.jumpToDate] and apply it as a filter.
   jumpToDate,
+
+  /// Remove the date filter and re-emit the episodes already loaded.
+  clearDateFilter,
 }
 
 /// The BLoC provides cursor-paginated access to all episodes from subscribed
@@ -67,8 +70,14 @@ class TimelineBloc extends Bloc {
   /// Whether the server-side has more episodes beyond the current pages.
   bool _hasMore = true;
 
-  /// When set (via [jumpToDate]), only episodes on or after this date are shown.
+  /// When set (via [jumpToDate]), only episodes from this calendar day are
+  /// shown.
   DateTime? _dateFilter;
+
+  /// Incremented by every operation that mutates the accumulated page state.
+  /// In-flight page fetches whose generation no longer matches are discarded —
+  /// `switchMap` cancels the event stream but not the `Future` it is awaiting.
+  int _generation = 0;
 
   /// The date most recently passed to [jumpToDate], consumed by
   /// [TimelineEvent.jumpToDate] on the shared event pipeline.
@@ -148,11 +157,8 @@ class TimelineBloc extends Bloc {
     return completer.future;
   }
 
-  /// Clear the active date filter and show all loaded episodes.
-  void clearDateFilter() {
-    _dateFilter = null;
-    _eventInput.add(TimelineEvent.refresh);
-  }
+  /// Clear the active date filter and show the episodes already loaded.
+  void clearDateFilter() => _eventInput.add(TimelineEvent.clearDateFilter);
 
   /// Load the next page if available (no-op if already at the end or loading).
   void loadMore() {
@@ -186,6 +192,9 @@ class TimelineBloc extends Bloc {
           return _emitFromCache();
         case TimelineEvent.jumpToDate:
           return _jumpToDate(_pendingJumpDate!);
+        case TimelineEvent.clearDateFilter:
+          _dateFilter = null;
+          return _emitFromCache();
       }
     }).listen((state) {
       _stateOutput.add(state);
@@ -212,6 +221,7 @@ class TimelineBloc extends Bloc {
   /// The previous list is kept in the loading state so the UI can show it
   /// underneath the refresh indicator instead of a blank spinner.
   Stream<BlocState<List<Episode>>> _refresh() async* {
+    final generation = ++_generation;
     final previous = List<Episode>.from(_allEpisodes);
 
     _allEpisodes.clear();
@@ -223,11 +233,16 @@ class TimelineBloc extends Bloc {
     yield BlocLoadingState<List<Episode>>(_sorted(previous));
 
     try {
-      await _fetchPage();
+      await _fetchPage(generation);
+      if (generation != _generation) return;
+
       _lastFetchTime = DateTime.now();
       yield BlocPopulatedState<List<Episode>>(results: _sorted(_allEpisodes));
     } catch (e) {
       log.severe('Timeline refresh failed: $e');
+
+      if (generation != _generation) return;
+
       yield BlocErrorState<List<Episode>>();
     }
   }
@@ -237,16 +252,23 @@ class TimelineBloc extends Bloc {
   Stream<BlocState<List<Episode>>> _loadMore() async* {
     if (_cursor == null || _allEpisodes.isEmpty) return;
 
+    final generation = ++_generation;
+
     _isLoadingMore = true;
 
     // Keep the current list visible while loading in the background.
     yield BlocBackgroundLoadingState<List<Episode>>(_sorted(_allEpisodes));
 
     try {
-      await _fetchPage();
+      await _fetchPage(generation);
+      if (generation != _generation) return;
+
       yield BlocPopulatedState<List<Episode>>(results: _sorted(_allEpisodes));
     } catch (e) {
       log.severe('Timeline loadMore failed: $e');
+
+      if (generation != _generation) return;
+
       // Re-emit current data so the UI isn't stuck in a loading state.
       yield BlocPopulatedState<List<Episode>>(results: _sorted(_allEpisodes));
     } finally {
@@ -258,17 +280,25 @@ class TimelineBloc extends Bloc {
   /// Uses [_cursor] as the (inclusive) "before" bound, and updates it
   /// afterwards. Episodes already loaded are skipped so that an inclusive
   /// cursor cannot produce duplicates.
-  Future<void> _fetchPage() async {
+  ///
+  /// Returns false when the result was discarded because a newer operation
+  /// has superseded [generation].
+  Future<bool> _fetchPage(int generation) async {
     final before = _cursor ?? DateTime.now().add(const Duration(days: 1));
     final page = await podcastService.loadEpisodesBefore(before, limit: pageSize);
 
+    // switchMap cancels the event stream, not the Future it was awaiting, so
+    // an in-flight fetch can still complete after being superseded. Writing its
+    // results into the shared page state would corrupt pagination.
+    if (generation != _generation) return false;
+
     if (page.isEmpty) {
       _hasMore = false;
-      return;
+      return true;
     }
 
-    final known = _allEpisodes.map((episode) => episode.guid).toSet();
-    final fresh = page.where((episode) => !known.contains(episode.guid)).toList();
+    final known = _allEpisodes.map(_episodeKey).toSet();
+    final fresh = page.where((episode) => !known.contains(_episodeKey(episode))).toList();
 
     _allEpisodes.addAll(fresh);
 
@@ -282,7 +312,13 @@ class TimelineBloc extends Bloc {
     if (page.length < pageSize || fresh.isEmpty) {
       _hasMore = false;
     }
+
+    return true;
   }
+
+  /// Identity used to de-duplicate pages: the database id when available,
+  /// falling back to the episode guid.
+  String _episodeKey(Episode episode) => episode.id?.toString() ?? episode.guid;
 
   // ---------------------------------------------------------------------------
   // Date jump
@@ -291,6 +327,8 @@ class TimelineBloc extends Bloc {
   /// Sets a date filter and loads enough pages to cover [date], then emits
   /// the filtered list so the UI shows episodes only from [date] onwards.
   Stream<BlocState<List<Episode>>> _jumpToDate(DateTime date) async* {
+    final generation = ++_generation;
+
     _dateFilter = date;
     yield BlocLoadingState<List<Episode>>(_sorted(_allEpisodes));
 
@@ -299,15 +337,22 @@ class TimelineBloc extends Bloc {
       // are needed, then load pages until we reach or exceed that count.
       final offset = await podcastService.countEpisodesSince(date);
 
+      if (generation != _generation) return;
+
       // Load pages one at a time until we have enough (or run out).
       while (_allEpisodes.length < offset + pageSize && _hasMore) {
-        await _fetchPage();
+        final progressed = await _fetchPage(generation);
+
+        if (!progressed) return;
       }
 
       _lastFetchTime = DateTime.now();
       yield BlocPopulatedState<List<Episode>>(results: _sorted(_allEpisodes));
     } catch (e) {
       log.severe('Timeline jumpToDate failed: $e');
+
+      if (generation != _generation) return;
+
       // If we have data, emit it anyway.
       if (_allEpisodes.isNotEmpty) {
         yield BlocPopulatedState<List<Episode>>(results: _sorted(_allEpisodes));

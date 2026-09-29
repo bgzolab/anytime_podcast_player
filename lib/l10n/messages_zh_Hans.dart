@@ -160,6 +160,7 @@ class MessageLookup extends MessageLookupByLibrary {
     'queue_remove_label': MessageLookupByLibrary.simpleMessage('删除'),
     'refresh_done': m19,
     'refresh_feed_label': MessageLookupByLibrary.simpleMessage('刷新节目'),
+    'refresh_feeds_failed': MessageLookupByLibrary.simpleMessage('无法刷新节目源'),
     'refresh_feeds_tooltip': MessageLookupByLibrary.simpleMessage('刷新节目'),
     'refreshing_feeds_title': MessageLookupByLibrary.simpleMessage('正在刷新节目'),
     'resume_button_label': MessageLookupByLibrary.simpleMessage('继续播放'),

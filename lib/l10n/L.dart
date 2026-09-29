@@ -2573,6 +2573,16 @@ class L {
           locale: localeName,
         );
   }
+
+  String get refresh_feeds_failed {
+    return message('refresh_feeds_failed') ??
+        Intl.message(
+          'Could not refresh feeds',
+          name: 'refresh_feeds_failed',
+          desc: 'Error shown when refreshing podcast feeds fails',
+          locale: localeName,
+        );
+  }
 }
 
 class AnytimeLocalisationsDelegate extends LocalizationsDelegate<L> {

@@ -401,7 +401,7 @@ class _TimelineState extends State<Timeline> {
 
     if (diff == 0) return L.of(context)!.timeline_date_today;
     if (diff == 1) return L.of(context)!.timeline_date_yesterday;
-    if (diff <= 7) return L.of(context)!.timeline_date_this_week;
+    if (diff > 1 && diff <= 7) return L.of(context)!.timeline_date_this_week;
 
     return DateFormat.yMMMd().format(date);
   }
@@ -480,6 +480,35 @@ class _TimelineState extends State<Timeline> {
             stream: stream,
             builder: (context, snapshot) {
               final progress = snapshot.data;
+
+              if (snapshot.hasError) {
+                // Never leave the user trapped in a dialog that cannot complete.
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (Navigator.of(dialogContext).canPop()) {
+                    Navigator.of(dialogContext).pop();
+                  }
+                });
+
+                return AlertDialog(
+                  content: Row(
+                    children: [
+                      Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error),
+                      const SizedBox(width: 16),
+                      Expanded(child: Text(L.of(context)!.refresh_feeds_failed)),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        if (Navigator.of(dialogContext).canPop()) {
+                          Navigator.of(dialogContext).pop();
+                        }
+                      },
+                      child: Text(L.of(context)!.close_button_label),
+                    ),
+                  ],
+                );
+              }
 
               if (progress == null) {
                 return AlertDialog(

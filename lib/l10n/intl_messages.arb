@@ -1,5 +1,5 @@
 {
-  "@@last_modified": "2026-09-29T21:38:59.988971",
+  "@@last_modified": "2026-09-29T22:06:12.485801",
   "app_title": "Anytime Podcast Player",
   "@app_title": {
     "description": "Full title for the application",
@@ -1545,6 +1545,12 @@
   "refreshing_feeds_title": "Refreshing feeds",
   "@refreshing_feeds_title": {
     "description": "Title of refresh progress dialog",
+    "type": "text",
+    "placeholders": {}
+  },
+  "refresh_feeds_failed": "Could not refresh feeds",
+  "@refresh_feeds_failed": {
+    "description": "Error shown when refreshing podcast feeds fails",
     "type": "text",
     "placeholders": {}
   }

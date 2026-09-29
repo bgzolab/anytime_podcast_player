@@ -1603,5 +1603,11 @@
     "description": "Title of refresh progress dialog",
     "type": "text",
     "placeholders": {}
+  },
+  "refresh_feeds_failed": "Could not refresh feeds",
+  "@refresh_feeds_failed": {
+    "description": "Error shown when refreshing podcast feeds fails",
+    "type": "text",
+    "placeholders": {}
   }
 }

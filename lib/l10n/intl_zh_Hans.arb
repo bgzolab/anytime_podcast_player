@@ -1524,5 +1524,11 @@
     "description": "Timeline section label for episodes published in the last seven days",
     "type": "text",
     "placeholders": {}
+  },
+  "refresh_feeds_failed": "无法刷新节目源",
+  "@refresh_feeds_failed": {
+    "description": "Error shown when refreshing podcast feeds fails",
+    "type": "text",
+    "placeholders": {}
   }
 }

@@ -196,6 +196,7 @@ class MessageLookup extends MessageLookupByLibrary {
     'queue_remove_label': MessageLookupByLibrary.simpleMessage('Remove'),
     'refresh_done': m19,
     'refresh_feed_label': MessageLookupByLibrary.simpleMessage('Refresh episodes'),
+    'refresh_feeds_failed': MessageLookupByLibrary.simpleMessage('Could not refresh feeds'),
     'refresh_feeds_tooltip': MessageLookupByLibrary.simpleMessage('Refresh feeds'),
     'refreshing_feeds_title': MessageLookupByLibrary.simpleMessage('Refreshing feeds'),
     'resume_button_label': MessageLookupByLibrary.simpleMessage('Resume episode'),

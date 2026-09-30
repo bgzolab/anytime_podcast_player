@@ -103,6 +103,11 @@ l10n/                  L.dart + intl_*.arb + generated messages_*.dart
 - Tests live under `test/unit/` (core, navigation, persistence, opml, services…) with mocks in `test/unit/mocks/` and
   fixtures in `test_resources/` (`.opml`, `.rss`). Use Mockito mocks of the abstract interfaces.
 - CI: `.github/workflows/dart.yml` runs pub get → test → debug APK/appbundle builds. Releases are built with Codemagic.
+- CI review: `.github/workflows/opencode-review.yml` reviews non-draft PRs from `bgzo` with opencode. It inlines the
+  opencode GitHub action steps so the release-version lookup is authenticated and non-fatal, and retries the review
+  once (16 + 11 minute attempts) when the provider stalls and no review verdict comment was posted yet. Inspect a failed run
+  with `gh run view <run-id> --log-failed`; retry it with `gh run rerun <run-id>`. If both attempts fail, fall back to
+  a manual review and record it on the PR.
 
 ## Known tech debt
 

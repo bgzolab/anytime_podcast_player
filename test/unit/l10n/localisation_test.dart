@@ -131,9 +131,10 @@ void main() {
       for (final entry in _expectedCategoryCounts.entries) {
         final fallback = englishCatalogueMessage(entry.key);
 
-        // Independent expectations: the entry counts come from the ARB-derived
-        // map, not from Intl state, so the test fails if the helper ever
-        // regresses to depending on initializeMessages().
+        // This group only checks content and counts against the ARB-derived
+        // map. The "independent of Intl global state" guard lives in
+        // english_fallback_independence_test.dart (own isolate, without
+        // initializeMessages).
         expect(fallback, isNotNull);
         expect(fallback, isNotEmpty);
         expect(fallback, isNot(entry.key));

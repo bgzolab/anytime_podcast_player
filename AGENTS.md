@@ -107,7 +107,8 @@ l10n/                  L.dart + intl_*.arb + generated messages_*.dart
   opencode GitHub action steps so the release-version lookup is authenticated and non-fatal, and retries the review
   once (16 + 11 minute attempts) when the provider stalls and no review verdict comment was posted yet. Inspect a failed run
   with `gh run view <run-id> --log-failed`; retry it with `gh run rerun <run-id>`. If both attempts fail, fall back to
-  a manual review and record it on the PR.
+  a manual review and record it on the PR. When upgrading the opencode CLI, update `OPENCODE_FALLBACK_VERSION` in the
+  workflow too: the review installs that pinned release whenever the authenticated version lookup fails.
 
 ## Known tech debt
 

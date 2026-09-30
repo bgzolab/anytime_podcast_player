@@ -13,19 +13,18 @@ import 'package:flutter_test/flutter_test.dart';
 /// purpose. A helper that regressed to `Intl.message(locale: 'en')` would
 /// return the key instead of the catalogue and fail these tests.
 void main() {
-  test('iTunes catalogue is readable without initializeMessages', () {
-    final fallback = englishCatalogueMessage('discovery_categories_itunes');
+  final expectedCounts = <String, int>{
+    'discovery_categories_itunes': PodcastService.itunesGenres.length,
+    'discovery_categories_pindex': PodcastService.podcastIndexGenres.length,
+  };
 
-    expect(fallback, isNotNull);
-    expect(fallback, isNot('discovery_categories_itunes'));
-    expect(fallback!.split(',').length, PodcastService.itunesGenres.length);
-  });
+  test('both category catalogues are readable without initializeMessages', () {
+    for (final entry in expectedCounts.entries) {
+      final fallback = englishCatalogueMessage(entry.key);
 
-  test('PodcastIndex catalogue is readable without initializeMessages', () {
-    final fallback = englishCatalogueMessage('discovery_categories_pindex');
-
-    expect(fallback, isNotNull);
-    expect(fallback, isNot('discovery_categories_pindex'));
-    expect(fallback!.split(',').length, PodcastService.podcastIndexGenres.length);
+      expect(fallback, isNotNull, reason: '${entry.key} must be available without Intl initialisation');
+      expect(fallback, isNot(entry.key));
+      expect(fallback!.split(',').length, entry.value);
+    }
   });
 }

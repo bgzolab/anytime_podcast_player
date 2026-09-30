@@ -99,6 +99,12 @@ jobs:
             }
           }
           EOF
+      # 门禁脚本固定取自 base 分支（而非 workspace 里的 PR 副本）：
+      # 1) PR 无法通过修改脚本绕过自己的门禁；2) PR 头分支缺少该文件时也可用。
+      - name: Fetch the review verdict checker from the base branch
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/contents/.github/scripts/review_verdict.sh?ref=${GITHUB_BASE_REF}" \
+            --jq '.content' | base64 -d > "$RUNNER_TEMP/review_verdict.sh"
       # 说明：下面内联了 anomalyco/opencode/github 的 composite 步骤
       # （v1.18.33 / 51ef4be1d3c122f18fefb510dca8d778571f4f18）。原 action 的
       # 「Get opencode version」步骤用未认证 curl 请求 GitHub API，共享 runner 上
@@ -164,7 +170,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           RUN_STARTED_AT: ${{ steps.version.outputs.started_at }}
         run: |
-          if FOUND=$(bash .github/scripts/review_verdict.sh "${PR_NUMBER}" "${RUN_STARTED_AT}"); then
+          if FOUND=$(bash "$RUNNER_TEMP/review_verdict.sh" "${PR_NUMBER}" "${RUN_STARTED_AT}"); then
             if [ -n "${FOUND}" ]; then
               echo "found=true" >> "$GITHUB_OUTPUT"
             else
@@ -191,7 +197,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           RUN_STARTED_AT: ${{ steps.version.outputs.started_at }}
         run: |
-          if FOUND=$(bash .github/scripts/review_verdict.sh "${PR_NUMBER}" "${RUN_STARTED_AT}"); then
+          if FOUND=$(bash "$RUNNER_TEMP/review_verdict.sh" "${PR_NUMBER}" "${RUN_STARTED_AT}"); then
             if [ -n "${FOUND}" ]; then
               echo "Review verdict comment found for this run."
               exit 0

@@ -300,4 +300,36 @@ void main() {
       expect(page2.map((e) => e.guid).toSet().containsAll({'EP002', 'EP003'}), isTrue);
     });
   });
+
+  group('Subscription metadata', () {
+    test('subscribedDate is persisted on the first save', () async {
+      final subscribedDate = DateTime(2020, 1, 1);
+      podcast1.subscribedDate = subscribedDate;
+
+      await persistenceService!.savePodcast(podcast1);
+
+      final stored = (await persistenceService!.findPodcastById(podcast1.id!))!;
+      expect(stored.subscribedDate!.millisecondsSinceEpoch, subscribedDate.millisecondsSinceEpoch);
+    });
+  });
+
+  group('Unicode search', () {
+    test('searchPodcasts matches case-insensitively for non-ASCII titles', () async {
+      final podcast = Podcast(
+        title: 'Привет мир',
+        description: 'Русский подкаст',
+        guid: 'http://ru.com',
+        link: 'http://ru.com',
+        url: 'http://ru.com',
+      );
+
+      await persistenceService!.savePodcast(podcast);
+
+      final lowercase = await persistenceService!.searchPodcasts('привет');
+      final uppercase = await persistenceService!.searchPodcasts('ПРИВЕТ');
+
+      expect(lowercase.map((p) => p.guid), contains('http://ru.com'));
+      expect(uppercase.map((p) => p.guid), contains('http://ru.com'));
+    });
+  });
 }

@@ -16,14 +16,21 @@ class SqliteDatabaseService {
   static const int _schemaVersion = 3;
 
   Database? _db;
+  Future<Database>? _dbFuture;
   final String databaseName;
 
   SqliteDatabaseService({this.databaseName = 'anytime.sqlite'});
 
-  Future<Database> get database async {
-    if (_db != null) return _db!;
-    _db = await _open();
-    return _db!;
+  Future<Database> get database {
+    final db = _db;
+    if (db != null) return Future.value(db);
+
+    // Cache the Future itself: without this, concurrent callers racing through
+    // the await would each open their own connection and leak all but the last.
+    return _dbFuture ??= _open().then((value) {
+      _db = value;
+      return value;
+    });
   }
 
   Future<Database> _open() async {
@@ -158,9 +165,17 @@ class SqliteDatabaseService {
   }
 
   Future<void> close() async {
-    if (_db != null) {
-      await _db!.close();
-      _db = null;
+    final future = _dbFuture;
+    _dbFuture = null;
+    _db = null;
+
+    if (future != null) {
+      try {
+        final db = await future;
+        await db.close();
+      } catch (_) {
+        // Opening the database failed; there is nothing to close.
+      }
     }
   }
 }

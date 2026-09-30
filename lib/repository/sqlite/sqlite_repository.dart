@@ -48,6 +48,7 @@ class SqliteRepository extends Repository {
     _log.fine('Saving podcast (${podcast.id ?? -1}) ${podcast.url}');
 
     podcast.lastUpdated = DateTime.now();
+    podcast.subscribedDate ??= DateTime.now();
     final map = _sanitizeForSqlite(podcast.toMap());
 
     if (podcast.id == null) {
@@ -106,13 +107,13 @@ class SqliteRepository extends Repository {
   @override
   Future<List<Podcast>> searchPodcasts(String term) async {
     final db = await _db;
-    final rows = await db.query(
-      'podcast',
-      where: 'title LIKE ? COLLATE NOCASE',
-      whereArgs: ['%$term%'],
-      orderBy: 'title COLLATE NOCASE',
+    final rows = await db.query('podcast', orderBy: 'title COLLATE NOCASE');
+
+    return _searchFilter(
+      rows.map((r) => Podcast.fromMap(r['id'] as int, _rowFromSqlite(r))).toList(),
+      term,
+      (p) => [p.title],
     );
-    return rows.map((r) => Podcast.fromMap(r['id'] as int, _rowFromSqlite(r))).toList();
   }
 
   // ---------------------------------------------------------------------------
@@ -129,12 +130,12 @@ class SqliteRepository extends Repository {
   @override
   Future<List<Episode>> searchEpisodes(String term) async {
     final db = await _db;
-    final rows = await db.query(
-      'episode',
-      where: 'title LIKE ? COLLATE NOCASE',
-      whereArgs: ['%$term%'],
-    );
-    return rows.map((r) => _episodeFromRow(r)).toList();
+    // SQLite's LIKE/COLLATE NOCASE only fold case for ASCII, so match in Dart
+    // to keep case-insensitive search working for every script (Cyrillic,
+    // Turkish, …), exactly as the previous implementation did.
+    final rows = await db.query('episode', orderBy: 'publicationDate DESC');
+
+    return _searchFilter(rows.map((r) => _episodeFromRow(r)).toList(), term, (e) => [e.title]);
   }
 
   @override
@@ -371,10 +372,11 @@ class SqliteRepository extends Repository {
     final db = await _db;
     final rows = await db.query(
       'episode',
-      where: 'downloadPercentage = 100 AND title LIKE ? COLLATE NOCASE',
-      whereArgs: ['%$term%'],
+      where: 'downloadPercentage = 100',
+      orderBy: 'publicationDate DESC',
     );
-    return rows.map((r) => _episodeFromRow(r)).toList();
+
+    return _searchFilter(rows.map((r) => _episodeFromRow(r)).toList(), term, (e) => [e.title]);
   }
 
   // ---------------------------------------------------------------------------
@@ -518,13 +520,14 @@ class SqliteRepository extends Repository {
   @override
   Future<List<Bookmark>> searchBookmarks(String term) async {
     final db = await _db;
-    final rows = await db.query(
-      'bookmark',
-      where: 'episodeTitle LIKE ? OR podcastName LIKE ? OR note LIKE ? COLLATE NOCASE',
-      whereArgs: ['%$term%', '%$term%', '%$term%'],
-      orderBy: 'createdAt DESC',
+    final rows = await db.query('bookmark', orderBy: 'createdAt DESC');
+    final bookmarks = rows.map((r) => Bookmark.fromMap(r['id'] as int, _rowFromSqlite(r))).toList();
+
+    return _searchFilter(
+      bookmarks,
+      term,
+      (b) => [b.episodeTitle, b.podcastName, b.note],
     );
-    return rows.map((r) => Bookmark.fromMap(r['id'] as int, _rowFromSqlite(r))).toList();
   }
 
   // ---------------------------------------------------------------------------
@@ -719,6 +722,20 @@ class SqliteRepository extends Repository {
         await batch.commit(noResult: true);
       });
     }
+  }
+
+  /// Filters [items] with a Unicode-aware, case-insensitive `contains` match
+  /// over the given [fields].
+  ///
+  /// SQLite's `LIKE` and `COLLATE NOCASE` only fold case for ASCII, so the
+  /// final match happens here, preserving the behaviour of the previous
+  /// Sembast implementation for every script.
+  List<T> _searchFilter<T>(List<T> items, String term, List<String?> Function(T) fields) {
+    final needle = term.toLowerCase();
+
+    return items.where((item) {
+      return fields(item).any((value) => value != null && value.toLowerCase().contains(needle));
+    }).toList();
   }
 
   /// Builds the WHERE clause for episode filtering by podcast and played state.

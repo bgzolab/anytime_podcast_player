@@ -43,6 +43,20 @@ class _PlaybackErrorListenerState extends State<PlaybackErrorListener> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_codeToMessage(context, code))));
       }
     });
+
+    // Report an error that happened before this listener was mounted (e.g. the
+    // platform does not support playback at all). It is shown once.
+    final pending = audioBloc.pendingPlaybackError;
+
+    if (pending != null) {
+      audioBloc.clearPendingPlaybackError();
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_codeToMessage(context, pending))));
+      });
+    }
   }
 
   @override

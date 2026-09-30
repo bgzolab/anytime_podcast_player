@@ -6,13 +6,18 @@ import 'dart:async';
 
 import 'package:anytime/entities/chapter.dart';
 import 'package:anytime/entities/episode.dart';
+import 'package:anytime/entities/persistable.dart';
 import 'package:anytime/repository/repository.dart';
 import 'package:anytime/services/audio/default_audio_player_service.dart';
 import 'package:anytime/services/podcast/podcast_service.dart';
 import 'package:anytime/services/settings/settings_service.dart';
+import 'package:anytime/state/persistent_state.dart';
 import 'package:anytime/state/queue_event_state.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+
+import '../mocks/mock_path_provider.dart';
 
 class _RecordingAudioHandler extends BaseAudioHandler {
   final List<MediaItem> played = <MediaItem>[];
@@ -24,6 +29,11 @@ class _RecordingAudioHandler extends BaseAudioHandler {
 }
 
 class _FakeRepository implements Repository {
+  final episodesById = <int, Episode>{};
+
+  @override
+  Future<Episode?> findEpisodeById(int id) async => episodesById[id];
+
   @override
   Future<Episode> saveEpisode(Episode episode, [bool updateIfSame = false]) async => episode;
 
@@ -171,5 +181,48 @@ void main() {
     // stored queue would put it back.
     expect(queueStates, isNotEmpty);
     expect(queueStates.last.queue.map((e) => e.guid), isNot(contains(episode.guid)));
+  });
+
+  test('a failed initialisation drops the pending request and reports 501', () async {
+    final episode = createEpisode('ep-1', 'Episode 1');
+    final service = createService();
+
+    final errors = <int>[];
+    service.playbackError.listen(errors.add);
+
+    await service.playEpisode(episode: episode);
+
+    initialiser.completeError(StateError('no platform audio service'));
+    await pumpEventQueue();
+
+    expect(handler.played, isEmpty);
+    expect(errors, contains(501));
+
+    // The error is latched for a listener that is not mounted yet, and can be
+    // marked as shown.
+    expect(service.pendingPlaybackError, 501);
+    service.clearPendingPlaybackError();
+    expect(service.pendingPlaybackError, isNull);
+  });
+
+  test('a play request during initialisation plays the restored episode', () async {
+    PathProviderPlatform.instance = MockPathProvder();
+
+    final restored = createEpisode('ep-restored', 'Restored episode');
+    repository.episodesById[42] = restored;
+
+    await PersistentState.persistState(Persistable(pguid: '', episodeId: 42, position: 100, state: LastState.paused));
+
+    final service = createService();
+
+    // Nothing is playing yet (resume has not restored the episode) but the tap
+    // must not be dropped: the replay awaits resume() and then plays.
+    await service.play();
+
+    initialiser.complete(handler);
+    await pumpEventQueue();
+
+    expect(handler.played, hasLength(1));
+    expect(handler.played.single.extras!['eid'], 'ep-restored');
   });
 }

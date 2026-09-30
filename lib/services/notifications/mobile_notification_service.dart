@@ -85,6 +85,10 @@ class MobileNotificationService extends NotificationService {
       log.warning('Failed to request notification permissions: $e');
 
       return false;
+    } catch (e, stack) {
+      log.warning('Failed to request notification permissions', e, stack);
+
+      return false;
     }
   }
 
@@ -100,6 +104,10 @@ class MobileNotificationService extends NotificationService {
       log.warning('Failed to query notification permissions: $e');
 
       return false;
+    } catch (e, stack) {
+      log.warning('Failed to query notification permissions', e, stack);
+
+      return false;
     }
   }
 
@@ -113,6 +121,8 @@ class MobileNotificationService extends NotificationService {
       _runtimeUnsupported = true;
 
       log.warning('Failed to clear the refresh notification: $e');
+    } catch (e, stack) {
+      log.warning('Failed to clear the refresh notification', e, stack);
     }
   }
 
@@ -142,6 +152,10 @@ class MobileNotificationService extends NotificationService {
       _runtimeUnsupported = true;
 
       log.warning('Failed to create the refresh notification: $e');
+
+      return false;
+    } catch (e, stack) {
+      log.warning('Failed to create the refresh notification', e, stack);
 
       return false;
     }

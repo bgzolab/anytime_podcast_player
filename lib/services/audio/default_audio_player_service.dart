@@ -104,6 +104,17 @@ class DefaultAudioPlayerService extends AudioPlayerService {
   /// Stream for the last audio error as an integer code.
   final _playbackError = PublishSubject<int>();
 
+  /// The last playback error that no listener has shown yet.
+  int? _pendingPlaybackError;
+
+  @override
+  int? get pendingPlaybackError => _pendingPlaybackError;
+
+  @override
+  void clearPendingPlaybackError() {
+    _pendingPlaybackError = null;
+  }
+
   final _queueState = BehaviorSubject<QueueListState>();
 
   final _sleepState = BehaviorSubject<Sleep>();
@@ -169,8 +180,15 @@ class DefaultAudioPlayerService extends AudioPlayerService {
       // the user instead of leaving it stranded without feedback.
       _pendingPlaybackRequest = null;
 
-      _playbackError.add(501);
+      _reportPlaybackError(501);
     }
+  }
+
+  /// Reports playback error [code] on the live stream and latches it for a
+  /// listener that is not mounted yet.
+  void _reportPlaybackError(int code) {
+    _pendingPlaybackError = code;
+    _playbackError.add(code);
   }
 
   /// Returns true when the platform audio service is unavailable (e.g. Windows,
@@ -202,7 +220,7 @@ class DefaultAudioPlayerService extends AudioPlayerService {
     log.warning('Audio service is unavailable on this platform; playback action ignored');
 
     if (notify) {
-      _playbackError.add(501);
+      _reportPlaybackError(501);
     }
 
     return true;
@@ -219,6 +237,21 @@ class DefaultAudioPlayerService extends AudioPlayerService {
     log.fine('Replaying playback request received during initialisation');
 
     unawaited(request());
+  }
+
+  /// Replays a `play` request that arrived during initialisation.
+  ///
+  /// The current episode is restored by [resume] on startup, so it may not be
+  /// set yet when the request is replayed; without awaiting it the tap would
+  /// be dropped silently.
+  Future<void> _replayPlay() async {
+    if (_currentEpisode == null) {
+      await resume();
+    }
+
+    if (_currentEpisode != null) {
+      await play();
+    }
   }
 
   /// Drops a playback request that is waiting for initialisation; used when a
@@ -245,7 +278,7 @@ class DefaultAudioPlayerService extends AudioPlayerService {
 
   @override
   Future<void> play() {
-    if (_audioUnavailable(notify: true, replay: () => _currentEpisode != null ? play() : Future.value())) {
+    if (_audioUnavailable(notify: true, replay: _replayPlay)) {
       return Future.value();
     }
 

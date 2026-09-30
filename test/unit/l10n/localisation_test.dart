@@ -4,6 +4,7 @@
 
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/l10n/messages_all_locales.dart';
+import 'package:anytime/services/podcast/mobile_podcast_service.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
@@ -100,22 +101,41 @@ void main() {
 
       // A missing translation returns the key itself.
       expect(categories, isNot('discovery_categories_itunes'));
-      expect(categories.split(',').length, 20);
     });
 
     test('zh_Hans translates the PodcastIndex genres', () {
       final categories = Intl.message('discovery_categories_pindex', locale: 'zh_Hans');
 
       expect(categories, isNot('discovery_categories_pindex'));
-      expect(categories.split(',').length, 113);
     });
 
-    test('zh_Hans category counts match the English catalogues', () {
-      for (final key in ['discovery_categories_itunes', 'discovery_categories_pindex']) {
-        final en = Intl.message(key, locale: 'en');
-        final zh = Intl.message(key, locale: 'zh_Hans');
+    test('catalogue entry counts match the expected English counts', () {
+      // Single source of truth for the expected counts: when the upstream
+      // catalogues gain or lose entries, update this map only.
+      const expectedCounts = {
+        'discovery_categories_itunes': 20,
+        'discovery_categories_pindex': 113,
+      };
 
-        expect(en.split(',').length, zh.split(',').length, reason: '$key must keep the same number of entries');
+      for (final entry in expectedCounts.entries) {
+        final en = Intl.message(entry.key, locale: 'en');
+        final zh = Intl.message(entry.key, locale: 'zh_Hans');
+
+        expect(en.split(',').length, entry.value, reason: '${entry.key} English count changed');
+        expect(zh.split(',').length, entry.value, reason: '${entry.key} must keep the same entry count');
+      }
+    });
+
+    test('the English fallback reads the generated catalogue directly', () {
+      // The helper must not depend on initializeMessages('en') having run;
+      // evaluating the generated lookup directly guarantees that.
+      for (final key in ['discovery_categories_itunes', 'discovery_categories_pindex']) {
+        final fallback = MobilePodcastService.englishCatalogueMessage(key);
+
+        expect(fallback, isNotNull);
+        expect(fallback, isNotEmpty);
+        expect(fallback, isNot(key));
+        expect(fallback, Intl.message(key, locale: 'en'));
       }
     });
   });

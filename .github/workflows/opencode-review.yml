@@ -25,6 +25,8 @@ jobs:
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       MODEL: opencode-go/glm-5.3-flash
+      # 版本查询三连失败时的固定回退版本，保证任何路径下安装版本可复现
+      OPENCODE_FALLBACK_VERSION: "1.18.33"
       # 思考等级：glm-5.3-flash 支持 low/high/max
       VARIANT: high
       # 用 workflow 的 GITHUB_TOKEN（contents: read），不再用 OpenCode App token：
@@ -112,39 +114,37 @@ jobs:
             fi
 
             VERSION=""
-            echo "opencode version lookup attempt ${attempt} failed" >&2
-            sleep 2
+            if [ "${attempt}" -lt 3 ]; then
+              echo "opencode version lookup attempt ${attempt} failed; retrying" >&2
+              sleep 2
+            fi
           done
+          # 三连失败时回退到已知良好的固定版本：保证任何路径下安装版本可复现，
+          # 第三方安装端点只影响下载、不影响版本选择
+          if [ -z "${VERSION}" ]; then
+            VERSION="${OPENCODE_FALLBACK_VERSION}"
+            echo "::warning::Could not resolve the opencode release tag; falling back to ${VERSION}."
+          fi
           VERSION="${VERSION#v}"
-          # 查询失败时用 run id 作缓存键：既不中断 job，也不会把一次性的
-          # "latest" 构建固化成长久复用的陈旧缓存。
-          # 同时记录本 run 的起始时间（github 上下文没有 run_started_at），供重试前 /
+          # 记录本 run 的起始时间（github 上下文没有 run_started_at），供重试前 /
           # 门禁校验判断本 run 是否已发出审查结论使用。
           {
             echo "version=${VERSION}"
-            echo "cache_key=${VERSION:-latest-${GITHUB_RUN_ID}}"
             echo "started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           } >> "$GITHUB_OUTPUT"
-      # 只有解析出确定版本时才写缓存：未解析出时安装脚本会取当前 latest，
-      # 用 run id 作键的条目永远不会被复用，写进去只会蚕食仓库缓存配额
       - name: Cache opencode
         id: cache
-        if: steps.version.outputs.version != ''
         uses: actions/cache@v4
         with:
           path: ~/.opencode/bin
-          key: opencode-${{ runner.os }}-${{ runner.arch }}-${{ steps.version.outputs.cache_key }}
+          key: opencode-${{ runner.os }}-${{ runner.arch }}-${{ steps.version.outputs.version }}
       - name: Install opencode
         if: steps.cache.outputs.cache-hit != 'true'
         env:
           PINNED_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          if [ -n "${PINNED_VERSION}" ]; then
-            curl -fsSL https://opencode.ai/install | bash -s -- --version "${PINNED_VERSION}"
-          else
-            echo "::warning::Could not resolve the opencode release tag; installing the latest version without pinning."
-            curl -fsSL https://opencode.ai/install | bash
-          fi
+          # 版本始终固定（查询失败时为 OPENCODE_FALLBACK_VERSION）
+          curl -fsSL https://opencode.ai/install | bash -s -- --version "${PINNED_VERSION}"
       - name: Add opencode to PATH
         run: echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
       # provider 卡死/网络抖动时最多损失一次尝试的时长，失败后自动进入第二次。

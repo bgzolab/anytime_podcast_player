@@ -8,8 +8,9 @@ jobs:
   opencode-review:
     if: github.event.pull_request.user.login == 'bgzo' && !github.event.pull_request.draft
     runs-on: ubuntu-latest
-    # 两次尝试（最长 16 + 11 分钟）加上初始化开销都控制在这里；正常一次 2-10 分钟完成
-    timeout-minutes: 30
+    # 两次尝试（最长 16 + 11 分钟）加初始化开销：最坏路径也留有余量，保证双超时时
+    # 仍能走到显式的「两次尝试均失败」步骤，而不是被 job 上限中途取消；正常一次 2-10 分钟完成
+    timeout-minutes: 35
     # 同一 PR 连续推送时，取消旧的审查，避免重复评论与配额浪费
     concurrency:
       group: opencode-review-${{ github.event.pull_request.number }}
@@ -108,7 +109,12 @@ jobs:
           VERSION=$(curl -sf -H "Authorization: Bearer ${GITHUB_TOKEN}" \
             https://api.github.com/repos/anomalyco/opencode/releases/latest \
             | grep -o '"tag_name": *"[^"]*"' | cut -d'"' -f4 || true)
-          echo "version=${VERSION:-latest}" >> "$GITHUB_OUTPUT"
+          # 查询失败时用 run id 作缓存键：既不中断 job，也不会把一次性的
+          # "latest" 构建固化成长久复用的陈旧缓存
+          echo "version=${VERSION:-latest-${GITHUB_RUN_ID}}" >> "$GITHUB_OUTPUT"
+          # 记录本 run 的起始时间（github 上下文没有 run_started_at），供重试前
+          # 判断 attempt 1 是否已经发出评论使用
+          echo "started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
       - name: Cache opencode
         id: cache
         uses: actions/cache@v4
@@ -127,14 +133,29 @@ jobs:
         continue-on-error: true
         timeout-minutes: 16
         run: opencode github run
-      - name: Reset workspace before the retry
+      # attempt 1 可能在「已发出评论之后」失败（评论已写入再退出非零）或在发布评论后
+      # 被超时终止。此时再跑 attempt 2 会产生两条可能不一致的结论，因此在重试前检查
+      # 本 run 启动之后是否已有 bot 评论：有则跳过重试，直接把 job 视为成功。
+      - name: Check whether attempt 1 already posted a review comment
+        id: attempt_1_comment
         if: steps.review_attempt_1.outcome == 'failure'
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_STARTED_AT: ${{ steps.version.outputs.started_at }}
+        run: |
+          POSTED=$(gh api --paginate --slurp \
+            "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments?per_page=100" \
+            --jq "[.[][] | select(.user.login == \"github-actions[bot]\" and .created_at >= \"${RUN_STARTED_AT}\")] | length" \
+            || echo 0)
+          echo "posted=${POSTED:-0}" >> "$GITHUB_OUTPUT"
+      - name: Reset workspace before the retry
+        if: steps.review_attempt_1.outcome == 'failure' && steps.attempt_1_comment.outputs.posted == '0'
         run: |
           git reset --hard HEAD
           git clean -fd
       - name: Run opencode review (attempt 2)
         id: review_attempt_2
-        if: steps.review_attempt_1.outcome == 'failure'
+        if: steps.review_attempt_1.outcome == 'failure' && steps.attempt_1_comment.outputs.posted == '0'
         continue-on-error: true
         timeout-minutes: 11
         run: opencode github run

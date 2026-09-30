@@ -48,12 +48,29 @@ class SqliteRepository extends Repository {
     _log.fine('Saving podcast (${podcast.id ?? -1}) ${podcast.url}');
 
     podcast.lastUpdated = DateTime.now();
+
+    if (podcast.id == null) {
+      // Guard against a plain replace: when the feed is already stored (deep
+      // links, re-subscribe) the existing row's id and the user's settings
+      // (filter, sort, new episode count, subscription date) must survive.
+      final existing = await db.query('podcast', where: 'guid = ?', whereArgs: [podcast.guid], limit: 1);
+
+      if (existing.isNotEmpty) {
+        final stored = Podcast.fromMap(existing.first['id'] as int, _rowFromSqlite(existing.first));
+
+        podcast.id = stored.id;
+        podcast.filter = stored.filter;
+        podcast.sort = stored.sort;
+        podcast.newEpisodes = stored.newEpisodes;
+        podcast.subscribedDate ??= stored.subscribedDate;
+      }
+    }
+
     podcast.subscribedDate ??= DateTime.now();
     final map = _sanitizeForSqlite(podcast.toMap());
 
     if (podcast.id == null) {
-      podcast.subscribedDate ??= DateTime.now();
-      podcast.id = await db.insert('podcast', map, conflictAlgorithm: ConflictAlgorithm.replace);
+      podcast.id = await db.insert('podcast', map);
     } else {
       await db.update('podcast', map, where: 'id = ?', whereArgs: [podcast.id]);
     }
@@ -103,17 +120,28 @@ class SqliteRepository extends Repository {
   @override
   Future<List<Podcast>> subscriptions() async {
     final db = await _db;
-    final rows = await db.query('podcast', orderBy: 'title COLLATE NOCASE');
-    return rows.map((r) => Podcast.fromMap(r['id'] as int, _rowFromSqlite(r))).toList();
+    final rows = await db.query('podcast');
+    final podcasts = rows.map((r) => Podcast.fromMap(r['id'] as int, _rowFromSqlite(r))).toList();
+
+    // Sort in Dart: SQLite's COLLATE NOCASE only folds ASCII case, while the
+    // previous implementation compared lower-cased titles for every script.
+    podcasts.sort((a, b) => _compareTitles(a.title, b.title));
+
+    return podcasts;
   }
+
+  /// Case-insensitive, Unicode-aware title comparison.
+  int _compareTitles(String? a, String? b) => (a ?? '').toLowerCase().compareTo((b ?? '').toLowerCase());
 
   @override
   Future<List<Podcast>> searchPodcasts(String term) async {
     final db = await _db;
-    final rows = await db.query('podcast', orderBy: 'title COLLATE NOCASE');
+    final rows = await db.query('podcast');
+    final podcasts = rows.map((r) => Podcast.fromMap(r['id'] as int, _rowFromSqlite(r))).toList();
+    podcasts.sort((a, b) => _compareTitles(a.title, b.title));
 
     return _searchFilter(
-      rows.map((r) => Podcast.fromMap(r['id'] as int, _rowFromSqlite(r))).toList(),
+      podcasts,
       term,
       (p) => [p.title],
     );
@@ -142,19 +170,24 @@ class SqliteRepository extends Repository {
   }
 
   @override
-  Future<List<Episode>> findEpisodesBefore(DateTime beforeDate, {int limit = 100}) async {
+  Future<List<Episode>> findEpisodesBefore(DateTime beforeDate, {int limit = 100, int? beforeId}) async {
     final sw = Stopwatch()..start();
     final db = await _db;
     final beforeMs = beforeDate.millisecondsSinceEpoch;
 
-    // Inclusive bound: the timeline de-duplicates pages by key, and an
-    // exclusive bound would silently skip episodes sharing the cursor's
-    // publication date.
+    // Without a tie-breaker the bound is inclusive: the timeline de-duplicates
+    // pages by key, and an exclusive bound would silently skip episodes that
+    // share the cursor's publication date. With [beforeId] the cursor is
+    // exact, so episodes sharing a date can span pages without repeats.
+    final where =
+        beforeId == null ? 'publicationDate <= ?' : '(publicationDate < ? OR (publicationDate = ? AND id < ?))';
+    final whereArgs = beforeId == null ? <Object?>[beforeMs] : <Object?>[beforeMs, beforeMs, beforeId];
+
     final rows = await db.query(
       'episode',
-      where: 'publicationDate <= ?',
-      whereArgs: [beforeMs],
-      orderBy: 'publicationDate DESC',
+      where: where,
+      whereArgs: whereArgs,
+      orderBy: 'publicationDate DESC, id DESC',
       limit: limit,
     );
 
@@ -207,7 +240,20 @@ class SqliteRepository extends Repository {
       orderBy: orderBy,
     );
 
-    return rows.map((r) => _episodeFromRow(r)).toList();
+    final episodes = rows.map((r) => _episodeFromRow(r)).toList();
+
+    // Alphabetical sorts happen in Dart so every script sorts consistently;
+    // SQLite's COLLATE NOCASE only folds ASCII case.
+    switch (sort) {
+      case PodcastEpisodeSort.alphabeticalAscending:
+        episodes.sort((a, b) => _compareTitles(a.title, b.title));
+      case PodcastEpisodeSort.alphabeticalDescending:
+        episodes.sort((a, b) => _compareTitles(b.title, a.title));
+      default:
+        break;
+    }
+
+    return episodes;
   }
 
   @override
@@ -246,10 +292,22 @@ class SqliteRepository extends Repository {
     PodcastEpisodeSort sort = PodcastEpisodeSort.none,
   }) async {
     final db = await _db;
+
+    // Honour the filter like [findEpisodeCountByPodcast] does; the previous
+    // implementation always counted unplayed episodes and ignored the caller's
+    // filter.
+    final filterClause = switch (filter) {
+      PodcastEpisodeFilter.none => '',
+      PodcastEpisodeFilter.played => ' AND played = 1',
+      PodcastEpisodeFilter.notPlayed => ' AND played = 0',
+      PodcastEpisodeFilter.started => ' AND position > 0',
+    };
+
     final result = await db.rawQuery(
-      'SELECT COUNT(*) as cnt FROM episode WHERE pguid = ? AND played = 0',
+      'SELECT COUNT(*) as cnt FROM episode WHERE pguid = ?$filterClause',
       [pguid],
     );
+
     return Sqflite.firstIntValue(result) ?? 0;
   }
 
@@ -556,6 +614,7 @@ class SqliteRepository extends Repository {
   // Cleanup
   // ---------------------------------------------------------------------------
 
+  @override
   Future<List<Episode>> cleanupEpisodes() async {
     final db = await _db;
     final threshold = DateTime.now().subtract(const Duration(days: 60)).millisecondsSinceEpoch;
@@ -730,17 +789,49 @@ class SqliteRepository extends Repository {
     final dateStamp = DateTime.now();
 
     for (var chunk in episodes.whereType<Episode>().toList().chunk(100)) {
+      // Look the stored rows up once per chunk so unchanged episodes are not
+      // rewritten (WAL write amplification) and do not have their lastUpdated
+      // refreshed — the orphan cleanup relies on that timestamp.
+      final ids = chunk.map((e) => e.id).whereType<int>().toList();
+      final stored = <int, Episode>{};
+
+      if (ids.isNotEmpty) {
+        final placeholders = List.filled(ids.length, '?').join(',');
+        final rows = await db.query('episode', where: 'id IN ($placeholders)', whereArgs: ids);
+
+        for (final row in rows) {
+          final id = row['id'] as int;
+          final map = _rowFromSqlite(row);
+
+          if (map['lastUpdated'] is int) {
+            map['lastUpdated'] = (map['lastUpdated'] as int).toString();
+          }
+
+          stored[id] = Episode.fromMap(id, map);
+        }
+      }
+
       await db.transaction((txn) async {
         final batch = txn.batch();
+
         for (var episode in chunk) {
+          final previous = episode.id == null ? null : stored[episode.id];
+
           episode.lastUpdated = dateStamp;
+
+          if (previous != null && episode == previous) {
+            continue;
+          }
+
           final map = _sanitizeForSqlite(episode.toMap());
+
           if (episode.id == null) {
             batch.insert('episode', map);
           } else {
             batch.update('episode', map, where: 'id = ?', whereArgs: [episode.id]);
           }
         }
+
         await batch.commit(noResult: true);
       });
     }
@@ -783,9 +874,9 @@ class SqliteRepository extends Repository {
       case PodcastEpisodeSort.earliestFirst:
         return 'publicationDate ASC';
       case PodcastEpisodeSort.alphabeticalAscending:
-        return 'title COLLATE NOCASE ASC';
+        return 'title ASC';
       case PodcastEpisodeSort.alphabeticalDescending:
-        return 'title COLLATE NOCASE DESC';
+        return 'title DESC';
     }
   }
 }

@@ -29,7 +29,7 @@ class FakePodcastService extends Fake implements PodcastService {
   Future<List<Episode>> loadEpisodes() async => _allEpisodes?.call() ?? [];
 
   @override
-  Future<List<Episode>> loadEpisodesBefore(DateTime beforeDate, {int limit = 100}) async {
+  Future<List<Episode>> loadEpisodesBefore(DateTime beforeDate, {int limit = 100, int? beforeId}) async {
     return _loadBefore?.call(beforeDate, limit) ?? [];
   }
 
@@ -75,18 +75,39 @@ class DatasetPodcastService extends Fake implements PodcastService {
   final List<Episode> episodes;
 
   DatasetPodcastService(this.episodes) {
-    // The repository returns episodes newest-first; mirror that contract so
-    // the cursor logic is exercised realistically.
-    episodes.sort((a, b) => (b.publicationDate ?? DateTime(0)).compareTo(a.publicationDate ?? DateTime(0)));
+    // Give the episodes row ids like the repository does, then mirror its
+    // contract: newest first, with the id descending as the tie-breaker within
+    // one publication date.
+    for (var i = 0; i < episodes.length; i++) {
+      episodes[i].id ??= i + 1;
+    }
+
+    episodes.sort((a, b) {
+      final byDate = (b.publicationDate ?? DateTime(0)).compareTo(a.publicationDate ?? DateTime(0));
+
+      if (byDate != 0) return byDate;
+
+      return (b.id ?? 0).compareTo(a.id ?? 0);
+    });
   }
 
   @override
   Future<List<Episode>> loadEpisodes() async => List<Episode>.of(episodes);
 
   @override
-  Future<List<Episode>> loadEpisodesBefore(DateTime beforeDate, {int limit = 100}) async {
+  Future<List<Episode>> loadEpisodesBefore(DateTime beforeDate, {int limit = 100, int? beforeId}) async {
     return episodes
-        .where((episode) => episode.publicationDate != null && !episode.publicationDate!.isAfter(beforeDate))
+        .where((episode) {
+          final date = episode.publicationDate;
+
+          if (date == null) return false;
+
+          if (date.isBefore(beforeDate)) return true;
+
+          if (beforeId == null) return !date.isAfter(beforeDate);
+
+          return date.isAtSameMomentAs(beforeDate) && (episode.id ?? 0) < beforeId;
+        })
         .take(limit)
         .toList();
   }
@@ -716,6 +737,49 @@ void main() {
 
       expect(populatedResults(states)!.every((e) => e.guid.startsWith('day-')), isTrue);
       expect(bloc.dateFilter, day);
+    });
+
+    test('pagination reaches episodes beyond a full page sharing one timestamp', () async {
+      final shared = DateTime(2026, 7, 20, 12);
+      final episodes = <Episode>[
+        for (var i = 0; i < 25; i++)
+          Episode(
+            guid: 'same-$i',
+            podcast: 'Test',
+            title: 'Same $i',
+            publicationDate: shared,
+            duration: 1000,
+          ),
+        for (var i = 0; i < 3; i++)
+          Episode(
+            guid: 'old-$i',
+            podcast: 'Test',
+            title: 'Old $i',
+            publicationDate: shared.subtract(Duration(days: 1 + i)),
+            duration: 1000,
+          ),
+      ];
+
+      final service = DatasetPodcastService(episodes);
+      final bloc = TimelineBloc(podcastService: service);
+      addTearDown(() => bloc.dispose());
+
+      final states = <BlocState>[];
+      bloc.state.listen(states.add);
+
+      bloc.refresh();
+      await waitUntil(() => populatedResults(states)?.length == 20);
+
+      // 25 episodes share one timestamp: with a date-only cursor the second
+      // page would repeat the first and end pagination, losing the remaining
+      // episodes. The id tie-breaker keeps them reachable.
+      bloc.loadMore();
+      await waitUntil(() => populatedResults(states)?.length == 28);
+      expect(bloc.hasMore, isFalse);
+
+      final guids = populatedResults(states)!.map((e) => e.guid).toSet();
+      expect(guids.length, 28);
+      expect(guids.contains('old-2'), isTrue);
     });
 
     test('a jumpToDate event without a pending date degrades to a refresh', () async {

@@ -61,10 +61,29 @@ class MobilePodcastService extends PodcastService {
     /// Setup background update handling if the repository supports it.
     await initBackgroundFetch();
 
+    /// Remove a small batch of orphaned episodes (e.g. ad-hoc queue items from
+    /// searches that are no longer linked to a subscription) on startup.
+    unawaited(_cleanupOrphanedEpisodes());
+
     /// Listen for user changes in search provider. If changed, reload the genre list
     settingsService.settingsListener.where((event) => event == 'search').listen((event) {
       _setupGenres(locale);
     });
+  }
+
+  /// Deletes a small batch of episodes that are not linked to any
+  /// subscription and have not been updated for a while; the batching and
+  /// thresholds live in the repository.
+  Future<void> _cleanupOrphanedEpisodes() async {
+    try {
+      final removed = await repository.cleanupEpisodes();
+
+      if (removed.isNotEmpty) {
+        _log.fine('Removed ${removed.length} orphaned episode(s)');
+      }
+    } catch (e, stack) {
+      _log.warning('Orphaned episode cleanup failed', e, stack);
+    }
   }
 
   /// We fetch the fixed list of Genre's for the search engine provider we are using. These
@@ -322,9 +341,12 @@ class MobilePodcastService extends PodcastService {
       // We are, so swap in the stored ID so we update the saved version later.
       pc.id = follow.id;
 
-      // And preserve any filter & sort applied
+      // And preserve any filter, sort and the original subscription date;
+      // otherwise a refresh would reset `subscribedDate` to now and the
+      // 'followed' ordering would keep changing.
       pc.filter = follow.filter;
       pc.sort = follow.sort;
+      pc.subscribedDate = follow.subscribedDate;
     }
 
     // Usually, episodes are order by reverse publication date - but not always.
@@ -625,8 +647,8 @@ class MobilePodcastService extends PodcastService {
   }
 
   @override
-  Future<List<Episode>> loadEpisodesBefore(DateTime beforeDate, {int limit = 100}) async {
-    return repository.findEpisodesBefore(beforeDate, limit: limit);
+  Future<List<Episode>> loadEpisodesBefore(DateTime beforeDate, {int limit = 100, int? beforeId}) async {
+    return repository.findEpisodesBefore(beforeDate, limit: limit, beforeId: beforeId);
   }
 
   @override

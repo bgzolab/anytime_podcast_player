@@ -107,7 +107,8 @@ list of the packages that
 are heavily used within the application.
 
 * [Flutter](https://flutter.dev/) - SDK.
-* [Sembast](https://pub.dev/packages/sembast) - NoSQL persistent store.
+* [sqflite](https://pub.dev/packages/sqflite) - SQLite persistent store.
+* [sqflite_common_ffi](https://pub.dev/packages/sqflite_common_ffi) - runs the SQLite tests on desktop and CI.
 * [RxDart](https://pub.dev/packages/rxdart) - adds additional capabilities to Dart Streams and
   StreamControllers.
 * [Audio Service](https://pub.dev/packages/audio_service) - Provides background support for audio

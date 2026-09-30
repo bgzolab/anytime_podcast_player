@@ -116,7 +116,7 @@ class FakeRepository extends Fake implements Repository {
   @override
   Future<List<Episode>> findAllEpisodes() async => [];
   @override
-  Future<List<Episode>> findEpisodesBefore(DateTime beforeDate, {int limit = 100}) async => [];
+  Future<List<Episode>> findEpisodesBefore(DateTime beforeDate, {int limit = 100, int? beforeId}) async => [];
   @override
   Future<int> countEpisodesSince(DateTime sinceDate) async => 0;
   @override

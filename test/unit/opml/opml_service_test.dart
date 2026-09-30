@@ -53,10 +53,12 @@ void main() {
   tearDown(() async {
     await repository.close();
 
-    var f = File('${Directory.systemTemp.path}/$dbName');
+    for (final suffix in ['', '-wal', '-shm']) {
+      final file = File('${Directory.systemTemp.path}/$dbName$suffix');
 
-    if (f.existsSync()) {
-      f.deleteSync();
+      if (file.existsSync()) {
+        file.deleteSync();
+      }
     }
   });
 

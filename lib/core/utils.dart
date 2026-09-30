@@ -120,6 +120,34 @@ String? safeFile(String? s) {
   return s?.replaceAll(RegExp(r'[^\w\s\.]+'), '').trim();
 }
 
+/// Normalizes [url] by collapsing multiple consecutive slashes in the path
+/// into a single slash.
+///
+/// This works around a `just_audio` proxy server bug where double slashes
+/// (e.g. `https://host//path/file.m4a`) make the HTTP server misparse the
+/// request URI as an empty path with an authority, so the handler lookup
+/// fails and playback stalls. See the upstream proxy fix shipped in
+/// just_audio 0.10.6, which `pubspec.yaml` requires.
+///
+/// The normalisation is kept as a defensive measure: the affected feeds (e.g.
+/// Himalaya) were only verified with it in place, and RFC 3986 empty path
+/// segments are rare in audio URLs. It can be removed once a release cycle
+/// passes without reports of double-slash feeds failing to play.
+///
+/// Returns [url] unchanged when it has no scheme, cannot be parsed, or its
+/// path is already normal. Query and fragment are preserved.
+String normalizeAudioUrl(String url) {
+  final uri = Uri.tryParse(url);
+
+  if (uri == null || !uri.hasScheme) return url;
+
+  final normalizedPath = uri.path.replaceAll(RegExp(r'/{2,}'), '/');
+
+  if (normalizedPath == uri.path) return url;
+
+  return uri.replace(path: normalizedPath).toString();
+}
+
 Future<String> resolveUrl(String url, {bool forceHttps = false}) async {
   final client = HttpClient();
   var uri = Uri.parse(url);

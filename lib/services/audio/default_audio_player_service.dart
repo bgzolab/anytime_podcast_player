@@ -644,23 +644,6 @@ class DefaultAudioPlayerService extends AudioPlayerService {
     _queueState.add(QueueListState(playing: _currentEpisode, queue: _queue));
   }
 
-  /// Normalizes [url] by collapsing multiple consecutive slashes in the path
-  /// into a single slash. This works around a [just_audio] proxy server bug
-  /// where double slashes (e.g. `//path/file.m4a`) cause the HTTP server to
-  /// misparse the request URI as an empty path with an authority, making the
-  /// handler lookup fail with a null check error.
-  ///
-  /// See also: [https://github.com/ryanheise/just_audio/issues]
-  String _normalizeAudioUrl(String url) {
-    final uri = Uri.tryParse(url);
-    if (uri == null || !uri.hasScheme) return url;
-
-    final normalizedPath = uri.path.replaceAll(RegExp(r'/{2,}'), '/');
-    if (normalizedPath == uri.path) return url;
-
-    return uri.replace(path: normalizedPath).toString();
-  }
-
   Future<String?> _generateEpisodeUri(Episode episode) async {
     var uri = episode.contentUrl;
 
@@ -669,7 +652,13 @@ class DefaultAudioPlayerService extends AudioPlayerService {
 
       episode.streaming = false;
     } else if (uri != null) {
-      uri = _normalizeAudioUrl(uri);
+      final normalized = normalizeAudioUrl(uri);
+
+      if (normalized != uri) {
+        log.info('Normalized streaming URL from $uri to $normalized');
+      }
+
+      uri = normalized;
     }
 
     return uri;
@@ -885,11 +874,12 @@ class DefaultAudioPlayerService extends AudioPlayerService {
         _currentEpisode!.chapters = await podcastService.loadChaptersByUrl(url: _currentEpisode!.chaptersUrl!);
         _currentEpisode!.chaptersLoading = false;
       } else {
-        // Attempt to parse ID3 chapters from the audio file. Some audio
-        // formats (e.g. M4A/MP4) throw InvalidMP3FileException here, which is
-        // harmless — they simply don't have embedded chapters.
+        // Attempt to parse ID3 chapters from the audio file, using the same
+        // (normalised) URL as playback so both agree on the resource. Some
+        // audio formats (e.g. M4A/MP4) throw InvalidMP3FileException here,
+        // which is harmless — they simply don't have embedded chapters.
         try {
-          var mp3Info = await MP3Processor.fromUri(_currentEpisode!.contentUrl!);
+          var mp3Info = await MP3Processor.fromUri(normalizeAudioUrl(_currentEpisode!.contentUrl!));
 
           if (mp3Info.id3 != null) {
             if (mp3Info.id3?.chapters != null) {
@@ -914,8 +904,16 @@ class DefaultAudioPlayerService extends AudioPlayerService {
               _currentEpisode!.chapters = chapters;
             }
           }
-        } catch (e) {
-          log.fine('Could not parse chapter metadata (audio may not be MP3): $e');
+        } catch (e, stack) {
+          // mp3_info does not export InvalidMP3FileException, so the expected
+          // "not an MP3" failure is recognised by its string representation
+          // and demoted to a fine log; anything else (network, parser) is a
+          // real problem worth a warning with the stack trace.
+          if (e.toString().contains('InvalidMP3FileException')) {
+            log.fine('No embedded ID3 chapters available: $e');
+          } else {
+            log.warning('Failed to parse embedded chapter metadata', e, stack);
+          }
         }
       }
 

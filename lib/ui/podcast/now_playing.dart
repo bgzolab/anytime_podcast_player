@@ -9,7 +9,6 @@ import 'package:anytime/entities/episode.dart';
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/services/audio/audio_player_service.dart';
 import 'package:anytime/ui/podcast/chapter_selector.dart';
-import 'package:anytime/ui/podcast/dot_decoration.dart';
 import 'package:anytime/ui/podcast/now_playing_floating_player.dart';
 import 'package:anytime/ui/podcast/now_playing_options.dart';
 import 'package:anytime/ui/podcast/person_avatar.dart';
@@ -317,10 +316,7 @@ class NowPlayingEpisodeDetails extends StatelessWidget {
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
                 minFontSize: minFontSize,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24.0,
-                ),
+                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 maxLines: episode!.hasChapters ? 3 : 4,
               ),
             ),
@@ -345,10 +341,8 @@ class NowPlayingEpisodeDetails extends StatelessWidget {
                         minFontSize: minFontSize,
                         textAlign: TextAlign.center,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.grey[300],
-                          fontWeight: FontWeight.normal,
-                          fontSize: 16.0,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                         maxLines: 2,
                       ),
@@ -492,7 +486,11 @@ class _NowPlayingTabsState extends State<NowPlayingTabs> with TickerProviderStat
     final orientation = MediaQuery.orientationOf(context);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: theme.appBarTheme.systemOverlayStyle!.copyWith(systemNavigationBarColor: theme.secondaryHeaderColor),
+      value: SystemUiOverlayStyle(
+        systemNavigationBarColor: theme.colorScheme.surface,
+        systemNavigationBarIconBrightness: theme.brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+        statusBarIconBrightness: theme.brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+      ),
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: theme.scaffoldBackgroundColor,
@@ -598,8 +596,10 @@ class _EpisodeTabBarState extends State<EpisodeTabBar> {
     return TabBar(
       controller: widget.controller,
       isScrollable: true,
-      indicatorSize: TabBarIndicatorSize.tab,
-      indicator: DotDecoration(colour: theme.primaryColor),
+      indicatorSize: TabBarIndicatorSize.label,
+      indicatorColor: theme.colorScheme.primary,
+      labelColor: theme.colorScheme.primary,
+      unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
       tabs: [
         if (widget.chapters)
           Tab(

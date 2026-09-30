@@ -50,6 +50,7 @@ import 'package:anytime/ui/search/search.dart';
 import 'package:anytime/ui/search/search_mode.dart';
 import 'package:anytime/ui/settings/settings.dart';
 import 'package:anytime/ui/themes.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:anytime/ui/widgets/action_text.dart';
 import 'package:anytime/ui/widgets/layout_selector.dart';
 import 'package:anytime/ui/widgets/search_slide_route.dart';
@@ -66,7 +67,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../services/settings/settings_service.dart';
 
-var theme = Themes.lightTheme().themeData;
+ThemeData theme = Themes.lightTheme().themeData;
 
 /// Anytime is a Podcast player. You can search and subscribe to podcasts,
 /// download and stream episodes and view the latest podcast charts.
@@ -234,40 +235,51 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
           dispose: (_, value) => value.dispose(),
         )
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        showSemanticsDebugger: false,
-        title: 'Anytime Podcast Player',
-        navigatorObservers: [NavigationRouteObserver()],
-        localizationsDelegates: const <LocalizationsDelegate<Object>>[
-          AnytimeLocalisationsDelegate(),
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: const [
-          Locale('en', ''),
-          Locale('es', ''),
-          Locale('de', ''),
-          Locale('gl', ''),
-          Locale('it', ''),
-          Locale('nl', ''),
-          Locale('ru', ''),
-          Locale('tr', ''),
-          Locale('vi', ''),
-          // zh_Hant / zh_TW intentionally falls back to the Simplified Chinese
-          // catalogue; the app currently ships no Traditional Chinese
-          // translation.
-          Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
-        ],
-        theme: theme,
-        // Uncomment builder below to enable accessibility checker tool.
-        // builder: (context, child) => AccessibilityTools(child: child),
-        home: AnytimeHomePage(
-          title: 'Anytime Podcast Player',
-          audioPlayerService: widget.audioPlayerService,
-          repository: widget.repository,
-        ),
+      child: DynamicColorBuilder(
+        builder: (lightColorScheme, darkColorScheme) {
+          final currentTheme = theme ?? Themes.darkTheme().themeData;
+          final isDark = currentTheme.brightness == Brightness.dark;
+          final dynamicScheme = isDark ? darkColorScheme : lightColorScheme;
+          final effectiveTheme = dynamicScheme != null
+              ? (isDark ? Themes.darkTheme(dynamicScheme) : Themes.lightTheme(dynamicScheme)).themeData
+              : currentTheme;
+
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            showSemanticsDebugger: false,
+            title: 'Anytime Podcast Player',
+            navigatorObservers: [NavigationRouteObserver()],
+            localizationsDelegates: const <LocalizationsDelegate<Object>>[
+              AnytimeLocalisationsDelegate(),
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('en', ''),
+              Locale('es', ''),
+              Locale('de', ''),
+              Locale('gl', ''),
+              Locale('it', ''),
+              Locale('nl', ''),
+              Locale('ru', ''),
+              Locale('tr', ''),
+              Locale('vi', ''),
+              // zh_Hant / zh_TW intentionally falls back to the Simplified Chinese
+              // catalogue; the app currently ships no Traditional Chinese
+              // translation.
+              Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
+            ],
+            theme: effectiveTheme,
+            // Uncomment builder below to enable accessibility checker tool.
+            // builder: (context, child) => AccessibilityTools(child: child),
+            home: AnytimeHomePage(
+              title: 'Anytime Podcast Player',
+              audioPlayerService: widget.audioPlayerService,
+              repository: widget.repository,
+            ),
+          );
+        },
       ),
     );
   }
@@ -454,8 +466,16 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
     final searchBloc = Provider.of<EpisodeBloc>(context);
     final backgroundColour = Theme.of(context).scaffoldBackgroundColor;
 
+    final isDark = theme.brightness == Brightness.dark;
+    final navBarColor = theme.colorScheme.surface;
+    final overlayStyle = SystemUiOverlayStyle(
+      systemNavigationBarColor: navBarColor,
+      systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+    );
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: theme.appBarTheme.systemOverlayStyle!,
+      value: overlayStyle,
       child: Scaffold(
         backgroundColor: backgroundColour,
         body: Column(
@@ -473,7 +493,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                     SliverVisibility(
                       visible: widget.topBarVisible,
                       sliver: SliverAppBar(
-                        title: ExcludeSemantics(
+                        title: const ExcludeSemantics(
                           child: TitleWidget(),
                         ),
                         backgroundColor: backgroundColour,
@@ -642,35 +662,33 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
             builder: (BuildContext context, AsyncSnapshot<int> snapshot) {
               int index = snapshot.data ?? 0;
 
-              return BottomNavigationBar(
-                type: BottomNavigationBarType.fixed,
-                backgroundColor: theme.bottomAppBarTheme.color,
-                selectedIconTheme: theme.iconTheme,
-                selectedItemColor: theme.iconTheme.color,
-                selectedFontSize: 11.0,
-                unselectedFontSize: 11.0,
-                unselectedItemColor: HSLColor.fromColor(theme.bottomAppBarTheme.color!).withLightness(0.8).toColor(),
-                currentIndex: index,
-                onTap: pager.changePage,
-                items: <BottomNavigationBarItem>[
-                  BottomNavigationBarItem(
-                    icon: index == 0 ? const Icon(Icons.timeline) : const Icon(Icons.timeline_outlined),
+              return NavigationBar(
+                selectedIndex: index,
+                onDestinationSelected: pager.changePage,
+                destinations: <NavigationDestination>[
+                  NavigationDestination(
+                    icon: const Icon(Icons.timeline_outlined),
+                    selectedIcon: const Icon(Icons.timeline),
                     label: L.of(context)!.timeline,
                   ),
-                  BottomNavigationBarItem(
-                    icon: index == 1 ? const Icon(Icons.library_music) : const Icon(Icons.library_music_outlined),
+                  NavigationDestination(
+                    icon: const Icon(Icons.library_music_outlined),
+                    selectedIcon: const Icon(Icons.library_music),
                     label: L.of(context)!.library,
                   ),
-                  BottomNavigationBarItem(
-                    icon: index == 2 ? const Icon(Icons.explore) : const Icon(Icons.explore_outlined),
+                  NavigationDestination(
+                    icon: const Icon(Icons.explore_outlined),
+                    selectedIcon: const Icon(Icons.explore),
                     label: L.of(context)!.discover,
                   ),
-                  BottomNavigationBarItem(
-                    icon: index == 3 ? const Icon(Icons.download) : const Icon(Icons.download_outlined),
+                  NavigationDestination(
+                    icon: const Icon(Icons.download_outlined),
+                    selectedIcon: const Icon(Icons.download),
                     label: L.of(context)!.downloads,
                   ),
-                  BottomNavigationBarItem(
-                    icon: index == 4 ? const Icon(Icons.bookmarks) : const Icon(Icons.bookmarks_outlined),
+                  NavigationDestination(
+                    icon: const Icon(Icons.bookmarks_outlined),
+                    selectedIcon: const Icon(Icons.bookmarks),
                     label: L.of(context)!.bookmarks_label,
                   ),
                 ],
@@ -759,7 +777,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                   'hello@anytimeplayer.app',
                   style: TextStyle(
                     decoration: TextDecoration.underline,
-                    color: theme.indicatorColor,
+                    color: theme.colorScheme.primary,
                   ),
                 ),
               ),
@@ -876,44 +894,32 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
 }
 
 class TitleWidget extends StatelessWidget {
-  final TextStyle _titleTheme1 = theme.textTheme.bodyMedium!.copyWith(
-    color: const Color.fromARGB(255, 255, 153, 0),
-    fontWeight: FontWeight.bold,
-    fontFamily: 'MontserratRegular',
-    fontSize: 18,
-  );
-
-  final TextStyle _titleTheme2Light = theme.textTheme.bodyMedium!.copyWith(
-    color: Colors.black,
-    fontWeight: FontWeight.bold,
-    fontFamily: 'MontserratRegular',
-    fontSize: 18,
-  );
-
-  final TextStyle _titleTheme2Dark = theme.textTheme.bodyMedium!.copyWith(
-    color: Colors.white,
-    fontWeight: FontWeight.bold,
-    fontFamily: 'MontserratRegular',
-    fontSize: 18,
-  );
-
-  TitleWidget({
+  const TitleWidget({
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    final titleStyle = textTheme.bodyMedium!.copyWith(
+      fontWeight: FontWeight.bold,
+      fontFamily: 'MontserratRegular',
+      fontSize: 18,
+    );
+
     return Padding(
       padding: const EdgeInsets.only(left: 2.0),
       child: Row(
         children: <Widget>[
           Text(
             'Anytime ',
-            style: _titleTheme1,
+            style: titleStyle.copyWith(color: colorScheme.primary),
           ),
           Text(
             'Player',
-            style: Theme.of(context).brightness == Brightness.light ? _titleTheme2Light : _titleTheme2Dark,
+            style: titleStyle.copyWith(color: colorScheme.onSurface),
           ),
         ],
       ),

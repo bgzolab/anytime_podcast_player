@@ -72,7 +72,7 @@ class PersonAvatar extends StatelessWidget {
               Container(
                 padding: padding,
                 decoration: BoxDecoration(
-                  color: highlight ? Colors.orange : Colors.transparent,
+                  color: highlight ? Theme.of(context).colorScheme.primary : Colors.transparent,
                   shape: BoxShape.circle,
                 ),
                 child: CircleAvatar(

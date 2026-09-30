@@ -228,7 +228,7 @@ class _PodcastHeaderTile extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 4.0),
       child: Row(
         children: [
-          Icon(Icons.podcasts, size: 20.0, color: theme.primaryColor),
+          Icon(Icons.podcasts, size: 20.0, color: theme.colorScheme.primary),
           const SizedBox(width: 8.0),
           Expanded(
             child: Text(
@@ -262,7 +262,7 @@ class _EpisodeTile extends StatelessWidget {
       padding: const EdgeInsets.only(left: 16.0),
       child: Row(
         children: [
-          Icon(Icons.bookmark, size: 18.0, color: theme.primaryColor),
+          Icon(Icons.bookmark, size: 18.0, color: theme.colorScheme.primary),
           const SizedBox(width: 8.0),
           Expanded(
             child: Text(
@@ -321,7 +321,7 @@ class _BookmarkTile extends StatelessWidget {
         padding: const EdgeInsets.only(left: 42.0),
         child: ListTile(
           dense: true,
-          leading: Icon(Icons.access_time, size: 18.0, color: theme.primaryColor),
+          leading: Icon(Icons.access_time, size: 18.0, color: theme.colorScheme.primary),
           title: Text(
             _formatPosition(bookmark.positionMs),
             style: theme.textTheme.bodyMedium?.copyWith(

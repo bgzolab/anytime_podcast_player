@@ -363,7 +363,7 @@ class _SearchState extends State<Search> {
           Icon(
             icon,
             size: 75,
-            color: Theme.of(context).primaryColor,
+            color: Theme.of(context).colorScheme.primary,
           ),
           const SizedBox(height: 16.0),
           Text(

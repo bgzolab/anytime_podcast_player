@@ -3,10 +3,19 @@
 // found in the LICENSE file.
 
 import 'package:anytime/l10n/L.dart';
+import 'package:anytime/l10n/messages_en.dart' as messages_en;
+import 'package:anytime/services/podcast/podcast_service.dart';
 import 'package:anytime/l10n/messages_all_locales.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
+
+/// Expected entry counts for the upstream catalogues, tied to the genre
+/// constants that are submitted to the API so the two cannot drift.
+final _expectedCategoryCounts = <String, int>{
+  'discovery_categories_itunes': PodcastService.itunesGenres.length,
+  'discovery_categories_pindex': PodcastService.podcastIndexGenres.length,
+};
 
 void main() {
   group('isSupportedLanguageCode', () {
@@ -100,22 +109,55 @@ void main() {
 
       // A missing translation returns the key itself.
       expect(categories, isNot('discovery_categories_itunes'));
-      expect(categories.split(',').length, 20);
     });
 
     test('zh_Hans translates the PodcastIndex genres', () {
       final categories = Intl.message('discovery_categories_pindex', locale: 'zh_Hans');
 
       expect(categories, isNot('discovery_categories_pindex'));
-      expect(categories.split(',').length, 113);
     });
 
-    test('zh_Hans category counts match the English catalogues', () {
-      for (final key in ['discovery_categories_itunes', 'discovery_categories_pindex']) {
-        final en = Intl.message(key, locale: 'en');
-        final zh = Intl.message(key, locale: 'zh_Hans');
+    test('catalogue entry counts match the expected English counts', () {
+      for (final entry in _expectedCategoryCounts.entries) {
+        final en = Intl.message(entry.key, locale: 'en');
+        final zh = Intl.message(entry.key, locale: 'zh_Hans');
 
-        expect(en.split(',').length, zh.split(',').length, reason: '$key must keep the same number of entries');
+        expect(en.split(',').length, entry.value, reason: '${entry.key} English count changed');
+        expect(zh.split(',').length, entry.value, reason: '${entry.key} must keep the same entry count');
+      }
+    });
+
+    test('the English fallback reads the generated catalogue directly', () {
+      for (final entry in _expectedCategoryCounts.entries) {
+        final fallback = englishCatalogueMessage(entry.key);
+
+        // Independent expectations: the entry counts come from the ARB-derived
+        // map, not from Intl state, so the test fails if the helper ever
+        // regresses to depending on initializeMessages().
+        expect(fallback, isNotNull);
+        expect(fallback, isNotEmpty);
+        expect(fallback, isNot(entry.key));
+        expect(fallback!.split(',').length, entry.value);
+      }
+    });
+
+    test('generated English catalogue keeps the expected value shapes', () {
+      for (final entry in messages_en.messages.messages.entries) {
+        expect(
+          entry.value,
+          anyOf(isA<String>(), isA<Function>()),
+          reason: 'English catalogue entry "${entry.key}" has an unexpected value type',
+        );
+      }
+
+      // The category entries must stay simple messages (a String or a
+      // zero-argument getter) — other shapes would silently break the English
+      // fallback.
+      for (final key in _expectedCategoryCounts.keys) {
+        final value = messages_en.messages.messages[key];
+
+        expect(value is String || value is String Function(), isTrue,
+            reason: 'Category entry "$key" is no longer a simple message');
       }
     });
   });

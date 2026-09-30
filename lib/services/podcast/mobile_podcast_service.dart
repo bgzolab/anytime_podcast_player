@@ -15,6 +15,7 @@ import 'package:anytime/entities/funding.dart';
 import 'package:anytime/entities/person.dart';
 import 'package:anytime/entities/podcast.dart';
 import 'package:anytime/entities/transcript.dart';
+import 'package:anytime/l10n/L.dart';
 import 'package:anytime/services/podcast/podcast_service.dart';
 import 'package:anytime/state/episode_state.dart';
 import 'package:anytime/state/library_state.dart';
@@ -87,7 +88,7 @@ class MobilePodcastService extends PodcastService {
     // returns the key itself. Fall back to English so genre search keeps
     // working instead of exposing the raw key as a single "category".
     if (categoryList == messageKey || !categoryList.contains(',')) {
-      categoryList = Intl.message(messageKey, locale: 'en');
+      categoryList = englishCatalogueMessage(messageKey) ?? messageKey;
     }
 
     _intlCategories = categoryList.split(',');

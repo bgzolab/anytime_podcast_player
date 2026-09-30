@@ -36,7 +36,6 @@ import 'package:anytime/services/podcast/mobile_podcast_service.dart';
 import 'package:anytime/services/podcast/opml_service.dart';
 import 'package:anytime/services/podcast/podcast_service.dart';
 import 'package:anytime/services/settings/mobile_settings_service.dart';
-import 'package:anytime/state/bloc_state.dart';
 import 'package:anytime/state/library_state.dart';
 import 'package:anytime/ui/home/home_page.dart';
 import 'package:anytime/ui/library/discovery.dart';
@@ -564,12 +563,9 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
     final backgroundColour = Theme.of(context).scaffoldBackgroundColor;
     return RefreshIndicator(
       onRefresh: () async {
-        if (pageIndex != 1) return;
-        final bloc = Provider.of<TimelineBloc>(context, listen: false);
-        bloc.event(TimelineEvent.refresh);
-        await bloc.state.firstWhere(
-          (s) => s is BlocPopulatedState || s is BlocErrorState,
-        );
+        // Discovery has no local data to refresh; the timeline refreshes from
+        // the Home tab.
+        return;
       },
       child: Container(
         color: backgroundColour,

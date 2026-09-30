@@ -211,6 +211,18 @@
     "placeholders_order": [],
     "placeholders": {}
   },
+  "home": "首页",
+  "@home": {
+    "description": "Home tab label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "my_tab": "我的",
+  "@my_tab": {
+    "description": "My tab label",
+    "type": "text",
+    "placeholders": {}
+  },
   "sleep_off_label": "关闭",
   "@sleep_off_label": {
     "description": "Describes off sleep label",
@@ -1638,5 +1650,191 @@
     "description": "Displayed when no bookmarks match the search query",
     "type": "text",
     "placeholders": {}
+  },
+  "settings_appearance_label": "外观",
+  "@settings_appearance_label": {
+    "description": "Settings label for appearance page",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_use_system_font": "使用系统字体",
+  "@settings_use_system_font": {
+    "description": "Setting to use system font instead of bundled font",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_use_system_font_subtitle": "关闭后使用应用内置字体",
+  "@settings_use_system_font_subtitle": {
+    "description": "Subtitle for system font setting",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme": "主题色",
+  "@settings_color_scheme": {
+    "description": "Settings label for color scheme picker",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_system": "跟随系统",
+  "@settings_color_scheme_system": {
+    "description": "Color scheme option: system dynamic color",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_blue": "蓝色",
+  "@settings_color_scheme_blue": {
+    "description": "Color scheme option: blue",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_green": "绿色",
+  "@settings_color_scheme_green": {
+    "description": "Color scheme option: green",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_purple": "紫色",
+  "@settings_color_scheme_purple": {
+    "description": "Color scheme option: purple",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_orange": "橙色",
+  "@settings_color_scheme_orange": {
+    "description": "Color scheme option: orange",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_teal": "青色",
+  "@settings_color_scheme_teal": {
+    "description": "Color scheme option: teal",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_pink": "粉色",
+  "@settings_color_scheme_pink": {
+    "description": "Color scheme option: pink",
+    "type": "text",
+    "placeholders": {}
+  },
+  "undo_label": "撤销",
+  "@undo_label": {
+    "description": "Undo action label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "see_all": "查看全部",
+  "@see_all": {
+    "description": "See all podcasts label in recent podcasts strip",
+    "type": "text",
+    "placeholders": {}
+  },
+  "episode_hidden": "已隐藏",
+  "@episode_hidden": {
+    "description": "Snackbar message when an episode is swiped to ignore",
+    "type": "text",
+    "placeholders": {}
+  },
+  "coming_soon": "即将推出",
+  "@coming_soon": {
+    "description": "Placeholder label for future features",
+    "type": "text",
+    "placeholders": {}
+  },
+  "episode_semantic_time_minute_remaining": "剩余{minutes}分钟",
+  "@episode_semantic_time_minute_remaining": {
+    "description": "Longer version of minutes remaining for screen readers",
+    "type": "text",
+    "placeholders": {
+      "minutes": {}
+    }
+  },
+  "episode_semantic_time_second_remaining": "剩余{seconds}秒",
+  "@episode_semantic_time_second_remaining": {
+    "description": "Longer version of seconds remaining for screen readers",
+    "type": "text",
+    "placeholders": {
+      "seconds": {}
+    }
+  },
+  "episode_time_weeks_ago": "{weeks,plural, =1{1周前}other{{weeks}周前}}",
+  "@episode_time_weeks_ago": {
+    "description": "Shows number of weeks ago the episode was released",
+    "type": "text",
+    "placeholders": {
+      "weeks": {}
+    }
+  },
+  "episode_semantic_time_weeks_ago": "{weeks,plural, =1{一周前}other{{weeks}周前}}",
+  "@episode_semantic_time_weeks_ago": {
+    "description": "Shows number of weeks ago the episode was release, longer form for screen readers",
+    "type": "text",
+    "placeholders": {
+      "weeks": {}
+    }
+  },
+  "episode_time_days_ago": "{days,plural, =1{1天前}other{{days}天前}}",
+  "@episode_time_days_ago": {
+    "description": "Shows number of days ago the episode was released",
+    "type": "text",
+    "placeholders": {
+      "days": {}
+    }
+  },
+  "episode_semantic_time_days_ago": "{days,plural, =1{一天前}other{{days}天前}}",
+  "@episode_semantic_time_days_ago": {
+    "description": "Shows number of days ago the episode was release, longer form for screen readers",
+    "type": "text",
+    "placeholders": {
+      "days": {}
+    }
+  },
+  "episode_time_hours_ago": "{hours,plural, =1{1小时前}other{{hours}小时前}}",
+  "@episode_time_hours_ago": {
+    "description": "Shows number of hours ago the episode was released",
+    "type": "text",
+    "placeholders": {
+      "hours": {}
+    }
+  },
+  "episode_semantic_time_hours_ago": "{hours,plural, =1{一小时前}other{{hours}小时前}}",
+  "@episode_semantic_time_hours_ago": {
+    "description": "Shows number of hours ago the episode was release, longer form for screen readers",
+    "type": "text",
+    "placeholders": {
+      "hours": {}
+    }
+  },
+  "episode_time_minutes_ago": "{minutes,plural, =1{1分钟前}other{{minutes}分钟前}}",
+  "@episode_time_minutes_ago": {
+    "description": "Shows number of minutes ago the episode was released",
+    "type": "text",
+    "placeholders": {
+      "minutes": {}
+    }
+  },
+  "episode_semantic_time_minutes_ago": "{minutes,plural, =1{一分钟前}other{{minutes}分钟前}}",
+  "@episode_semantic_time_minutes_ago": {
+    "description": "Shows number of minutes ago the episode was release, longer form for screen readers",
+    "type": "text",
+    "placeholders": {
+      "minutes": {}
+    }
+  },
+  "semantic_unplayed_episodes_count": "{episodes,plural, =1{1 个未播放单集}other{{episodes} 个未播放单集}}",
+  "@semantic_unplayed_episodes_count": {
+    "description": "Semantic label for unplayed episodes count.",
+    "type": "text",
+    "placeholders": {
+      "episodes": {}
+    }
+  },
+  "semantic_new_episodes_count": "{episodes,plural, =1{1 个新单集}other{{episodes} 个新单集}}",
+  "@semantic_new_episodes_count": {
+    "description": "Semantic label for new episodes count.",
+    "type": "text",
+    "placeholders": {
+      "episodes": {}
+    }
   }
 }

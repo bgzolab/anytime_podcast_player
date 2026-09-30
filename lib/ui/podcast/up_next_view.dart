@@ -2,9 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:anytime/bloc/podcast/audio_bloc.dart';
 import 'package:anytime/bloc/podcast/queue_bloc.dart';
-import 'package:anytime/entities/episode.dart';
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/state/queue_event_state.dart';
 import 'package:anytime/ui/widgets/action_text.dart';
@@ -18,37 +16,22 @@ class UpNextPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final audioBloc = Provider.of<AudioBloc>(context);
-
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(title: Text(L.of(context)!.up_next_queue_label)),
-      body: StreamBuilder<Episode?>(
-          stream: audioBloc.nowPlaying,
-          builder: (context, snapshot) {
-            var playing = snapshot.hasData && snapshot.data != null;
-            return Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: UpNextView(
-                playing: playing,
-              ),
-            );
-          }),
+      body: const Padding(
+        padding: EdgeInsets.only(top: 8.0),
+        child: UpNextView(),
+      ),
     );
   }
 }
 
-/// This class is responsible for rendering the Up Next queue feature.
+/// Renders the Up Next queue.
 ///
-/// The user can see the currently playing item and the current queue. The user can
-/// re-arrange items in the queue, remove individual items or completely clear the queue.
+/// The user can re-arrange items in the queue, remove individual items or clear the queue.
 class UpNextView extends StatelessWidget {
-  final bool playing;
-
-  const UpNextView({
-    super.key,
-    this.playing = true,
-  });
+  const UpNextView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -59,31 +42,9 @@ class UpNextView extends StatelessWidget {
         stream: queueBloc.queue,
         builder: (context, snapshot) {
           return Column(
-            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (playing && snapshot.data!.playing != null)
-                Row(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16.0, 8.0, 24.0, 8.0),
-                      child: Text(
-                        L.of(context)!.now_playing_queue_label,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                    ),
-                  ],
-                ),
-              if (playing && snapshot.data!.playing != null)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 0.0),
-                  child: DraggableEpisodeTile(
-                    key: const Key('detileplaying'),
-                    episode: snapshot.data!.playing!,
-                    draggable: false,
-                  ),
-                ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -177,7 +138,7 @@ class UpNextView extends StatelessWidget {
                   : Expanded(
                       child: ReorderableListView.builder(
                         buildDefaultDragHandles: false,
-                        shrinkWrap: true,
+                        proxyDecorator: (child, index, animation) => child,
                         padding: const EdgeInsets.all(8),
                         itemCount: snapshot.hasData ? snapshot.data!.queue.length : 0,
                         itemBuilder: (BuildContext context, int index) {
@@ -187,11 +148,13 @@ class UpNextView extends StatelessWidget {
                             onDismissed: (direction) {
                               queueBloc.queueEvent(QueueRemoveEvent(episode: snapshot.data!.queue[index]));
                             },
-                            child: DraggableEpisodeTile(
-                              key: ValueKey('tilequeue${snapshot.data!.queue[index].guid}'),
-                              index: index,
-                              episode: snapshot.data!.queue[index],
-                              playable: true,
+                            child: Card(
+                              child: DraggableEpisodeTile(
+                                key: ValueKey('tilequeue${snapshot.data!.queue[index].guid}'),
+                                index: index,
+                                episode: snapshot.data!.queue[index],
+                                playable: true,
+                              ),
                             ),
                           );
                         },

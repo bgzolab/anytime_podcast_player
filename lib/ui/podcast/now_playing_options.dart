@@ -2,35 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:anytime/bloc/podcast/queue_bloc.dart';
 import 'package:anytime/l10n/L.dart';
-import 'package:anytime/ui/podcast/bookmark_view.dart';
-import 'package:anytime/state/queue_event_state.dart';
-import 'package:anytime/ui/podcast/transcript_view.dart';
 import 'package:anytime/ui/podcast/up_next_view.dart';
-import 'package:anytime/ui/widgets/slider_handle.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-/// This class gives us options that can be dragged up from the bottom of the main player
-/// window.
-///
-/// Currently these options are Up Next & Transcript.
-///
-/// This class is an initial version and should by much simpler than it is; however,
-/// a [NestedScrollView] is the widget we need to implement this UI, there is a current
-/// issue whereby the scroll view and [DraggableScrollableSheet] clash and therefore cannot
-/// be used together.
-///
-/// See issues [64157](https://github.com/flutter/flutter/issues/64157)
-///            [67219](https://github.com/flutter/flutter/issues/67219)
-///
-/// If anyone can come up with a more elegant solution (and one that does not throw
-/// an overflow error in debug) please raise and issue/submit a PR.
-///
 class NowPlayingOptionsSelector extends StatefulWidget {
   final double? scrollPos;
-  static const baseSize = 68.0;
+  static const baseSize = 48.0;
 
   const NowPlayingOptionsSelector({super.key, this.scrollPos});
 
@@ -39,173 +17,58 @@ class NowPlayingOptionsSelector extends StatefulWidget {
 }
 
 class _NowPlayingOptionsSelectorState extends State<NowPlayingOptionsSelector> {
-  DraggableScrollableController? draggableController;
+  bool _expanded = false;
+
+  void _toggle() {
+    setState(() => _expanded = !_expanded);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final queueBloc = Provider.of<QueueBloc>(context, listen: false);
     final theme = Theme.of(context);
-    final windowHeight = MediaQuery.sizeOf(context).height;
-    final minSize = NowPlayingOptionsSelector.baseSize / (windowHeight - NowPlayingOptionsSelector.baseSize);
 
-    return DraggableScrollableSheet(
-      initialChildSize: minSize,
-      minChildSize: minSize,
-      maxChildSize: 1.0,
-      controller: draggableController,
-      // Snap doesn't work as the sheet and scroll controller just don't get along
-      // snap: true,
-      // snapSizes: [minSize, maxSize],
-      builder: (BuildContext context, ScrollController scrollController) {
-        return DefaultTabController(
-          animationDuration: !draggableController!.isAttached || draggableController!.size <= minSize
-              ? const Duration(seconds: 0)
-              : kTabScrollDuration,
-          length: 3,
-          child: LayoutBuilder(builder: (BuildContext ctx, BoxConstraints constraints) {
-            return SingleChildScrollView(
-              controller: scrollController,
-              child: ConstrainedBox(
-                constraints: BoxConstraints.expand(
-                  height: constraints.maxHeight,
-                ),
-                child: Material(
-                  color: theme.secondaryHeaderColor,
-                  shape: RoundedRectangleBorder(
-                    side: BorderSide(
-                      color: theme.highlightColor,
-                      width: 0.0,
-                    ),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(18.0),
-                      topRight: Radius.circular(18.0),
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      SliderHandle(
-                        label: optionsSliderOpen()
-                            ? L.of(context)!.semantic_playing_options_collapse_label
-                            : L.of(context)!.semantic_playing_options_expand_label,
-                        onTap: () {
-                          if (draggableController != null) {
-                            if (draggableController!.size < 1.0) {
-                              draggableController!.animateTo(
-                                1.0,
-                                duration: const Duration(milliseconds: 150),
-                                curve: Curves.easeInOut,
-                              );
-                            } else {
-                              draggableController!.animateTo(
-                                0.0,
-                                duration: const Duration(milliseconds: 150),
-                                curve: Curves.easeInOut,
-                              );
-                            }
-                          }
-                        },
-                      ),
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.0),
-                          border: Border(
-                            bottom: draggableController != null &&
-                                    (!draggableController!.isAttached || draggableController!.size <= minSize)
-                                ? BorderSide.none
-                                : BorderSide(color: Colors.grey[800]!, width: 1.0),
-                          ),
-                        ),
-                        child: StreamBuilder<QueueState>(
-                            initialData: QueueEmptyState(),
-                            stream: queueBloc.queue,
-                            builder: (context, snapshot) {
-                              return TabBar(
-                                onTap: (index) {
-                                  DefaultTabController.of(ctx).animateTo(index);
-
-                                  if (draggableController != null && draggableController!.size < 1.0) {
-                                    draggableController!.animateTo(
-                                      1.0,
-                                      duration: const Duration(milliseconds: 150),
-                                      curve: Curves.easeInOut,
-                                    );
-                                  }
-                                },
-                                automaticIndicatorColorAdjustment: false,
-                                indicatorPadding: EdgeInsets.zero,
-
-                                /// Little hack to hide the indicator when closed
-                                indicatorColor: draggableController != null &&
-                                        (!draggableController!.isAttached || draggableController!.size <= minSize)
-                                    ? theme.secondaryHeaderColor
-                                    : null,
-                                tabs: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-                                    child: Text(
-                                      L.of(context)!.up_next_queue_label.toUpperCase(),
-                                      style: theme.textTheme.labelLarge,
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-                                    // If the episode does not support transcripts, grey out
-                                    // the option.
-                                    child: snapshot.hasData &&
-                                            snapshot.data?.playing != null &&
-                                            snapshot.data!.playing!.hasTranscripts
-                                        ? Text(
-                                            L.of(context)!.transcript_label.toUpperCase(),
-                                            style: theme.textTheme.labelLarge,
-                                          )
-                                        : Text(
-                                            L.of(context)!.transcript_label.toUpperCase(),
-                                            style: theme.textTheme.labelLarge!.copyWith(color: theme.disabledColor),
-                                          ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-                                    child: Text(
-                                      L.of(context)!.bookmarks_label.toUpperCase(),
-                                      style: theme.textTheme.labelLarge,
-                                    ),
-                                  ),
-                                ],
-                              );
-                            }),
-                      ),
-                      const Padding(padding: EdgeInsets.only(bottom: 12.0)),
-                      const Expanded(
-                        child: TabBarView(
-                          children: [
-                            UpNextView(),
-                            TranscriptView(),
-                            BookmarkView(),
-                          ],
-                        ),
-                      ),
-                    ],
+    return GestureDetector(
+      onTap: _toggle,
+      onVerticalDragEnd: (details) {
+        final dy = details.primaryVelocity ?? 0;
+        if (dy < -300 && !_expanded) {
+          _toggle();
+        } else if (dy > 300 && _expanded) {
+          _toggle();
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        height: _expanded ? 300 : 48,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerLow,
+        ),
+        clipBehavior: Clip.hardEdge,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Center(
+                child: Container(
+                  width: 32,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
-            );
-          }),
-        );
-      },
+            ),
+            if (_expanded)
+              const Expanded(
+                child: UpNextView(),
+              ),
+          ],
+        ),
+      ),
     );
-  }
-
-  bool optionsSliderOpen() {
-    return (draggableController != null && draggableController!.isAttached && draggableController!.size == 1.0);
-  }
-
-  @override
-  void initState() {
-    draggableController = DraggableScrollableController();
-    super.initState();
   }
 }
 
@@ -214,19 +77,13 @@ class NowPlayingOptionsScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
-      height: NowPlayingOptionsSelector.baseSize - 8.0,
-    );
+    return const SizedBox(height: NowPlayingOptionsSelector.baseSize);
   }
 }
 
-/// This implementation displays the additional options in a tab set outside of a
-/// draggable sheet.
-///
-/// Currently these options are Up Next & Transcript.
 class NowPlayingOptionsSelectorWide extends StatefulWidget {
   final double? scrollPos;
-  static const baseSize = 68.0;
+  static const baseSize = 48.0;
 
   const NowPlayingOptionsSelectorWide({super.key, this.scrollPos});
 
@@ -235,91 +92,31 @@ class NowPlayingOptionsSelectorWide extends StatefulWidget {
 }
 
 class _NowPlayingOptionsSelectorWideState extends State<NowPlayingOptionsSelectorWide> {
-  DraggableScrollableController? draggableController;
-
   @override
   Widget build(BuildContext context) {
-    final queueBloc = Provider.of<QueueBloc>(context, listen: false);
     final theme = Theme.of(context);
-    final scrollController = ScrollController();
-
-    return DefaultTabController(
-      length: 3,
-      child: LayoutBuilder(builder: (BuildContext ctx, BoxConstraints constraints) {
-        return SingleChildScrollView(
-          controller: scrollController,
-          child: ConstrainedBox(
-            constraints: BoxConstraints.expand(
-              height: constraints.maxHeight,
-            ),
-            child: Material(
-              color: theme.secondaryHeaderColor,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.0),
-                      border: Border(
-                        bottom: BorderSide(color: Colors.grey[800]!, width: 1.0),
-                      ),
-                    ),
-                    child: StreamBuilder<QueueState>(
-                        initialData: QueueEmptyState(),
-                        stream: queueBloc.queue,
-                        builder: (context, snapshot) {
-                          return TabBar(
-                            automaticIndicatorColorAdjustment: false,
-                            tabs: [
-                              Padding(
-                                padding: const EdgeInsets.only(top: 16.0, bottom: 16.0),
-                                child: Text(
-                                  L.of(context)!.up_next_queue_label.toUpperCase(),
-                                  style: theme.textTheme.labelLarge,
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(top: 16.0, bottom: 16.0),
-                                child: snapshot.hasData &&
-                                        snapshot.data?.playing != null &&
-                                        snapshot.data!.playing!.hasTranscripts
-                                    ? Text(
-                                        L.of(context)!.transcript_label.toUpperCase(),
-                                        style: theme.textTheme.labelLarge,
-                                      )
-                                    : Text(
-                                        L.of(context)!.transcript_label.toUpperCase(),
-                                        style: theme.textTheme.labelLarge!.copyWith(color: theme.disabledColor),
-                                      ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(top: 16.0, bottom: 16.0),
-                                child: Text(
-                                  L.of(context)!.bookmarks_label.toUpperCase(),
-                                  style: theme.textTheme.labelLarge,
-                                ),
-                              ),
-                            ],
-                          );
-                        }),
-                  ),
-                  const Expanded(
-                    child: TabBarView(
-                      children: [
-                        UpNextView(),
-                        TranscriptView(),
-                        BookmarkView(),
-                      ],
-                    ),
-                  ),
-                ],
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        border: Border(
+          top: BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
+        ),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                L.of(context)!.up_next_queue_label.toUpperCase(),
+                style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.primary),
               ),
             ),
           ),
-        );
-      }),
+          const Expanded(child: UpNextView()),
+        ],
+      ),
     );
   }
 }

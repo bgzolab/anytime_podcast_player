@@ -58,7 +58,7 @@ class PodcastBloc extends Bloc {
   final PublishSubject<Episode?> _downloadEpisode = PublishSubject<Episode?>();
 
   /// Listen to this subject's stream to obtain list of current subscriptions.
-  late PublishSubject<List<Podcast>> _subscriptions;
+  late BehaviorSubject<List<Podcast>> _subscriptions;
 
   /// Stream containing details of the current podcast.
   final BehaviorSubject<BlocState<Podcast>> _podcastStream = BehaviorSubject<BlocState<Podcast>>(sync: true);
@@ -96,7 +96,7 @@ class PodcastBloc extends Bloc {
 
   void _init() {
     /// When someone starts listening for subscriptions, load them.
-    _subscriptions = PublishSubject<List<Podcast>>(onListen: _loadSubscriptions);
+    _subscriptions = BehaviorSubject<List<Podcast>>(onListen: _loadSubscriptions);
 
     /// When we receive a load podcast request, send back a BlocState.
     _listenPodcastLoad();
@@ -306,18 +306,26 @@ class PodcastBloc extends Bloc {
 
       if (episode != null) {
         episode.downloadState = e.downloadState = DownloadState.queued;
-
         _refresh();
+      } else {
+        // Episode may not be in _episodes (e.g. when downloading from
+        // timeline). Set state on the passed-in object for UI feedback.
+        e.downloadState = DownloadState.queued;
+      }
 
-        var result = await downloadService.downloadEpisode(e);
+      var result = await downloadService.downloadEpisode(e);
 
-        // If there was an error downloading the episode, push an error state
-        // and then restore to none.
-        if (!result) {
+      // If there was an error downloading the episode, push an error state
+      // and then restore to none.
+      if (!result) {
+        if (episode != null) {
           episode.downloadState = e.downloadState = DownloadState.failed;
           _refresh();
           episode.downloadState = e.downloadState = DownloadState.none;
           _refresh();
+        } else {
+          e.downloadState = DownloadState.failed;
+          e.downloadState = DownloadState.none;
         }
       }
     });

@@ -1484,5 +1484,17 @@
     "type": "text",
     "placeholders_order": [],
     "placeholders": {}
+  },
+  "home": "Home",
+  "@home": {
+    "description": "Home tab label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "my_tab": "My",
+  "@my_tab": {
+    "description": "My tab label",
+    "type": "text",
+    "placeholders": {}
   }
 }

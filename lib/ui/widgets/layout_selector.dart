@@ -6,7 +6,6 @@ import 'package:anytime/bloc/settings/settings_bloc.dart';
 import 'package:anytime/entities/app_settings.dart';
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/ui/widgets/action_text.dart';
-import 'package:anytime/ui/widgets/slider_handle.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -71,7 +70,6 @@ class _LayoutSelectorWidgetState extends State<LayoutSelectorWidget> {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                const SliderHandle(),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(8.0, 24.0, 8.0, 0.0),
                   child: Row(
@@ -281,72 +279,52 @@ class _LayoutSelectorWidgetState extends State<LayoutSelectorWidget> {
                                             textAlign: TextAlign.center,
                                           ),
                                           scrollable: true,
-                                          content:
-                                              StatefulBuilder(builder: (BuildContext context, StateSetter setState) {
-                                            return Column(children: <Widget>[
-                                              RadioListTile<String>(
-                                                  title: Text(L.of(context)!.library_sort_alphabetical_label),
-                                                  dense: true,
-                                                  contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-                                                  value: 'alphabetical',
-                                                  groupValue: snapshot.data!.layoutOrder,
-                                                  onChanged: (String? value) {
-                                                    setState(() {
-                                                      settingsBloc.layoutOrder(value ?? '');
-                                                      Navigator.pop(context);
-                                                    });
-                                                  }),
-                                              RadioListTile<String>(
-                                                  title: Text(L.of(context)!.library_sort_date_followed_label),
-                                                  dense: true,
-                                                  contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-                                                  value: 'followed',
-                                                  groupValue: snapshot.data!.layoutOrder,
-                                                  onChanged: (String? value) {
-                                                    setState(() {
-                                                      settingsBloc.layoutOrder(value ?? '');
-                                                      Navigator.pop(context);
-                                                    });
-                                                  }),
-                                              RadioListTile<String>(
-                                                  title: Text(L.of(context)!.library_sort_unplayed_count_label),
-                                                  dense: true,
-                                                  contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-                                                  value: 'unplayed',
-                                                  groupValue: snapshot.data!.layoutOrder,
-                                                  onChanged: (String? value) {
-                                                    setState(() {
-                                                      settingsBloc.layoutOrder(value ?? '');
-                                                      Navigator.pop(context);
-                                                    });
-                                                  }),
-                                              RadioListTile<String>(
-                                                  title: Text(L.of(context)!.library_sort_latest_episodes_label),
-                                                  dense: true,
-                                                  contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-                                                  value: 'episodes',
-                                                  groupValue: snapshot.data!.layoutOrder,
-                                                  onChanged: (String? value) {
-                                                    setState(() {
-                                                      settingsBloc.layoutOrder(value ?? '');
-                                                      Navigator.pop(context);
-                                                    });
-                                                  }),
-                                              SimpleDialogOption(
-                                                padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
-                                                child: Align(
-                                                  alignment: Alignment.centerRight,
-                                                  child: TextButton(
-                                                    child: ActionText(L.of(context)!.close_button_label),
-                                                    onPressed: () {
-                                                      Navigator.pop(context, '');
-                                                    },
+                                          content: StatefulBuilder(
+                                            builder: (BuildContext context, StateSetter setState) {
+                                              return RadioGroup<String>(
+                                                groupValue: snapshot.data!.layoutOrder,
+                                                onChanged: (String? value) {
+                                                  settingsBloc.layoutOrder(value ?? '');
+                                                  Navigator.pop(context);
+                                                },
+                                                child: Column(children: <Widget>[
+                                                  RadioListTile<String>(
+                                                      title: Text(L.of(context)!.library_sort_alphabetical_label),
+                                                      dense: true,
+                                                      contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
+                                                      value: 'alphabetical'),
+                                                  RadioListTile<String>(
+                                                      title: Text(L.of(context)!.library_sort_date_followed_label),
+                                                      dense: true,
+                                                      contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
+                                                      value: 'followed'),
+                                                  RadioListTile<String>(
+                                                      title: Text(L.of(context)!.library_sort_unplayed_count_label),
+                                                      dense: true,
+                                                      contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
+                                                      value: 'unplayed'),
+                                                  RadioListTile<String>(
+                                                      title: Text(L.of(context)!.library_sort_latest_episodes_label),
+                                                      dense: true,
+                                                      contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
+                                                      value: 'episodes'),
+                                                  SimpleDialogOption(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
+                                                    child: Align(
+                                                      alignment: Alignment.centerRight,
+                                                      child: TextButton(
+                                                        child: ActionText(L.of(context)!.close_button_label),
+                                                        onPressed: () {
+                                                          Navigator.pop(context, '');
+                                                        },
+                                                      ),
+                                                    ),
                                                   ),
-                                                ),
-                                              ),
-                                            ]);
-                                          }),
-                                        );
+                                                ]),
+                                              );
+                                            },
+                                          ));
                                 });
                           },
                           child: Text(sortOrder),

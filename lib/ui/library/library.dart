@@ -95,7 +95,9 @@ class _LibraryState extends State<Library> {
                         return SliverList(
                             delegate: SliverChildBuilderDelegate(
                           (BuildContext context, int index) {
-                            return PodcastTile(podcast: snapshot.data!.elementAt(index));
+                            return Card(
+                              child: PodcastTile(podcast: snapshot.data!.elementAt(index)),
+                            );
                           },
                           childCount: snapshot.data!.length,
                           addAutomaticKeepAlives: false,

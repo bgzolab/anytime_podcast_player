@@ -36,6 +36,18 @@
     "type": "text",
     "placeholders": {}
   },
+  "home": "Home",
+  "@home": {
+    "description": "Home tab label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "my_tab": "My",
+  "@my_tab": {
+    "description": "My tab label",
+    "type": "text",
+    "placeholders": {}
+  },
   "no_episodes_message": "No episodes yet",
   "@no_episodes_message": {
     "description": "Displayed when the timeline has no episodes",
@@ -80,7 +92,31 @@
   },
   "unsubscribe_message": "Unfollowing will delete all downloaded episodes of this podcast.",
   "@unsubscribe_message": {
-    "description": "Displayed when the user unsubscribes from a podcast.",
+    "description": "Displayed when the user unfollows a podcast.",
+    "type": "text",
+    "placeholders": {}
+  },
+  "undo_label": "Undo",
+  "@undo_label": {
+    "description": "Undo action label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "see_all": "See All",
+  "@see_all": {
+    "description": "See all podcasts label in recent podcasts strip",
+    "type": "text",
+    "placeholders": {}
+  },
+  "episode_hidden": "Episode hidden",
+  "@episode_hidden": {
+    "description": "Snackbar message when an episode is swiped to ignore",
+    "type": "text",
+    "placeholders": {}
+  },
+  "coming_soon": "Coming Soon",
+  "@coming_soon": {
+    "description": "Placeholder label for future features",
     "type": "text",
     "placeholders": {}
   },
@@ -1755,6 +1791,72 @@
   "bookmark_episode_missing": "This episode is no longer available",
   "@bookmark_episode_missing": {
     "description": "Shown when a bookmark points at an episode that no longer exists",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_appearance_label": "Appearance",
+  "@settings_appearance_label": {
+    "description": "Settings label for appearance page",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_use_system_font": "Use system font",
+  "@settings_use_system_font": {
+    "description": "Setting to use system font instead of bundled font",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_use_system_font_subtitle": "Disable bundled Montserrat font and use the system default font",
+  "@settings_use_system_font_subtitle": {
+    "description": "Subtitle for system font setting",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme": "Color scheme",
+  "@settings_color_scheme": {
+    "description": "Settings label for color scheme picker",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_system": "System dynamic color",
+  "@settings_color_scheme_system": {
+    "description": "Color scheme option: system dynamic color",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_blue": "Blue",
+  "@settings_color_scheme_blue": {
+    "description": "Color scheme option: blue",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_green": "Green",
+  "@settings_color_scheme_green": {
+    "description": "Color scheme option: green",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_purple": "Purple",
+  "@settings_color_scheme_purple": {
+    "description": "Color scheme option: purple",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_orange": "Orange",
+  "@settings_color_scheme_orange": {
+    "description": "Color scheme option: orange",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_teal": "Teal",
+  "@settings_color_scheme_teal": {
+    "description": "Color scheme option: teal",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_pink": "Pink",
+  "@settings_color_scheme_pink": {
+    "description": "Color scheme option: pink",
     "type": "text",
     "placeholders": {}
   }

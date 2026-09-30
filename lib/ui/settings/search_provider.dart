@@ -53,57 +53,44 @@ class _SearchProviderWidgetState extends State<SearchProviderWidget> {
                                 ),
                                 content: StatefulBuilder(
                                   builder: (BuildContext context, StateSetter setState) {
-                                    return Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-                                      RadioListTile<String>(
-                                        title: const Text('iTunes'),
-                                        value: 'itunes',
-                                        dense: true,
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-                                        groupValue: snapshot.data!.searchProvider,
-                                        onChanged: (String? value) {
-                                          setState(() {
-                                            settingsBloc.setSearchProvider(value ?? 'itunes');
+                                    return RadioGroup<String>(
+                                      groupValue: snapshot.data!.searchProvider,
+                                      onChanged: (String? value) {
+                                        settingsBloc.setSearchProvider(value ?? 'itunes');
 
-                                            if (widget.onChanged != null) {
-                                              widget.onChanged!(value);
-                                            }
+                                        if (widget.onChanged != null) {
+                                          widget.onChanged!(value);
+                                        }
 
-                                            Navigator.pop(context);
-                                          });
-                                        },
-                                      ),
-                                      RadioListTile<String>(
-                                        title: const Text('PodcastIndex'),
-                                        value: 'podcastindex',
-                                        dense: true,
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 0.0),
-                                        groupValue: snapshot.data!.searchProvider,
-                                        onChanged: (String? value) {
-                                          setState(() {
-                                            settingsBloc.setSearchProvider(value ?? 'podcastindex');
-
-                                            if (widget.onChanged != null) {
-                                              widget.onChanged!(value);
-                                            }
-
-                                            Navigator.pop(context);
-                                          });
-                                        },
-                                      ),
-                                      SimpleDialogOption(
-                                        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
-                                        // child: Text(L.of(context)!.close_button_label),
-                                        child: Align(
-                                          alignment: Alignment.centerRight,
-                                          child: TextButton(
-                                            child: ActionText(L.of(context)!.close_button_label),
-                                            onPressed: () {
-                                              Navigator.pop(context, '');
-                                            },
+                                        Navigator.pop(context);
+                                      },
+                                      child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+                                        const RadioListTile<String>(
+                                          title: Text('iTunes'),
+                                          value: 'itunes',
+                                          dense: true,
+                                          contentPadding: EdgeInsets.symmetric(horizontal: 0.0),
+                                        ),
+                                        const RadioListTile<String>(
+                                          title: Text('PodcastIndex'),
+                                          value: 'podcastindex',
+                                          dense: true,
+                                          contentPadding: EdgeInsets.symmetric(horizontal: 0.0),
+                                        ),
+                                        SimpleDialogOption(
+                                          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
+                                          child: Align(
+                                            alignment: Alignment.centerRight,
+                                            child: TextButton(
+                                              child: ActionText(L.of(context)!.close_button_label),
+                                              onPressed: () {
+                                                Navigator.pop(context, '');
+                                              },
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ]);
+                                      ]),
+                                    );
                                   },
                                 ));
                           },

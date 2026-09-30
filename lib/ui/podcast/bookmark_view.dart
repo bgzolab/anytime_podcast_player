@@ -32,25 +32,14 @@ class _BookmarkViewState extends State<BookmarkView> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    final audioBloc = Provider.of<AudioBloc>(context, listen: false);
     final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
-
     _subscription ??= bookmarkBloc.state.listen(_onState);
 
-    final episode = audioBloc.nowPlaying?.valueOrNull;
-
-    if (episode != null && episode.guid != _currentEpisodeGuid) {
-      _currentEpisodeGuid = episode.guid;
-      // Don't keep showing the previous episode's bookmarks: they belong to a
-      // different episode and tapping one would seek the wrong position.
-      _bookmarks = null;
-      _error = false;
-      bookmarkBloc.event(BookmarkFetchByEpisodeEvent(episodeGuid: episode.guid));
-    }
+    _fetchForCurrentEpisode();
   }
 
   /// Only accepts episode-scoped states for the episode currently on screen;
-  /// the shared BLoC's "all bookmarks" states must not be rendered here.
+  /// the shared BLoC's all-bookmarks states must not be rendered here.
   void _onState(BlocState<List<Bookmark>> state) {
     if (!mounted) return;
 
@@ -72,6 +61,21 @@ class _BookmarkViewState extends State<BookmarkView> {
   void dispose() {
     _subscription?.cancel();
     super.dispose();
+  }
+
+  void _fetchForCurrentEpisode() {
+    final audioBloc = Provider.of<AudioBloc>(context, listen: false);
+    final bookmarkBloc = Provider.of<BookmarkBloc>(context, listen: false);
+    final episode = audioBloc.nowPlaying?.valueOrNull;
+
+    if (episode != null && episode.guid != _currentEpisodeGuid) {
+      _currentEpisodeGuid = episode.guid;
+      // Don't keep showing the previous episode's bookmarks: they belong to a
+      // different episode and tapping one would seek the wrong position.
+      _bookmarks = null;
+      _error = false;
+      bookmarkBloc.event(BookmarkFetchByEpisodeEvent(episodeGuid: episode.guid));
+    }
   }
 
   @override
@@ -160,33 +164,31 @@ class _BookmarkViewState extends State<BookmarkView> {
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 16.0),
             color: Colors.red,
-            child: Semantics(
-              label: L.of(context)!.bookmark_delete_label,
-              child: const Icon(Icons.delete, color: Colors.white),
-            ),
+            child: const Icon(Icons.delete, color: Colors.white),
           ),
-          child: ListTile(
-            leading: Icon(Icons.bookmark, color: Theme.of(context).colorScheme.primary),
-            title: Text(
-              _formatPosition(bookmark.positionMs),
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                fontFeatures: const [FontFeature.tabularFigures()],
+          child: Card(
+            child: ListTile(
+              leading: Icon(Icons.bookmark, color: Theme.of(context).colorScheme.primary),
+              title: Text(
+                _formatPosition(bookmark.positionMs),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
               ),
-            ),
-            subtitle: bookmark.note != null && bookmark.note!.isNotEmpty
-                ? Text(bookmark.note!, maxLines: 1, overflow: TextOverflow.ellipsis)
-                : null,
-            trailing: IconButton(
-              icon: const Icon(Icons.play_circle_outline),
-              tooltip: L.of(context)!.bookmark_seek_label(_formatPosition(bookmark.positionMs)),
-              onPressed: () {
+              subtitle: bookmark.note != null && bookmark.note!.isNotEmpty
+                  ? Text(bookmark.note!, maxLines: 1, overflow: TextOverflow.ellipsis)
+                  : null,
+              trailing: IconButton(
+                icon: const Icon(Icons.play_circle_outline),
+                onPressed: () {
+                  audioBloc.transitionPosition(bookmark.positionMs / 1000.0);
+                },
+              ),
+              onTap: () {
                 audioBloc.transitionPosition(bookmark.positionMs / 1000.0);
               },
             ),
-            onTap: () {
-              audioBloc.transitionPosition(bookmark.positionMs / 1000.0);
-            },
           ),
         );
       },

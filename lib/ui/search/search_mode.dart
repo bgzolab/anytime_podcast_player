@@ -6,18 +6,15 @@
 ///
 /// Each mode determines what data is searched and how results are displayed.
 enum SearchMode {
-  /// Search all local episodes by title (Timeline tab).
-  timeline,
-
-  /// Search all locally subscribed podcasts by name (Library tab).
-  library,
+  /// Search all local episodes by title (Home/Timeline tab).
+  home,
 
   /// Search online via iTunes/PodcastIndex API (Discovery tab).
   discovery,
 
-  /// Search locally downloaded episodes by title (Downloads tab).
-  downloads,
+  /// Search bookmarks (My tab / Bookmarks page).
+  my,
 
-  /// Search bookmarks by episode title, podcast name, or note (Bookmarks tab).
-  bookmarks,
+  /// Search downloaded episodes (Downloads page).
+  download,
 }

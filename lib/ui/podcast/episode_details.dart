@@ -74,11 +74,9 @@ class _EpisodeDetailsState extends State<EpisodeDetails> {
                       softWrap: false,
                       style: theme.textTheme.bodyMedium,
                     )),
-                const Divider(),
                 EpisodeToolBar(
                   episode: episode,
                 ),
-                const Divider(),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
                   child: Align(

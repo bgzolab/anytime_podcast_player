@@ -2,12 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:io';
+
 import 'package:anytime/entities/bookmark.dart';
+import 'package:anytime/entities/chapter.dart';
 import 'package:anytime/entities/downloadable.dart';
 import 'package:anytime/entities/episode.dart';
+import 'package:anytime/entities/person.dart';
 import 'package:anytime/entities/podcast.dart';
 import 'package:anytime/entities/transcript.dart';
 import 'package:anytime/repository/sqlite/sqlite_repository.dart';
+import 'package:anytime/state/episode_state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,6 +27,7 @@ void main() {
 
   MockPathProvder mockPath;
   SqliteRepository? persistenceService;
+  late String databaseName;
 
   late Podcast podcast1;
   late Podcast podcast2;
@@ -29,7 +35,8 @@ void main() {
   setUp(() async {
     mockPath = MockPathProvder();
     PathProviderPlatform.instance = mockPath;
-    persistenceService = SqliteRepository(databaseName: 'test_${DateTime.now().microsecondsSinceEpoch}.sqlite');
+    databaseName = 'test_${DateTime.now().microsecondsSinceEpoch}.sqlite';
+    persistenceService = SqliteRepository(databaseName: databaseName);
 
     podcast1 = Podcast(
         title: 'Podcast 1', description: '1st p1', guid: 'http://p1.com', link: 'http://p1.com', url: 'http://p1.com');
@@ -41,6 +48,15 @@ void main() {
   tearDown(() async {
     await persistenceService!.close();
     persistenceService = null;
+
+    // SQLite keeps sidecar files; remove them with the database.
+    for (final suffix in ['', '-wal', '-shm']) {
+      final file = File('${Directory.systemTemp.path}/$databaseName$suffix');
+
+      if (file.existsSync()) {
+        file.deleteSync();
+      }
+    }
   });
 
   test('Fetch p1 with non-existent ID', () async {
@@ -341,6 +357,44 @@ void main() {
   });
 
   group('Subscription metadata', () {
+    test('findEpisodesBefore pages through a shared timestamp with beforeId', () async {
+      final shared = DateTime(2026, 7, 20, 12);
+
+      podcast1.episodes = <Episode>[
+        for (var i = 0; i < 25; i++)
+          Episode(
+            guid: 'EP$i',
+            title: 'Episode $i',
+            pguid: podcast1.guid,
+            podcast: podcast1.title,
+            publicationDate: shared,
+          ),
+        Episode(
+          guid: 'OLD',
+          title: 'Old episode',
+          pguid: podcast1.guid,
+          podcast: podcast1.title,
+          publicationDate: shared.subtract(const Duration(days: 1)),
+        ),
+      ];
+
+      await persistenceService!.savePodcast(podcast1);
+
+      final page1 = await persistenceService!.findEpisodesBefore(DateTime(2026, 7, 21), limit: 20);
+      expect(page1.length, 20);
+
+      // The tie-breaker lets the remaining episodes of the shared timestamp be
+      // fetched instead of repeating the first page.
+      final page2 =
+          await persistenceService!.findEpisodesBefore(page1.last.publicationDate!, limit: 20, beforeId: page1.last.id);
+
+      expect(page2.length, 6);
+      expect(page2.map((e) => e.guid), contains('OLD'));
+
+      final all = <Episode>[...page1, ...page2].map((e) => e.guid).toSet();
+      expect(all.length, 26);
+    });
+
     test('subscribedDate is persisted on the first save', () async {
       final subscribedDate = DateTime(2020, 1, 1);
       podcast1.subscribedDate = subscribedDate;
@@ -369,6 +423,189 @@ void main() {
 
       expect(lowercase.map((p) => p.guid), contains('http://ru.com'));
       expect(uppercase.map((p) => p.guid), contains('http://ru.com'));
+    });
+  });
+
+  group('savePodcast re-subscribe', () {
+    test('preserves the stored row and its user settings for an existing guid', () async {
+      await persistenceService!.savePodcast(podcast1);
+
+      final storedId = podcast1.id!;
+      final subscribedDate = podcast1.subscribedDate!;
+
+      podcast1.newEpisodes = 3;
+      await persistenceService!.savePodcast(podcast1);
+
+      // A deep link or re-subscribe passes a fresh object with the same guid
+      // and no id; a plain replace would delete the stored row (and its
+      // settings) and insert a new one.
+      final duplicate = Podcast(
+        title: 'Podcast 1',
+        description: '1st p1',
+        guid: podcast1.guid,
+        link: podcast1.link,
+        url: podcast1.url,
+      );
+
+      final saved = await persistenceService!.savePodcast(duplicate);
+
+      expect(saved.id, storedId);
+      expect(saved.subscribedDate!.millisecondsSinceEpoch, subscribedDate.millisecondsSinceEpoch);
+      expect(saved.newEpisodes, 3);
+      expect((await persistenceService!.subscriptions()).length, 1);
+    });
+  });
+
+  group('Episode change detection', () {
+    test('re-saving unchanged episodes keeps their lastUpdated timestamp', () async {
+      podcast1.episodes = <Episode>[
+        Episode(guid: 'EP001', title: 'Episode 1', pguid: podcast1.guid, podcast: podcast1.title),
+      ];
+
+      await persistenceService!.savePodcast(podcast1);
+
+      final first = (await persistenceService!.findEpisodeByGuid('EP001'))!;
+
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      await persistenceService!.savePodcast(podcast1);
+
+      final second = (await persistenceService!.findEpisodeByGuid('EP001'))!;
+
+      // Unchanged rows are skipped, so the orphan-cleanup timestamp stays put.
+      expect(second.lastUpdated!.millisecondsSinceEpoch, first.lastUpdated!.millisecondsSinceEpoch);
+    });
+  });
+
+  group('Episode counts', () {
+    test('findEpisodeCountByPodcastGuid honours the filter', () async {
+      podcast1.episodes = <Episode>[
+        Episode(guid: 'EP-NEW', title: 'New', pguid: podcast1.guid, podcast: podcast1.title),
+        Episode(guid: 'EP-PLAYED', title: 'Played', pguid: podcast1.guid, podcast: podcast1.title, played: true),
+        Episode(guid: 'EP-STARTED', title: 'Started', pguid: podcast1.guid, podcast: podcast1.title, position: 42),
+      ];
+
+      await persistenceService!.savePodcast(podcast1);
+
+      expect(await persistenceService!.findEpisodeCountByPodcastGuid('http://p1.com'), 3);
+      expect(
+        await persistenceService!
+            .findEpisodeCountByPodcastGuid('http://p1.com', filter: PodcastEpisodeFilter.notPlayed),
+        2,
+      );
+      expect(
+        await persistenceService!.findEpisodeCountByPodcastGuid('http://p1.com', filter: PodcastEpisodeFilter.played),
+        1,
+      );
+      expect(
+        await persistenceService!.findEpisodeCountByPodcastGuid('http://p1.com', filter: PodcastEpisodeFilter.started),
+        1,
+      );
+    });
+  });
+
+  group('Queue persistence', () {
+    test('saveQueue and loadQueue round-trip subscribed and ad-hoc episodes', () async {
+      final adHoc = Episode(guid: 'AD-HOC', podcast: 'Search result', title: 'Ad-hoc episode');
+      final subscribed = Episode(guid: 'EP001', pguid: podcast1.guid, podcast: podcast1.title, title: 'Episode 1');
+
+      // Subscribed episodes already live in the database; saveQueue only adds
+      // ad-hoc ones before recording the queue.
+      podcast1.episodes = <Episode>[subscribed];
+      await persistenceService!.savePodcast(podcast1);
+
+      await persistenceService!.saveQueue([adHoc, subscribed]);
+
+      final queue = await persistenceService!.loadQueue();
+
+      expect(queue.map((e) => e.guid).toList(), ['AD-HOC', 'EP001']);
+      expect(queue.first.podcast, 'Search result');
+    });
+  });
+
+  group('Event streams', () {
+    test('podcastListener emits when a podcast is saved', () async {
+      final events = <Podcast>[];
+      final subscription = persistenceService!.podcastListener.listen(events.add);
+
+      addTearDown(subscription.cancel);
+
+      await persistenceService!.savePodcast(podcast1);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(events.map((p) => p.guid), contains(podcast1.guid));
+    });
+
+    test('episodeListener emits update and delete states', () async {
+      final events = <EpisodeState>[];
+      final subscription = persistenceService!.episodeListener.listen(events.add);
+
+      addTearDown(subscription.cancel);
+
+      final episode =
+          await persistenceService!.saveEpisode(Episode(guid: 'EP001', podcast: podcast1.title, title: 'Episode 1'));
+
+      await persistenceService!.deleteEpisode(episode);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(events.any((state) => state is EpisodeUpdateState), isTrue);
+      expect(events.any((state) => state is EpisodeDeleteState), isTrue);
+    });
+  });
+
+  group('Entity round-trip', () {
+    test('all episode fields survive a save/reload round-trip', () async {
+      final episode = Episode(
+        guid: 'EP-ROUND',
+        pguid: podcast1.guid,
+        podcast: podcast1.title,
+        title: 'Round trip',
+        description: 'Description',
+        content: '<p>Content</p>',
+        link: 'https://example.com/episode',
+        imageUrl: 'https://example.com/art.png',
+        thumbImageUrl: 'https://example.com/thumb.png',
+        publicationDate: DateTime(2026, 7, 18, 9, 30),
+        contentUrl: 'https://example.com/episode.mp3',
+        length: 1234,
+        mimeType: 'audio/mpeg',
+        author: 'Author',
+        season: 2,
+        episode: 3,
+        duration: 456,
+        position: 42,
+        downloadPercentage: 100,
+        played: true,
+        newEpisode: true,
+        highlight: true,
+        chaptersUrl: 'https://example.com/chapters.json',
+        chapters: <Chapter>[
+          Chapter(title: 'Intro', imageUrl: 'https://example.com/chapter.png', startTime: 0, endTime: 12),
+        ],
+        transcriptUrls: <TranscriptUrl>[
+          TranscriptUrl(url: 'https://example.com/transcript.vtt', type: TranscriptFormat.vtt),
+        ],
+        persons: <Person>[
+          Person(
+              name: 'Someone',
+              role: 'Host',
+              group: 'Cast',
+              image: 'https://example.com/person.png',
+              link: 'https://example.com'),
+        ],
+        filepath: '/downloads',
+        filename: 'episode.mp3',
+        downloadTaskId: 'task-1',
+        downloadState: DownloadState.downloaded,
+        transcriptId: 0,
+      );
+
+      await persistenceService!.saveEpisode(episode);
+
+      final reloaded = (await persistenceService!.findEpisodeByGuid('EP-ROUND'))!;
+
+      // Episode equality covers every persisted field (chapters, transcripts
+      // and persons included); it is also what change detection relies on.
+      expect(reloaded, episode);
     });
   });
 }

@@ -17,6 +17,11 @@ class SqliteDatabaseService {
 
   Database? _db;
   Future<Database>? _dbFuture;
+
+  /// Bumped by [close]; an open that finishes after a close is discarded
+  /// instead of being cached and handed out.
+  var _generation = 0;
+
   final String databaseName;
 
   SqliteDatabaseService({this.databaseName = 'anytime.sqlite'});
@@ -25,11 +30,27 @@ class SqliteDatabaseService {
     final db = _db;
     if (db != null) return Future.value(db);
 
+    final generation = _generation;
+
     // Cache the Future itself: without this, concurrent callers racing through
     // the await would each open their own connection and leak all but the last.
     return _dbFuture ??= _open().then((value) {
+      if (generation != _generation) {
+        // close() ran while this connection was opening; it must not be cached
+        // or handed out.
+        value.close();
+
+        throw StateError('The database was closed while opening');
+      }
+
       _db = value;
       return value;
+    }, onError: (Object error, StackTrace stackTrace) {
+      // A failed open (transient I/O error) must not poison every later call:
+      // clear the cached future so the next caller can retry.
+      _dbFuture = null;
+
+      Error.throwWithStackTrace(error, stackTrace);
     });
   }
 
@@ -47,8 +68,11 @@ class SqliteDatabaseService {
       onOpen: (db) async {
         // Enable WAL mode for better concurrent read performance.
         // sqflite requires rawQuery for PRAGMA statements.
+        //
+        // Foreign keys are intentionally not enabled: the schema defines no
+        // FK constraints, and the repository removes dependent rows (episodes,
+        // bookmarks) explicitly inside the delete transactions.
         await db.rawQuery('PRAGMA journal_mode=WAL');
-        await db.rawQuery('PRAGMA foreign_keys=ON');
       },
     );
 
@@ -165,6 +189,8 @@ class SqliteDatabaseService {
   }
 
   Future<void> close() async {
+    _generation++;
+
     final future = _dbFuture;
     _dbFuture = null;
     _db = null;
@@ -174,7 +200,8 @@ class SqliteDatabaseService {
         final db = await future;
         await db.close();
       } catch (_) {
-        // Opening the database failed; there is nothing to close.
+        // Opening the database failed, or the connection was discarded by the
+        // generation check; there is nothing to close.
       }
     }
   }

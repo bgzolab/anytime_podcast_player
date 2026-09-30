@@ -36,7 +36,13 @@ abstract class Repository {
 
   /// Returns up to [limit] episodes whose [publicationDate] is strictly before
   /// [beforeDate], sorted newest-first. Used for cursor-based pagination.
-  Future<List<Episode>> findEpisodesBefore(DateTime beforeDate, {int limit = 100});
+  /// Returns up to [limit] episodes published before [beforeDate], newest
+  /// first.
+  ///
+  /// [beforeId] is the row id of the last episode of the previous page and
+  /// acts as a tie-breaker: a group of episodes sharing one publication date
+  /// can then span pages without repeating or skipping entries.
+  Future<List<Episode>> findEpisodesBefore(DateTime beforeDate, {int limit = 100, int? beforeId});
 
   /// Returns the number of episodes whose [publicationDate] is on or after
   /// [sinceDate]. Used to calculate the scroll offset for date-jump.
@@ -77,6 +83,11 @@ abstract class Repository {
   Future<void> deleteEpisode(Episode episode);
 
   Future<void> deleteEpisodes(List<Episode> episodes);
+
+  /// Removes a small batch of episodes that are not linked to any subscribed
+  /// podcast and have not been updated for a while; returns the removed
+  /// episodes.
+  Future<List<Episode>> cleanupEpisodes();
 
   Future<List<Episode>> findDownloadsByPodcastGuid(String pguid);
 

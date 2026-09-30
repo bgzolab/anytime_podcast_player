@@ -82,6 +82,10 @@ class TimelineBloc extends Bloc {
   /// the next `loadMore` call. `null` after [refresh] before first page loads.
   DateTime? _cursor;
 
+  /// The row id of the oldest loaded episode; the tie-breaker of the cursor
+  /// for episodes that share [DateTime] with [_cursor].
+  int? _cursorId;
+
   /// Whether the server-side has more episodes beyond the current pages.
   bool _hasMore = true;
 
@@ -342,6 +346,7 @@ class TimelineBloc extends Bloc {
     _allEpisodes.clear();
     _dateFilter = null;
     _cursor = null;
+    _cursorId = null;
     _hasMore = true;
 
     yield BlocLoadingState<List<Episode>>(_sorted(previous));
@@ -403,7 +408,7 @@ class TimelineBloc extends Bloc {
   /// has superseded [generation].
   Future<bool> _fetchPage(int generation) async {
     final before = _cursor ?? DateTime.now().add(const Duration(days: 1));
-    final page = await podcastService.loadEpisodesBefore(before, limit: pageSize);
+    final page = await podcastService.loadEpisodesBefore(before, limit: pageSize, beforeId: _cursorId);
 
     // switchMap cancels the event stream, not the Future it was awaiting, so
     // an in-flight fetch can still complete after being superseded. Writing its
@@ -420,14 +425,18 @@ class TimelineBloc extends Bloc {
 
     _allEpisodes.addAll(fresh);
 
-    // Update cursor to the oldest episode in this page.
-    // loadEpisodesBefore returns newest-first, so last is the oldest.
-    _cursor = page.last.publicationDate;
+    // Advance the cursor to the oldest episode in this page.
+    // loadEpisodesBefore returns newest-first, so last is the oldest. The row
+    // id is the tie-breaker: a group of episodes sharing one publication date
+    // can then span pages without repeating or skipping entries.
+    final oldest = page.last;
+    _cursor = oldest.publicationDate;
+    _cursorId = oldest.id;
 
-    // If we got fewer than pageSize, there are no more pages. If everything
-    // was already known (a full page sharing the cursor timestamp), stop too —
-    // otherwise the same page would be fetched forever.
-    if (page.length < pageSize || fresh.isEmpty) {
+    // If we got fewer than pageSize, there are no more pages. Without a row id
+    // the cursor cannot advance within a shared timestamp, so stop instead of
+    // fetching the same page forever.
+    if (page.length < pageSize || (fresh.isEmpty && oldest.id == null)) {
       _hasMore = false;
     }
 

@@ -56,7 +56,7 @@ ui/                    Widgets/screens, no business logic
 bloc/                  Business logic: bloc.dart base + podcast/ discovery/ search/ settings/ ui/
 services/              Abstract interface + Mobile* impl: audio/ download/ notifications/ podcast/ settings/
 api/podcast/           PodcastApi (abstract) / MobilePodcastApi (podcast_search pkg)
-repository/            Repository (abstract) / sembast/ NoSQL impl + DB service (versioning, migration)
+repository/            Repository (abstract) / sqlite/ impl + DB service (schema versioning)
 entities/              Data models: Podcast, Episode, Chapter, Transcript, Queue, Person, Funding…
 state/                 Shared state types: bloc_state.dart, episode_state.dart, library_state.dart…
 core/                  environment.dart (compile-time constants), utils.dart, extensions.dart
@@ -76,9 +76,10 @@ l10n/                  L.dart + intl_*.arb + generated messages_*.dart
   `BlocPopulatedState<T>` / `BlocErrorState`).
 - **Abstract interface + `Mobile*` implementation** for every service and API — the seam that makes mocking possible
   in tests. Keep it when adding services.
-- **Sembast persistence.** Stores: `podcasts` (key: feedUrl), `episodes` (key: link), `queue`, `transcripts`. All
-  reads check an in-memory `Map` cache first, then the DB (and populate the cache on miss). `shared_preferences` is
-  used for simple settings only.
+- **SQLite persistence** (`sqflite`; desktop tests run on `sqflite_common_ffi`). Tables: `podcast`, `episode`,
+  `transcript`, `bookmark`, `queue` (keyed by the feed URL / episode GUID). Rows are converted with explicit mapping
+  tables; reads check the in-memory `Map` cache first (podcasts and episodes) and populate it on a miss.
+  `shared_preferences` is used for simple settings only.
 - **Audio pipeline:** `AudioBloc` → `DefaultAudioPlayerService` (wraps `audio_service` for background/lock-screen
   controls) → `just_audio` (engine) + `audio_session` (audio focus).
 - **Deep links:** `https://anytimeplayer.app/subscribe?url=<feed>` handled via `app_links`.

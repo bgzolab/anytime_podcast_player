@@ -60,6 +60,10 @@ class MobileNotificationService extends NotificationService {
       _runtimeUnsupported = true;
 
       log.warning('Notifications are not available on this platform: $e');
+    } catch (e, stack) {
+      // Never let initialisation become an unhandled async error: the service
+      // must stay in a safe state even if the channel fails in another way.
+      log.warning('Failed to initialise notifications', e, stack);
     }
   }
 

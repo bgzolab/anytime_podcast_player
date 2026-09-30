@@ -67,19 +67,28 @@ String stripInlineColors(String html) {
 int _findTagEnd(String html, int nameStart) {
   var i = nameStart;
 
+  // A quote only starts an attribute value directly after '=' (whitespace may
+  // sit in between); quotes inside unquoted values (e.g. `it's`) are data.
+  var quotePending = false;
+
   while (i < html.length) {
     final char = html[i];
 
-    if (char == '"' || char == "'") {
+    if (quotePending && (char == '"' || char == "'")) {
       final close = html.indexOf(char, i + 1);
 
       if (close < 0) return -1;
 
       i = close + 1;
+      quotePending = false;
       continue;
     }
 
     if (char == '>') return i;
+
+    if (!_isWhitespace(html.codeUnitAt(i))) {
+      quotePending = char == '=';
+    }
 
     i++;
   }
@@ -121,11 +130,19 @@ String _cleanTag(String tag) {
     }
 
     final name = tag.substring(nameStart, i).toLowerCase();
+
+    // HTML allows whitespace around the '=' of an attribute.
+    var valueStart = i;
+
+    while (valueStart < tag.length && _isWhitespace(tag.codeUnitAt(valueStart))) {
+      valueStart++;
+    }
+
     String? value;
     String? quote;
 
-    if (i < tag.length && tag[i] == '=') {
-      i++;
+    if (valueStart < tag.length && tag[valueStart] == '=') {
+      i = valueStart + 1;
 
       while (i < tag.length && _isWhitespace(tag.codeUnitAt(i))) {
         i++;
@@ -218,9 +235,32 @@ List<String> _splitDeclarations(String value) {
   final declarations = <String>[];
   final current = StringBuffer();
   var depth = 0;
+  String? quote;
 
   for (var i = 0; i < value.length; i++) {
     final char = value[i];
+
+    // Quoted strings (e.g. font-family:'a;b') must not be split.
+    if (quote != null) {
+      if (char == '\\' && i + 1 < value.length) {
+        // An escaped character stays inside the string.
+        current.write(char);
+        current.write(value[i + 1]);
+        i++;
+        continue;
+      }
+
+      if (char == quote) quote = null;
+
+      current.write(char);
+      continue;
+    }
+
+    if (char == '"' || char == "'") {
+      quote = char;
+      current.write(char);
+      continue;
+    }
 
     if (char == '(') depth++;
     if (char == ')' && depth > 0) depth--;
@@ -239,28 +279,89 @@ List<String> _splitDeclarations(String value) {
   return declarations;
 }
 
-/// Removes the colour fallback from a `background` shorthand value while
-/// keeping image references. Returns null when the value is a plain colour.
-String? _stripBackgroundColour(String value) {
-  final urlIndex = value.toLowerCase().indexOf('url(');
-
-  if (urlIndex < 0) return null;
-
-  final before = value.substring(0, urlIndex).replaceAll(_colourToken, ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
-  final after = value.substring(urlIndex).trim();
-
-  return before.isEmpty ? after : '$before $after';
-}
-
-/// Matches CSS colour tokens used as a `background` fallback: hex colours,
-/// `rgb()`/`hsl()` functions and the basic named colours.
-final _colourToken = RegExp(
-  r'(#[0-9a-f]{3,8}\b)'
-  r'|(rgba?\([^)]*\))'
-  r'|(hsla?\([^)]*\))'
-  r'|\b(black|white|red|green|blue|yellow|gray|grey|silver|maroon|navy|teal|aqua|fuchsia|lime|olive|purple|orange|pink|brown)\b',
+/// Matches the non-colour parts of a `background` shorthand: layout and box
+/// keywords, lengths/percentages and the `/` position-size separator.
+final _backgroundKeyword = RegExp(
+  r'^(repeat(-x|-y)?|no-repeat|space|round|fixed|local|scroll|left|right|top|bottom|center|cover|contain|border-box|padding-box|content-box|none|inherit|initial|unset|revert)$'
+  r'|^[+-]?[\d.]+(%|px|em|rem|vh|vw|vmin|vmax|pt|pc|cm|mm|in|q)?$',
   caseSensitive: false,
 );
+
+/// Removes the colour components from a `background` shorthand value while
+/// keeping the image reference and the layout keywords.
+///
+/// Colours may appear before or after `url(...)` (the CSS `||` combinator
+/// allows any order), so the value is tokenised outside parentheses rather
+/// than only looking before the image. A bare token that is neither a layout
+/// keyword/length nor a `url(...)` is treated as a colour and dropped, which
+/// also covers the long tail of named CSS colours. Minified values that glue
+/// colours and images together (`red,url(a.png)`) keep their `url(...)` parts.
+///
+/// Returns null when the value has no image reference (a plain colour).
+String? _stripBackgroundColour(String value) {
+  if (!value.toLowerCase().contains('url(')) return null;
+
+  final kept = <String>[];
+  final current = StringBuffer();
+  var depth = 0;
+
+  void addToken(String token) {
+    final trimmed = token.trim();
+
+    if (trimmed.isEmpty) return;
+
+    final lower = trimmed.toLowerCase();
+
+    if (_isBackgroundKeywordToken(lower)) {
+      kept.add(trimmed);
+
+      return;
+    }
+
+    if (lower.contains('url(')) {
+      for (final match in RegExp(r'url\([^)]*\)', caseSensitive: false).allMatches(trimmed)) {
+        kept.add(match.group(0)!);
+      }
+    }
+  }
+
+  for (var i = 0; i < value.length; i++) {
+    final char = value[i];
+
+    if (char == '(') depth++;
+    if (char == ')' && depth > 0) depth--;
+
+    if (depth == 0 && (char == ',' || _isWhitespace(char.codeUnitAt(0)))) {
+      addToken(current.toString());
+      current.clear();
+
+      if (char == ',') kept.add(',');
+
+      continue;
+    }
+
+    current.write(char);
+  }
+
+  addToken(current.toString());
+
+  if (kept.isEmpty) return null;
+
+  // Normalise the separators: commas left at the edges or doubled up by
+  // removed colour layers are dropped.
+  final joined = kept.join(' ').replaceAll(RegExp(r'\s*,\s*'), ', ');
+  final parts = joined.split(',').map((part) => part.trim()).where((part) => part.isNotEmpty).toList();
+
+  return parts.isEmpty ? null : parts.join(', ');
+}
+
+/// Whether [token] consists only of non-colour `background` keywords, lengths
+/// or the `/` position/size separator.
+bool _isBackgroundKeywordToken(String token) {
+  if (token == '/') return true;
+
+  return token.split('/').every((part) => _backgroundKeyword.hasMatch(part));
+}
 
 bool _isWhitespace(int codeUnit) => codeUnit == 0x20 || codeUnit == 0x09 || codeUnit == 0x0A || codeUnit == 0x0D;
 

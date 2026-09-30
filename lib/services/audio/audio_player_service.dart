@@ -131,6 +131,16 @@ abstract class AudioPlayerService {
   ValueStream<Episode?>? episodeEvent;
   Stream<TranscriptState>? transcriptEvent;
   Stream<int>? playbackError;
+
+  /// The last playback error code that has not been shown to the user yet.
+  ///
+  /// Errors raised while no UI listener is mounted (e.g. playback is not
+  /// supported on the platform) are latched here so a later listener can still
+  /// report them once.
+  int? get pendingPlaybackError;
+
+  /// Marks the pending playback error as shown.
+  void clearPendingPlaybackError();
   Stream<QueueListState>? queueState;
   Stream<Sleep>? sleepStream;
 }

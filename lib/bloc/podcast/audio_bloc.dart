@@ -220,6 +220,12 @@ class AudioBloc extends Bloc {
   /// Listen for any playback errors
   Stream<int>? get playbackError => audioPlayerService.playbackError;
 
+  /// The last playback error not yet shown to the user, if any.
+  int? get pendingPlaybackError => audioPlayerService.pendingPlaybackError;
+
+  /// Marks the pending playback error as shown.
+  void clearPendingPlaybackError() => audioPlayerService.clearPendingPlaybackError();
+
   /// Get the current playing episode
   ValueStream<Episode?>? get nowPlaying => audioPlayerService.episodeEvent;
 

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'package:flutter/widgets.dart';
+import 'package:anytime/l10n/messages_en.dart' as messages_en;
 import 'package:intl/intl.dart';
 
 import 'messages_all.dart';
@@ -3179,6 +3180,24 @@ class L {
           locale: localeName,
         );
   }
+}
+
+/// Returns the English translation of [messageKey] from the generated
+/// catalogue, independent of `initializeMessages()` state.
+///
+/// `Intl.message(..., locale: 'en')` silently returns the key when the English
+/// catalogue was never initialised, which would leave callers that need an
+/// English fallback broken; evaluating the generated lookup directly avoids
+/// that.
+String? englishCatalogueMessage(String messageKey) {
+  final message = messages_en.messages.messages[messageKey];
+
+  // Simple messages are stored as a zero-argument getter in the generated
+  // catalogue (MessageLookupByLibrary.simpleMessage).
+  if (message is String) return message;
+  if (message is String Function()) return message();
+
+  return null;
 }
 
 class AnytimeLocalisationsDelegate extends LocalizationsDelegate<L> {

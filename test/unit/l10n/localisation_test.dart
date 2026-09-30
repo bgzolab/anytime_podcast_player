@@ -3,11 +3,18 @@
 // found in the LICENSE file.
 
 import 'package:anytime/l10n/L.dart';
+import 'package:anytime/l10n/messages_en.dart' as messages_en;
 import 'package:anytime/l10n/messages_all_locales.dart';
-import 'package:anytime/services/podcast/mobile_podcast_service.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
+
+/// Expected entry counts for the upstream catalogues; the single place to
+/// update when the provider lists change.
+const _expectedCategoryCounts = {
+  'discovery_categories_itunes': 20,
+  'discovery_categories_pindex': 113,
+};
 
 void main() {
   group('isSupportedLanguageCode', () {
@@ -110,14 +117,7 @@ void main() {
     });
 
     test('catalogue entry counts match the expected English counts', () {
-      // Single source of truth for the expected counts: when the upstream
-      // catalogues gain or lose entries, update this map only.
-      const expectedCounts = {
-        'discovery_categories_itunes': 20,
-        'discovery_categories_pindex': 113,
-      };
-
-      for (final entry in expectedCounts.entries) {
+      for (final entry in _expectedCategoryCounts.entries) {
         final en = Intl.message(entry.key, locale: 'en');
         final zh = Intl.message(entry.key, locale: 'zh_Hans');
 
@@ -127,15 +127,36 @@ void main() {
     });
 
     test('the English fallback reads the generated catalogue directly', () {
-      // The helper must not depend on initializeMessages('en') having run;
-      // evaluating the generated lookup directly guarantees that.
-      for (final key in ['discovery_categories_itunes', 'discovery_categories_pindex']) {
-        final fallback = MobilePodcastService.englishCatalogueMessage(key);
+      for (final entry in _expectedCategoryCounts.entries) {
+        final fallback = englishCatalogueMessage(entry.key);
 
+        // Independent expectations: the entry counts come from the ARB-derived
+        // map, not from Intl state, so the test fails if the helper ever
+        // regresses to depending on initializeMessages().
         expect(fallback, isNotNull);
         expect(fallback, isNotEmpty);
-        expect(fallback, isNot(key));
-        expect(fallback, Intl.message(key, locale: 'en'));
+        expect(fallback, isNot(entry.key));
+        expect(fallback!.split(',').length, entry.value);
+      }
+    });
+
+    test('generated English catalogue keeps the expected value shapes', () {
+      for (final entry in messages_en.messages.messages.entries) {
+        expect(
+          entry.value,
+          anyOf(isA<String>(), isA<Function>()),
+          reason: 'English catalogue entry "${entry.key}" has an unexpected value type',
+        );
+      }
+
+      // The category entries must stay simple messages (a String or a
+      // zero-argument getter) — other shapes would silently break the English
+      // fallback.
+      for (final key in _expectedCategoryCounts.keys) {
+        final value = messages_en.messages.messages[key];
+
+        expect(value is String || value is String Function(), isTrue,
+            reason: 'Category entry "$key" is no longer a simple message');
       }
     });
   });

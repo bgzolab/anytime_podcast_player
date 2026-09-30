@@ -15,7 +15,7 @@ import 'package:anytime/entities/funding.dart';
 import 'package:anytime/entities/person.dart';
 import 'package:anytime/entities/podcast.dart';
 import 'package:anytime/entities/transcript.dart';
-import 'package:anytime/l10n/messages_en.dart' as messages_en;
+import 'package:anytime/l10n/L.dart';
 import 'package:anytime/services/podcast/podcast_service.dart';
 import 'package:anytime/state/episode_state.dart';
 import 'package:anytime/state/library_state.dart';
@@ -65,24 +65,6 @@ class MobilePodcastService extends PodcastService {
     settingsService.settingsListener.where((event) => event == 'search').listen((event) {
       _setupGenres(locale);
     });
-  }
-
-  /// Returns the English translation of [messageKey] from the generated
-  /// catalogue, independent of `initializeMessages()` state.
-  ///
-  /// `Intl.message(..., locale: 'en')` silently returns the key when the
-  /// English catalogue was never initialised, which would leave the genre
-  /// fallback broken; evaluating the generated lookup directly avoids that.
-  @visibleForTesting
-  static String? englishCatalogueMessage(String messageKey) {
-    final message = messages_en.messages.messages[messageKey];
-
-    // Simple messages are stored as a zero-argument getter in the generated
-    // catalogue (MessageLookupByLibrary.simpleMessage).
-    if (message is String) return message;
-    if (message is String Function()) return message();
-
-    return null;
   }
 
   /// We fetch the fixed list of Genre's for the search engine provider we are using. These

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:anytime/entities/chapter.dart';
 import 'package:anytime/entities/episode.dart';
@@ -52,6 +53,26 @@ class _FakePodcastService implements PodcastService {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName}');
+}
+
+/// A path provider backed by a per-test directory, so persisted state files
+/// do not leak into the shared system temp directory.
+class _TempPathProvider extends MockPathProvder {
+  _TempPathProvider(this.directory);
+
+  final Directory directory;
+
+  @override
+  Future<Directory> getApplicationDocumentsDirectory() async => directory;
+
+  @override
+  Future<String> getApplicationDocumentsPath() async => directory.path;
+
+  @override
+  Future<String> getApplicationSupportPath() async => directory.path;
+
+  @override
+  Future<String> getTemporaryPath() async => directory.path;
 }
 
 class _FakeSettingsService implements SettingsService {
@@ -206,7 +227,22 @@ void main() {
   });
 
   test('a play request during initialisation plays the restored episode', () async {
-    PathProviderPlatform.instance = MockPathProvder();
+    final previousPathProvider = PathProviderPlatform.instance;
+    final tempDirectory = Directory.systemTemp.createTempSync('anytime_audio_replay_');
+    PathProviderPlatform.instance = _TempPathProvider(tempDirectory);
+
+    addTearDown(() async {
+      // Clear while the temp provider is still installed: restoring the
+      // default provider first would use the platform channel, which no test
+      // binding initialises here.
+      await PersistentState.clearState();
+
+      PathProviderPlatform.instance = previousPathProvider;
+
+      if (tempDirectory.existsSync()) {
+        tempDirectory.deleteSync(recursive: true);
+      }
+    });
 
     final restored = createEpisode('ep-restored', 'Restored episode');
     repository.episodesById[42] = restored;

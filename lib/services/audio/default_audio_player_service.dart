@@ -245,12 +245,18 @@ class DefaultAudioPlayerService extends AudioPlayerService {
   /// set yet when the request is replayed; without awaiting it the tap would
   /// be dropped silently.
   Future<void> _replayPlay() async {
-    if (_currentEpisode == null) {
-      await resume();
-    }
+    try {
+      if (_currentEpisode == null) {
+        await resume();
+      }
 
-    if (_currentEpisode != null) {
-      await play();
+      if (_currentEpisode != null) {
+        await play();
+      }
+    } catch (e, stack) {
+      log.warning('Failed to replay the playback request', e, stack);
+
+      _reportPlaybackError(501);
     }
   }
 
@@ -629,13 +635,18 @@ class DefaultAudioPlayerService extends AudioPlayerService {
         var ps = await PersistentState.fetchState();
 
         if (ps.state == LastState.paused) {
-          _currentEpisode = await repository.findEpisodeById(ps.episodeId);
-          _currentEpisode!.position = ps.position;
-          _playingState.add(AudioState.pausing);
+          final episode = await repository.findEpisodeById(ps.episodeId);
 
-          updateCurrentPosition(_currentEpisode);
+          // The persisted episode may have been deleted since it was paused.
+          if (episode != null) {
+            _currentEpisode = episode;
+            _currentEpisode!.position = ps.position;
+            _playingState.add(AudioState.pausing);
 
-          _cold = true;
+            updateCurrentPosition(_currentEpisode);
+
+            _cold = true;
+          }
         }
       }
     } else if (_initialised) {

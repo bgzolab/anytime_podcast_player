@@ -39,6 +39,12 @@ class _PlaybackErrorListenerState extends State<PlaybackErrorListener> {
     final audioBloc = Provider.of<AudioBloc>(context, listen: false);
 
     errorSubscription = audioBloc.playbackError!.listen((code) {
+      // The stream delivered this error, so a copy latched for a later mount
+      // must not be shown again.
+      if (audioBloc.pendingPlaybackError == code) {
+        audioBloc.clearPendingPlaybackError();
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_codeToMessage(context, code))));
       }

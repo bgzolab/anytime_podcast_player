@@ -9,7 +9,7 @@ jobs:
     if: github.event.pull_request.user.login == 'bgzo' && !github.event.pull_request.draft
     runs-on: ubuntu-latest
     # 两次尝试（最长 16 + 11 分钟）加初始化开销：最坏路径也留有余量，保证双超时时
-    # 仍能走到显式的「两次尝试均失败」步骤，而不是被 job 上限中途取消；正常一次 2-10 分钟完成
+    # 仍能走到显式的门禁校验步骤，而不是被 job 上限中途取消；正常一次 2-10 分钟完成
     timeout-minutes: 35
     # 同一 PR 连续推送时，取消旧的审查，避免重复评论与配额浪费
     concurrency:
@@ -18,7 +18,7 @@ jobs:
     permissions:
       # 只读 contents：即使工作区变脏，opencode 也无法 push
       contents: read
-      # 只有评论需要写权限
+      # 评论需要写权限
       pull-requests: write
       issues: write
     env:
@@ -101,43 +101,51 @@ jobs:
       # （v1.18.33 / 51ef4be1d3c122f18fefb510dca8d778571f4f18）。原 action 的
       # 「Get opencode version」步骤用未认证 curl 请求 GitHub API，共享 runner 上
       # 容易触发限流（60 次/小时）并让整步直接失败，而 action 没有对应 input 可用。
-      # 内联后：版本查询带 GITHUB_TOKEN（认证额度 5000 次/小时），失败时回退
-      # "latest" 而不是中断 job；其余步骤与 action 行为一致。
+      # 内联后：版本查询走 gh api（认证额度 5000 次/小时）且失败不中断 job。
       - name: Get opencode version (authenticated, non-fatal)
         id: version
         run: |
-          VERSION=$(curl -sf -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-            https://api.github.com/repos/anomalyco/opencode/releases/latest \
-            | grep -o '"tag_name": *"[^"]*"' | cut -d'"' -f4 || true)
+          VERSION=""
+          VERSION=$(gh api repos/anomalyco/opencode/releases/latest --jq '.tag_name' 2>/dev/null | sed 's/^v//') || true
           # 查询失败时用 run id 作缓存键：既不中断 job，也不会把一次性的
-          # "latest" 构建固化成长久复用的陈旧缓存
-          echo "version=${VERSION:-latest-${GITHUB_RUN_ID}}" >> "$GITHUB_OUTPUT"
-          # 记录本 run 的起始时间（github 上下文没有 run_started_at），供重试前
-          # 判断 attempt 1 是否已经发出评论使用
-          echo "started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+          # "latest" 构建固化成长久复用的陈旧缓存。
+          # 同时记录本 run 的起始时间（github 上下文没有 run_started_at），供重试前 /
+          # 门禁校验判断本 run 是否已发出审查结论使用。
+          {
+            echo "version=${VERSION}"
+            echo "cache_key=${VERSION:-latest-${GITHUB_RUN_ID}}"
+            echo "started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } >> "$GITHUB_OUTPUT"
       - name: Cache opencode
         id: cache
         uses: actions/cache@v4
         with:
           path: ~/.opencode/bin
-          key: opencode-${{ runner.os }}-${{ runner.arch }}-${{ steps.version.outputs.version }}
+          key: opencode-${{ runner.os }}-${{ runner.arch }}-${{ steps.version.outputs.cache_key }}
       - name: Install opencode
         if: steps.cache.outputs.cache-hit != 'true'
-        run: curl -fsSL https://opencode.ai/install | bash
+        env:
+          PINNED_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if [ -n "${PINNED_VERSION}" ]; then
+            curl -fsSL https://opencode.ai/install | bash -s -- --version "${PINNED_VERSION}"
+          else
+            echo "::warning::Could not resolve the opencode release tag; installing the latest version without pinning."
+            curl -fsSL https://opencode.ai/install | bash
+          fi
       - name: Add opencode to PATH
         run: echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
       # provider 卡死/网络抖动时最多损失一次尝试的时长，失败后自动进入第二次。
-      # 第一次成功（或失败但已产出结论）则跳过第二次。
       - name: Run opencode review (attempt 1)
         id: review_attempt_1
         continue-on-error: true
         timeout-minutes: 16
         run: opencode github run
-      # attempt 1 可能在「已发出评论之后」失败（评论已写入再退出非零）或在发布评论后
-      # 被超时终止。此时再跑 attempt 2 会产生两条可能不一致的结论，因此在重试前检查
-      # 本 run 启动之后是否已有 bot 评论：有则跳过重试，直接把 job 视为成功。
-      - name: Check whether attempt 1 already posted a review comment
-        id: attempt_1_comment
+      # attempt 1 失败时可能已经发出过评论，但评论有两种：真正的审查结论（以
+      # `结论：LGTM`/`结论：BLOCK` 结尾）与上游 handler 的「失败通报」评论。只有
+      # 前者才应跳过重试；查询失败（unknown）时保守重试，最终由门禁校验兜底。
+      - name: Check whether attempt 1 posted a review verdict
+        id: verdict
         if: steps.review_attempt_1.outcome == 'failure'
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -145,22 +153,33 @@ jobs:
         run: |
           POSTED=$(gh api --paginate --slurp \
             "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments?per_page=100" \
-            --jq "[.[][] | select(.user.login == \"github-actions[bot]\" and .created_at >= \"${RUN_STARTED_AT}\")] | length" \
-            || echo 0)
-          echo "posted=${POSTED:-0}" >> "$GITHUB_OUTPUT"
+            --jq "[.[][] | select(.user.login == \"github-actions[bot]\" and .created_at >= \"${RUN_STARTED_AT}\" and (.body | contains(\"结论：\")))] | length") || POSTED=unknown
+          echo "posted=${POSTED:-unknown}" >> "$GITHUB_OUTPUT"
+          echo "verdict lookup result: ${POSTED:-unknown}"
       - name: Reset workspace before the retry
-        if: steps.review_attempt_1.outcome == 'failure' && steps.attempt_1_comment.outputs.posted == '0'
+        if: steps.review_attempt_1.outcome == 'failure' && steps.verdict.outputs.posted != 'review'
         run: |
           git reset --hard HEAD
           git clean -fd
       - name: Run opencode review (attempt 2)
         id: review_attempt_2
-        if: steps.review_attempt_1.outcome == 'failure' && steps.attempt_1_comment.outputs.posted == '0'
+        if: steps.review_attempt_1.outcome == 'failure' && steps.verdict.outputs.posted != 'review'
         continue-on-error: true
         timeout-minutes: 11
         run: opencode github run
-      - name: Fail when both review attempts failed
-        if: steps.review_attempt_1.outcome == 'failure' && steps.review_attempt_2.outcome == 'failure'
+      # 门禁：本次 run 必须产出一条带结论签名的审查评论；无论 attempt 路径如何
+      # （重复评论被跳过、守卫查询失败、两次尝试均失败）都以此为准，避免静默放过。
+      - name: Verify a review verdict was posted
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_STARTED_AT: ${{ steps.version.outputs.started_at }}
         run: |
-          echo "opencode review failed after two attempts" >&2
+          VERDICTS=$(gh api --paginate --slurp \
+            "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments?per_page=100" \
+            --jq "[.[][] | select(.user.login == \"github-actions[bot]\" and .created_at >= \"${RUN_STARTED_AT}\" and (.body | contains(\"结论：\")))] | length") || VERDICTS=0
+          if [ "${VERDICTS:-0}" -gt 0 ]; then
+            echo "Review verdict comment found for this run."
+            exit 0
+          fi
+          echo "No review verdict was posted by this run; failing the gate." >&2
           exit 1

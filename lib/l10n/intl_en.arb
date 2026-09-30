@@ -1943,5 +1943,21 @@
     "description": "Displayed when the user attempts to download on a platform without a download manager",
     "type": "text",
     "placeholders": {}
+  },
+  "bookmarks_episode_count": "{count,plural, =1{1 episode}other{{count} episodes}}",
+  "@bookmarks_episode_count": {
+    "description": "Number of bookmarked episodes in a podcast group.",
+    "type": "text",
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "bookmarks_bookmark_count": "{count,plural, =1{1 bookmark}other{{count} bookmarks}}",
+  "@bookmarks_bookmark_count": {
+    "description": "Number of bookmarks for a podcast or episode.",
+    "type": "text",
+    "placeholders": {
+      "count": {}
+    }
   }
 }

@@ -12,15 +12,32 @@ import 'package:logging/logging.dart';
 class BookmarkSound {
   static final _log = Logger('BookmarkSound');
   static AudioPlayer? _player;
+  static bool _prepared = false;
+  static bool _playing = false;
 
   /// Play the bookmark creation sound effect.
+  ///
+  /// The asset is loaded once and reused; calls that arrive while the sound is
+  /// still playing are ignored so rapid taps cannot interrupt each other.
   static Future<void> play() async {
+    if (_playing) return;
+
+    _playing = true;
+
     try {
-      _player ??= AudioPlayer();
-      await _player!.setAsset('assets/notification/water-drop.mp3');
-      await _player!.play();
+      final player = _player ??= AudioPlayer();
+
+      if (!_prepared) {
+        await player.setAsset('assets/notification/water-drop.mp3');
+        _prepared = true;
+      }
+
+      await player.seek(Duration.zero);
+      await player.play();
     } catch (e) {
       _log.warning('Failed to play bookmark sound: $e');
+    } finally {
+      _playing = false;
     }
   }
 
@@ -28,5 +45,7 @@ class BookmarkSound {
   static void dispose() {
     _player?.dispose();
     _player = null;
+    _prepared = false;
+    _playing = false;
   }
 }

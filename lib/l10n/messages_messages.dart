@@ -24,6 +24,10 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static m20(timestamp) => "Jump to ${timestamp}";
 
+  static m21(count) => "${Intl.plural(count, one: '1 bookmark', other: '${count} bookmarks')}";
+
+  static m22(count) => "${Intl.plural(count, one: '1 episode', other: '${count} episodes')}";
+
   static m0(days) => "${Intl.plural(days, one: 'One day ago', other: '${days} days ago')}";
 
   static m1(hours) => "${Intl.plural(hours, one: '${hours} hour ago', other: '${hours} hours ago')}";
@@ -48,7 +52,7 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static m11(weeks) => "${Intl.plural(weeks, one: '1w ago', other: '${weeks}w ago')}";
 
-  static m21(total) => "Done! Updated ${total} sources";
+  static m23(total) => "Done! Updated ${total} sources";
 
   static m12(episodes) => "${Intl.plural(episodes, one: '1 new episode', other: '${episodes} new episodes')}";
 
@@ -64,7 +68,7 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static m18(seconds) => "${seconds} seconds";
 
-  static m22(dateStr) => "Showing ${dateStr}";
+  static m24(dateStr) => "Showing ${dateStr}";
 
   @override
   final Map<String, dynamic> messages = _notInlinedMessages(_notInlinedMessages);
@@ -91,6 +95,8 @@ class MessageLookup extends MessageLookupByLibrary {
         'bookmark_delete_label': MessageLookupByLibrary.simpleMessage('Delete bookmark'),
         'bookmark_episode_missing': MessageLookupByLibrary.simpleMessage('This episode is no longer available'),
         'bookmark_seek_label': m20,
+        'bookmarks_bookmark_count': m21,
+        'bookmarks_episode_count': m22,
         'bookmarks_label': MessageLookupByLibrary.simpleMessage('Bookmarks'),
         'bookmarks_load_failed': MessageLookupByLibrary.simpleMessage('Could not load bookmarks'),
         'cancel_button_label': MessageLookupByLibrary.simpleMessage('Cancel'),
@@ -238,7 +244,7 @@ class MessageLookup extends MessageLookupByLibrary {
         'queue_clear_label': MessageLookupByLibrary.simpleMessage('Are you sure you wish to clear the queue?'),
         'queue_clear_label_title': MessageLookupByLibrary.simpleMessage('Clear Queue'),
         'queue_remove_label': MessageLookupByLibrary.simpleMessage('Remove'),
-        'refresh_done': m21,
+        'refresh_done': m23,
         'refresh_feed_label': MessageLookupByLibrary.simpleMessage('Refresh episodes'),
         'refresh_feeds_failed': MessageLookupByLibrary.simpleMessage('Could not refresh feeds'),
         'refresh_feeds_tooltip': MessageLookupByLibrary.simpleMessage('Refresh feeds'),
@@ -395,7 +401,7 @@ class MessageLookup extends MessageLookupByLibrary {
         'timeline_date_unknown': MessageLookupByLibrary.simpleMessage('Unknown'),
         'timeline_date_yesterday': MessageLookupByLibrary.simpleMessage('Yesterday'),
         'timeline_failed_to_load': MessageLookupByLibrary.simpleMessage('Failed to load timeline'),
-        'timeline_showing_date': m22,
+        'timeline_showing_date': m24,
         'transcript_label': MessageLookupByLibrary.simpleMessage('Transcript'),
         'transcript_why_not_label': MessageLookupByLibrary.simpleMessage('Why not?'),
         'transcript_why_not_url':

@@ -1,5 +1,5 @@
 {
-  "@@last_modified": "2026-09-30T13:02:02.639248",
+  "@@last_modified": "2026-09-30T17:35:23.647043",
   "app_title": "Anytime Podcast Player",
   "@app_title": {
     "description": "Full title for the application",
@@ -91,6 +91,22 @@
     "description": "Fallback name for a bookmark whose podcast is unknown",
     "type": "text",
     "placeholders": {}
+  },
+  "bookmarks_episode_count": "{count,plural, =1{1 episode}other{{count} episodes}}",
+  "@bookmarks_episode_count": {
+    "description": "Number of bookmarked episodes in a podcast group.",
+    "type": "text",
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "bookmarks_bookmark_count": "{count,plural, =1{1 bookmark}other{{count} bookmarks}}",
+  "@bookmarks_bookmark_count": {
+    "description": "Number of bookmarks for a podcast or episode.",
+    "type": "text",
+    "placeholders": {
+      "count": {}
+    }
   },
   "unknown_episode": "Unknown Episode",
   "@unknown_episode": {

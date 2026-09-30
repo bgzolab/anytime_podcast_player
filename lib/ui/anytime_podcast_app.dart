@@ -444,6 +444,12 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
     timelineBloc.transitionLifecycleState(LifecycleState.detach);
     bookmarkBloc.transitionLifecycleState(LifecycleState.detach);
 
+    // The headphone callback captures blocs that are disposed with this
+    // widget; clear it so a late button press cannot write into closed
+    // subjects, and release the bookmark sound player.
+    widget.audioPlayerService?.onSkipToPrevious = null;
+    BookmarkSound.dispose();
+
     deepLinkSubscription?.cancel();
 
     WidgetsBinding.instance.removeObserver(this);

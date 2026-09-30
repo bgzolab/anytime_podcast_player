@@ -125,6 +125,14 @@ class _BookmarksPageState extends State<BookmarksPage> {
 
     final podcastNames = podcastMap.keys.toList()..sort();
 
+    // Match the Now Playing bookmark view, which orders bookmarks by position
+    // within the episode.
+    for (final episodeMap in podcastMap.values) {
+      for (final episode in episodeMap.values) {
+        episode.bookmarks.sort((a, b) => a.positionMs.compareTo(b.positionMs));
+      }
+    }
+
     // Build a flat list of display items for the SliverList.
     final items = <_DisplayItem>[];
     for (final podcastName in podcastNames) {
@@ -239,7 +247,8 @@ class _PodcastHeaderTile extends StatelessWidget {
             ),
           ),
           Text(
-            '$episodeCount ep · $bookmarkCount bm',
+            '${L.of(context)!.bookmarks_episode_count(episodeCount)} · '
+            '${L.of(context)!.bookmarks_bookmark_count(bookmarkCount)}',
             style: theme.textTheme.bodySmall?.copyWith(color: theme.disabledColor),
           ),
         ],
@@ -273,7 +282,7 @@ class _EpisodeTile extends StatelessWidget {
             ),
           ),
           Text(
-            '$count bm',
+            L.of(context)!.bookmarks_bookmark_count(count),
             style: theme.textTheme.bodySmall?.copyWith(color: theme.disabledColor),
           ),
         ],

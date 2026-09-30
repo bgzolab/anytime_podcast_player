@@ -106,7 +106,16 @@ jobs:
         id: version
         run: |
           VERSION=""
-          VERSION=$(gh api repos/anomalyco/opencode/releases/latest --jq '.tag_name' 2>/dev/null | sed 's/^v//') || true
+          for attempt in 1 2 3; do
+            if VERSION=$(gh api repos/anomalyco/opencode/releases/latest --jq '.tag_name' 2>/dev/null) && [ -n "${VERSION}" ]; then
+              break
+            fi
+
+            VERSION=""
+            echo "opencode version lookup attempt ${attempt} failed" >&2
+            sleep 2
+          done
+          VERSION="${VERSION#v}"
           # 查询失败时用 run id 作缓存键：既不中断 job，也不会把一次性的
           # "latest" 构建固化成长久复用的陈旧缓存。
           # 同时记录本 run 的起始时间（github 上下文没有 run_started_at），供重试前 /
@@ -116,8 +125,11 @@ jobs:
             echo "cache_key=${VERSION:-latest-${GITHUB_RUN_ID}}"
             echo "started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           } >> "$GITHUB_OUTPUT"
+      # 只有解析出确定版本时才写缓存：未解析出时安装脚本会取当前 latest，
+      # 用 run id 作键的条目永远不会被复用，写进去只会蚕食仓库缓存配额
       - name: Cache opencode
         id: cache
+        if: steps.version.outputs.version != ''
         uses: actions/cache@v4
         with:
           path: ~/.opencode/bin

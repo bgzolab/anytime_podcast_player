@@ -25,8 +25,12 @@ for attempt in 1 2 3; do
     exit 0
   fi
 
-  echo "verdict lookup attempt ${attempt} failed; retrying" >&2
-  sleep 2
+  if [ "$attempt" -lt 3 ]; then
+    echo "verdict lookup attempt ${attempt} failed; retrying" >&2
+    sleep 2
+  else
+    echo "verdict lookup failed after ${attempt} attempts" >&2
+  fi
 done
 
 exit 1

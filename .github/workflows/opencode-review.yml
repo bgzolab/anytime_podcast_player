@@ -141,9 +141,10 @@ jobs:
         continue-on-error: true
         timeout-minutes: 16
         run: opencode github run
-      # attempt 1 失败时可能已经发出过评论，但评论有两种：真正的审查结论（以
-      # `结论：LGTM`/`结论：BLOCK` 结尾）与上游 handler 的「失败通报」评论。只有
-      # 前者才应跳过重试；查询失败（unknown）时保守重试，最终由门禁校验兜底。
+      # attempt 1 失败时可能已经发出过评论，但评论有两种：真正的审查结论（带
+      # `结论：` 签名）与上游 handler 的「失败通报」评论。守卫只认前者，并且必须
+      # 绑定到本 run（评论页脚含 /actions/runs/<run id>），避免被并发取消的旧 run
+      # 迟到的结论误判。查询失败记为 unknown 并保守重试，最终由门禁校验兜底。
       - name: Check whether attempt 1 posted a review verdict
         id: verdict
         if: steps.review_attempt_1.outcome == 'failure'
@@ -151,35 +152,42 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           RUN_STARTED_AT: ${{ steps.version.outputs.started_at }}
         run: |
-          POSTED=$(gh api --paginate --slurp \
-            "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments?per_page=100" \
-            --jq "[.[][] | select(.user.login == \"github-actions[bot]\" and .created_at >= \"${RUN_STARTED_AT}\" and (.body | contains(\"结论：\")))] | length") || POSTED=unknown
-          echo "posted=${POSTED:-unknown}" >> "$GITHUB_OUTPUT"
-          echo "verdict lookup result: ${POSTED:-unknown}"
+          if FOUND=$(bash .github/scripts/review_verdict.sh "${PR_NUMBER}" "${RUN_STARTED_AT}"); then
+            if [ -n "${FOUND}" ]; then
+              echo "found=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "found=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "found=unknown" >> "$GITHUB_OUTPUT"
+          fi
       - name: Reset workspace before the retry
-        if: steps.review_attempt_1.outcome == 'failure' && steps.verdict.outputs.posted != 'review'
+        if: steps.review_attempt_1.outcome == 'failure' && steps.verdict.outputs.found != 'true'
         run: |
           git reset --hard HEAD
           git clean -fd
       - name: Run opencode review (attempt 2)
         id: review_attempt_2
-        if: steps.review_attempt_1.outcome == 'failure' && steps.verdict.outputs.posted != 'review'
+        if: steps.review_attempt_1.outcome == 'failure' && steps.verdict.outputs.found != 'true'
         continue-on-error: true
         timeout-minutes: 11
         run: opencode github run
-      # 门禁：本次 run 必须产出一条带结论签名的审查评论；无论 attempt 路径如何
-      # （重复评论被跳过、守卫查询失败、两次尝试均失败）都以此为准，避免静默放过。
+      # 门禁：本次 run 必须产出一条带结论签名且绑定本 run 的审查评论；无论 attempt
+      # 路径如何（重复评论被跳过、守卫查询失败、两次尝试均失败）都以此为准，避免静默放过。
       - name: Verify a review verdict was posted
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           RUN_STARTED_AT: ${{ steps.version.outputs.started_at }}
         run: |
-          VERDICTS=$(gh api --paginate --slurp \
-            "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments?per_page=100" \
-            --jq "[.[][] | select(.user.login == \"github-actions[bot]\" and .created_at >= \"${RUN_STARTED_AT}\" and (.body | contains(\"结论：\")))] | length") || VERDICTS=0
-          if [ "${VERDICTS:-0}" -gt 0 ]; then
-            echo "Review verdict comment found for this run."
-            exit 0
+          if FOUND=$(bash .github/scripts/review_verdict.sh "${PR_NUMBER}" "${RUN_STARTED_AT}"); then
+            if [ -n "${FOUND}" ]; then
+              echo "Review verdict comment found for this run."
+              exit 0
+            fi
+
+            echo "No review verdict was posted by this run; failing the gate." >&2
+            exit 1
           fi
-          echo "No review verdict was posted by this run; failing the gate." >&2
+
+          echo "Verdict lookup failed; failing the gate." >&2
           exit 1

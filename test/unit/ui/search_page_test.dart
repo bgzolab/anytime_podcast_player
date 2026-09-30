@@ -124,6 +124,8 @@ void main() {
 
     expect(find.text('Search failed. Please try again.'), findsOneWidget);
     expect(find.text('No bookmarks found'), findsNothing);
+    // The error state offers the retry action the message promises.
+    expect(find.text('Retry'), findsOneWidget);
   });
 
   testWidgets('clearing invalidates an in-flight local search', (tester) async {
@@ -138,13 +140,13 @@ void main() {
     await tester.tap(find.byIcon(Icons.clear));
     await tester.pump();
 
-    await addBookmark(repository);
-    repository.gate.complete(await repository.findAllBookmarks());
+    // Fail the stale search after the clear: without the generation bump its
+    // error would surface as the (visible) error state. The cleared screen
+    // must stay clear and show no spinner.
+    repository.gate.completeError(Exception('search failed'));
     await tester.pumpAndSettle();
 
-    // The stale result must be discarded (generation guard) and the spinner
-    // must be gone.
-    expect(find.text('Deep Dive'), findsNothing);
+    expect(find.text('Search failed. Please try again.'), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
@@ -170,6 +172,26 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(audioPlayerService.seeks, contains(5));
+  });
+
+  testWidgets('home mode shows the episode empty state for a non-matching term', (tester) async {
+    final repository = FakeRepository();
+    repository.searchableEpisodes.add(Episode(guid: 'ep-1', podcast: 'Test', title: 'Deep Dive'));
+
+    await _pumpSearch(tester, const Search(mode: SearchMode.home), repository: repository);
+    await _submit(tester, 'nothing');
+
+    expect(find.text('No episodes found'), findsOneWidget);
+  });
+
+  testWidgets('home mode shows the error state when the search fails', (tester) async {
+    final repository = FakeRepository()..failSearches = true;
+
+    await _pumpSearch(tester, const Search(mode: SearchMode.home), repository: repository);
+    await _submit(tester, 'hello');
+
+    expect(find.text('Search failed. Please try again.'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
   });
 
   testWidgets('downloads mode shows its own empty state', (tester) async {

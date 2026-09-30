@@ -65,8 +65,10 @@ class _SearchState extends State<Search> {
       bloc.search(SearchClearEvent());
 
       if (widget.searchTerm != null) {
-        bloc.search(SearchTermEvent(widget.searchTerm!));
-        _searchController.text = widget.searchTerm!;
+        final term = widget.searchTerm!.trim();
+
+        bloc.search(SearchTermEvent(term));
+        _searchController.text = term;
       }
     } else if (widget.searchTerm != null) {
       _searchController.text = widget.searchTerm!;
@@ -86,7 +88,10 @@ class _SearchState extends State<Search> {
   /// overwrite the results of a newer one.
   int _searchGeneration = 0;
 
-  Future<void> _performLocalSearch(String term) async {
+  Future<void> _performLocalSearch(String value) async {
+    // Trim here rather than at each call site, so the initial searchTerm and
+    // any future entry point behave the same.
+    final term = value.trim();
     final generation = ++_searchGeneration;
 
     if (term.isEmpty) {
@@ -170,17 +175,15 @@ class _SearchState extends State<Search> {
   }
 
   void _onSubmitted(String value) {
-    // Search terms with surrounding whitespace would match nothing and show a
-    // misleading empty state.
-    final term = value.trim();
-
+    // Surrounding whitespace is trimmed by the search itself
+    // (_performLocalSearch) so every entry point behaves the same.
     SemanticsService.sendAnnouncement(View.of(context), L.of(context)!.semantic_announce_searching, TextDirection.ltr);
 
     if (_mode == SearchMode.discovery) {
       final bloc = Provider.of<SearchBloc>(context, listen: false);
-      bloc.search(SearchTermEvent(term));
+      bloc.search(SearchTermEvent(value.trim()));
     } else {
-      _performLocalSearch(term);
+      _performLocalSearch(value);
     }
   }
 
@@ -274,7 +277,7 @@ class _SearchState extends State<Search> {
     if (_searchError) {
       return SliverFillRemaining(
         hasScrollBody: false,
-        child: _buildEmptyState(Icons.error_outline, L.of(context)!.search_failed_message),
+        child: _buildErrorState(),
       );
     }
 
@@ -340,6 +343,34 @@ class _SearchState extends State<Search> {
           return _BookmarkSearchTile(bookmark: bookmark);
         },
         childCount: _bookmarkResults.length,
+      ),
+    );
+  }
+
+  /// Error state with a retry action: the message asks the user to try again,
+  /// so the screen offers to do it (and screen readers reach it easily).
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Icon(
+            Icons.error_outline,
+            size: 75,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          const Padding(padding: EdgeInsets.only(top: 16.0)),
+          Text(
+            L.of(context)!.search_failed_message,
+            style: Theme.of(context).textTheme.titleMedium,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16.0),
+          TextButton(
+            onPressed: () => _onSubmitted(_searchController.text),
+            child: Text(L.of(context)!.retry_button_label),
+          ),
+        ],
       ),
     );
   }

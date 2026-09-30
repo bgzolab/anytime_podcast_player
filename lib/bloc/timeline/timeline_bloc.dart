@@ -107,6 +107,10 @@ class TimelineBloc extends Bloc {
   static const int pageSize = 20;
   static const Duration maxStale = Duration(minutes: 5);
 
+  /// Upper bound on the pages a single [jumpToDate] may load, so jumping far
+  /// into the past cannot trigger hundreds of sequential queries.
+  static const int maxJumpPages = 50;
+
   TimelineBloc({
     required this.podcastService,
   }) {
@@ -246,7 +250,17 @@ class TimelineBloc extends Bloc {
         case TimelineEvent.loadMore:
           return _loadMore();
         case TimelineEvent.jumpToDate:
-          return _jumpToDate(_pendingJumpDate!);
+          final date = _pendingJumpDate;
+
+          if (date == null) {
+            // A jump event without a pending date (e.g. sent directly through
+            // the [event] sink) must not crash; degrade to a normal refresh.
+            log.warning('jumpToDate event without a pending date; refreshing instead');
+
+            return _refresh();
+          }
+
+          return _jumpToDate(date);
         case TimelineEvent.toggleShowPlayed:
         case TimelineEvent.clearDateFilter:
           // Routed to _cacheEventInput by the [event] getter; unreachable here.
@@ -256,7 +270,7 @@ class TimelineBloc extends Bloc {
       _stateOutput.add(state);
     });
 
-    // Cache-only events re-emit the current list immediately, without touching
+    // Cache-only events re-emit the current state immediately, without touching
     // the page-operation pipeline.
     _cacheEventInput.listen((event) {
       if (event == TimelineEvent.toggleShowPlayed) {
@@ -267,22 +281,36 @@ class TimelineBloc extends Bloc {
         return;
       }
 
-      if (_allEpisodes.isNotEmpty) {
-        _stateOutput.add(BlocPopulatedState<List<Episode>>(results: _sorted(_allEpisodes)));
-      } else {
-        _stateOutput.add(BlocDefaultState<List<Episode>>());
-      }
+      _emitCacheState();
     });
   }
 
-  /// Re-emits the current cached list, or the default state when nothing has
-  /// been loaded yet.
+  /// Re-emits the current cached list, or a state that keeps the UI meaningful
+  /// while nothing is loaded.
+  ///
+  /// While a page operation is in flight (e.g. a refresh has cleared the list)
+  /// a loading state is emitted instead of an empty populated state, so the UI
+  /// keeps showing a spinner rather than going blank.
   void _emitCacheState() {
     if (_allEpisodes.isNotEmpty) {
       _stateOutput.add(BlocPopulatedState<List<Episode>>(results: _sorted(_allEpisodes)));
-    } else {
-      _stateOutput.add(BlocDefaultState<List<Episode>>());
+
+      return;
     }
+
+    if (_busy) {
+      _stateOutput.add(BlocLoadingState<List<Episode>>());
+
+      return;
+    }
+
+    if (_lastFetchTime != null) {
+      _stateOutput.add(BlocPopulatedState<List<Episode>>(results: <Episode>[]));
+
+      return;
+    }
+
+    _stateOutput.add(BlocDefaultState<List<Episode>>());
   }
 
   /// Completes a pending [refreshAndWait] Future.
@@ -431,11 +459,24 @@ class TimelineBloc extends Bloc {
 
         if (generation != _generation) return;
 
-        // Load pages one at a time until we have enough (or run out).
-        while (_allEpisodes.length < offset + pageSize && _hasMore) {
+        // Load pages until the whole calendar day is covered: enough episodes
+        // to reach [date], then continue until the oldest loaded episode is
+        // older than the start of that day (a single day can span several
+        // pages). The loop is bounded by [maxJumpPages] so jumping far into the
+        // past cannot load hundreds of pages.
+        final dayStart = DateTime(date.year, date.month, date.day);
+        var pages = 0;
+
+        while (_hasMore && pages < maxJumpPages && !_dayCovered(offset, dayStart)) {
           final progressed = await _fetchPage(generation);
 
           if (!progressed) return;
+
+          pages++;
+        }
+
+        if (_hasMore && pages >= maxJumpPages) {
+          log.warning('Stopped loading pages for jump to $date after $maxJumpPages pages');
         }
 
         _lastFetchTime = DateTime.now();
@@ -455,6 +496,19 @@ class TimelineBloc extends Bloc {
     } finally {
       if (generation == _generation) _busy = false;
     }
+  }
+
+  /// Whether the loaded episodes cover the calendar day starting at
+  /// [dayStart] for a jump that needs [offset] episodes newer than the date.
+  bool _dayCovered(int offset, DateTime dayStart) {
+    // We must at least have loaded every episode newer than the date before the
+    // day itself can be considered covered.
+    if (_allEpisodes.length < offset) return false;
+
+    // Episodes are appended newest-first, so the last entry is the oldest.
+    final oldest = _allEpisodes.isNotEmpty ? _allEpisodes.last.publicationDate : null;
+
+    return oldest != null && oldest.isBefore(dayStart);
   }
 
   // ---------------------------------------------------------------------------

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 
@@ -827,6 +828,7 @@ class MobilePodcastService extends PodcastService {
 
           final startTime = DateTime.now();
           final subs = await subscriptions();
+          var loaded = 0;
 
           /// Sort by last updated ASC - we will improve this in time.
           subs.sort((a, b) => a.lastUpdated.compareTo(b.lastUpdated));
@@ -836,6 +838,8 @@ class MobilePodcastService extends PodcastService {
 
             try {
               final p = await loadPodcast(podcast: sub, ignoreCache: true, highlightNewEpisodes: true);
+
+              loaded++;
 
               if (p != null) {
                 if (p.newEpisodes > 0 || p.updatedEpisodes) {
@@ -867,7 +871,15 @@ class MobilePodcastService extends PodcastService {
           }
 
           _libraryState.add(LibraryReadyState());
-          settingsService.lastFeedRefresh = DateTime.now();
+
+          // Only record the refresh when at least one source loaded (or there
+          // was nothing to load), so an entirely failed run is retried by the
+          // next background refresh instead of being considered done.
+          if (loaded > 0 || subs.isEmpty) {
+            settingsService.lastFeedRefresh = DateTime.now();
+          } else {
+            _log.warning('No source loaded successfully; leaving the last refresh time untouched');
+          }
         } else {
           _log.fine('We do not have suitable connectivity available. Skipping update:');
           _log.fine(
@@ -881,6 +893,40 @@ class MobilePodcastService extends PodcastService {
 
   @override
   Stream<RefreshProgress> refreshFeedsWithProgress() async* {
+    // Serialise with the other refresh paths (manual and background refreshes)
+    // and with itself: two concurrent runs would duplicate feed fetches and
+    // interleave library states.
+    if (_lock.locked) {
+      _log.fine('A library refresh is already running; ignoring the concurrent refresh request');
+
+      yield const RefreshProgress(
+        total: 0,
+        completed: 0,
+        currentSource: '',
+        finished: true,
+        skipped: RefreshSkipReason.alreadyRunning,
+      );
+      return;
+    }
+
+    final controller = StreamController<RefreshProgress>();
+
+    unawaited(_lock.synchronized(() async {
+      try {
+        await _refreshFeedsWithProgress(controller.add);
+      } catch (e, stack) {
+        controller.addError(e, stack);
+      } finally {
+        await controller.close();
+      }
+    }));
+
+    yield* controller.stream;
+  }
+
+  /// Runs a feed refresh, reporting progress through [report]. See
+  /// [refreshFeedsWithProgress].
+  Future<void> _refreshFeedsWithProgress(void Function(RefreshProgress) report) async {
     // Check connectivity first.
     final connectivityResult = await Connectivity().checkConnectivity();
     final hasConnectivity = !connectivityResult.contains(ConnectivityResult.none);
@@ -889,7 +935,14 @@ class MobilePodcastService extends PodcastService {
 
     if (!hasConnectivity || !allowConnectivity) {
       _log.fine('No suitable connectivity for feed refresh');
-      yield const RefreshProgress(total: 0, completed: 0, currentSource: '', finished: true);
+
+      report(const RefreshProgress(
+        total: 0,
+        completed: 0,
+        currentSource: '',
+        finished: true,
+        skipped: RefreshSkipReason.noConnectivity,
+      ));
       return;
     }
 
@@ -901,15 +954,21 @@ class MobilePodcastService extends PodcastService {
 
       final total = subs.length;
       var completed = 0;
+      var loaded = 0;
       var newOrUpdatedEpisodes = false;
 
       for (var i = 0; i < total; i++) {
         final sub = subs[i];
-        yield RefreshProgress(total: total, completed: completed, currentSource: sub.title);
+        report(RefreshProgress(total: total, completed: completed, currentSource: sub.title));
 
         try {
+          // The timeout only bounds how long we wait: an in-flight load may
+          // still finish and write in the background, and its results will be
+          // picked up by the next refresh.
           final p = await loadPodcast(podcast: sub, ignoreCache: true, highlightNewEpisodes: true)
               .timeout(const Duration(seconds: 5));
+
+          loaded++;
 
           if (p != null && (p.newEpisodes > 0 || p.updatedEpisodes)) {
             newOrUpdatedEpisodes = true;
@@ -925,9 +984,16 @@ class MobilePodcastService extends PodcastService {
         _libraryState.add(LibraryUpdatedState());
       }
 
-      settingsService.lastFeedRefresh = DateTime.now();
+      // Only record the refresh when at least one source loaded (or there was
+      // nothing to load); otherwise the next automatic refresh would be
+      // delayed even though nothing was refreshed.
+      if (loaded > 0 || subs.isEmpty) {
+        settingsService.lastFeedRefresh = DateTime.now();
+      } else {
+        _log.warning('No source loaded successfully; leaving the last refresh time untouched');
+      }
 
-      yield RefreshProgress(total: total, completed: completed, currentSource: '', finished: true);
+      report(RefreshProgress(total: total, completed: completed, currentSource: '', finished: true));
     } finally {
       // Always leave the library in a ready state — even when the refresh
       // fails or the consumer cancels the stream — otherwise the whole app is

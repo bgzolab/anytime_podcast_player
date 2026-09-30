@@ -562,71 +562,67 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
   /// SliverAppBar containing search, queue, and menu actions.
   Widget _buildPageWithAppBar(BuildContext context, int pageIndex, Widget page) {
     final backgroundColour = Theme.of(context).scaffoldBackgroundColor;
-    return RefreshIndicator(
-      onRefresh: () async {
-        // Discovery has no local data to refresh; the timeline refreshes from
-        // the Home tab.
-        return;
-      },
-      child: Container(
-        color: backgroundColour,
-        child: CustomScrollView(
-          slivers: <Widget>[
-            SliverVisibility(
-              visible: widget.topBarVisible,
-              sliver: SliverAppBar(
-                title: const ExcludeSemantics(
-                  child: TitleWidget(),
-                ),
-                backgroundColor: backgroundColour,
-                floating: false,
-                pinned: true,
-                snap: false,
-                actions: <Widget>[
-                  IconButton(
-                    icon: Icon(
-                      Icons.search,
-                      semanticLabel: _getSearchTooltip(context, pageIndex),
-                    ),
-                    onPressed: () async {
-                      final mode = _getSearchMode(pageIndex);
-                      await Navigator.push(
-                        context,
-                        defaultTargetPlatform == TargetPlatform.iOS
-                            ? MaterialPageRoute<void>(
-                                fullscreenDialog: false,
-                                settings: const RouteSettings(name: 'search'),
-                                builder: (context) => Search(mode: mode, repository: widget.repository))
-                            : SlideRightRoute(
-                                widget: Search(mode: mode, repository: widget.repository),
-                                settings: const RouteSettings(name: 'search'),
-                              ),
-                      );
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.featured_play_list_outlined,
-                      semanticLabel: L.of(context)!.open_up_next_hint,
-                    ),
-                    onPressed: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute<void>(
-                          fullscreenDialog: false,
-                          settings: const RouteSettings(name: 'queue'),
-                          builder: (context) => const UpNextPage(),
-                        ),
-                      );
-                    },
-                  ),
-                  // Overflow menu removed — items moved to My page
-                ],
+
+    // No RefreshIndicator: this page has no local data to refresh, and a
+    // pull-down that only spins would suggest a refresh that never happens.
+    return Container(
+      color: backgroundColour,
+      child: CustomScrollView(
+        slivers: <Widget>[
+          SliverVisibility(
+            visible: widget.topBarVisible,
+            sliver: SliverAppBar(
+              title: const ExcludeSemantics(
+                child: TitleWidget(),
               ),
+              backgroundColor: backgroundColour,
+              floating: false,
+              pinned: true,
+              snap: false,
+              actions: <Widget>[
+                IconButton(
+                  icon: Icon(
+                    Icons.search,
+                    semanticLabel: _getSearchTooltip(context, pageIndex),
+                  ),
+                  onPressed: () async {
+                    final mode = _getSearchMode(pageIndex);
+                    await Navigator.push(
+                      context,
+                      defaultTargetPlatform == TargetPlatform.iOS
+                          ? MaterialPageRoute<void>(
+                              fullscreenDialog: false,
+                              settings: const RouteSettings(name: 'search'),
+                              builder: (context) => Search(mode: mode, repository: widget.repository))
+                          : SlideRightRoute(
+                              widget: Search(mode: mode, repository: widget.repository),
+                              settings: const RouteSettings(name: 'search'),
+                            ),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.featured_play_list_outlined,
+                    semanticLabel: L.of(context)!.open_up_next_hint,
+                  ),
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        fullscreenDialog: false,
+                        settings: const RouteSettings(name: 'queue'),
+                        builder: (context) => const UpNextPage(),
+                      ),
+                    );
+                  },
+                ),
+                // Overflow menu removed — items moved to My page
+              ],
             ),
-            page,
-          ],
-        ),
+          ),
+          page,
+        ],
       ),
     );
   }

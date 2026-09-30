@@ -39,6 +39,66 @@ class FakePodcastService extends Fake implements PodcastService {
   }
 }
 
+/// Waits until [condition] is true, polling the event loop; fails the test
+/// after [turns] polls instead of relying on a fixed delay.
+Future<void> waitUntil(bool Function() condition, {int turns = 400}) async {
+  for (var i = 0; i < turns; i++) {
+    if (condition()) return;
+
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+  }
+
+  fail('Condition was not met after $turns event loop turns');
+}
+
+/// The results of the last populated state, or null when the last state is not
+/// populated.
+List<Episode>? populatedResults(List<BlocState> states) {
+  if (states.isEmpty) return null;
+
+  final last = states.last;
+
+  return last is BlocPopulatedState<List<Episode>> ? last.results : null;
+}
+
+/// The guid of the first episode in the last populated state, or null.
+String? firstGuid(List<BlocState> states) {
+  final results = populatedResults(states);
+
+  return results != null && results.isNotEmpty ? results.first.guid : null;
+}
+
+/// A [PodcastService] fake backed by an in-memory, newest-first episode list.
+/// Applies the same inclusive `before` cursor and `limit` semantics as the
+/// repository, so pagination behaviour is actually exercised.
+class DatasetPodcastService extends Fake implements PodcastService {
+  final List<Episode> episodes;
+
+  DatasetPodcastService(this.episodes) {
+    // The repository returns episodes newest-first; mirror that contract so
+    // the cursor logic is exercised realistically.
+    episodes.sort((a, b) => (b.publicationDate ?? DateTime(0)).compareTo(a.publicationDate ?? DateTime(0)));
+  }
+
+  @override
+  Future<List<Episode>> loadEpisodes() async => List<Episode>.of(episodes);
+
+  @override
+  Future<List<Episode>> loadEpisodesBefore(DateTime beforeDate, {int limit = 100}) async {
+    return episodes
+        .where((episode) => episode.publicationDate != null && !episode.publicationDate!.isAfter(beforeDate))
+        .take(limit)
+        .toList();
+  }
+
+  @override
+  Future<int> countEpisodesSince(DateTime sinceDate) async {
+    return episodes
+        .where((episode) => episode.publicationDate != null && !episode.publicationDate!.isBefore(sinceDate))
+        .length;
+  }
+}
+
 void main() {
   group('TimelineBloc', () {
     test('refresh emits BlocLoadingState then BlocPopulatedState with episodes', () async {
@@ -72,7 +132,7 @@ void main() {
       });
 
       bloc.event(TimelineEvent.refresh);
-      await Future.delayed(const Duration(milliseconds: 100));
+      await waitUntil(() => populatedResults(states)?.length == 2);
 
       expect(states.length, greaterThanOrEqualTo(2));
       expect(states[0], isA<BlocLoadingState>());
@@ -99,7 +159,7 @@ void main() {
       });
 
       bloc.event(TimelineEvent.refresh);
-      await Future.delayed(const Duration(milliseconds: 100));
+      await waitUntil(() => populatedResults(states)?.isEmpty == true);
 
       expect(states.any((s) => s is BlocPopulatedState), isTrue);
       final last = states.last as BlocPopulatedState<List<Episode>>;
@@ -158,7 +218,7 @@ void main() {
 
       // Load first page (refresh)
       bloc.event(TimelineEvent.refresh);
-      await Future.delayed(const Duration(milliseconds: 100));
+      await waitUntil(() => populatedResults(states)?.length == 2);
 
       var loaded = states.last as BlocPopulatedState<List<Episode>>;
       expect(loaded.results!.length, 2);
@@ -166,7 +226,7 @@ void main() {
 
       // Load more
       bloc.event(TimelineEvent.loadMore);
-      await Future.delayed(const Duration(milliseconds: 100));
+      await waitUntil(() => populatedResults(states)?.length == 4);
 
       loaded = states.last as BlocPopulatedState<List<Episode>>;
       expect(loaded.results!.length, 4);
@@ -192,7 +252,7 @@ void main() {
       addTearDown(() => bloc.dispose());
 
       bloc.event(TimelineEvent.refresh);
-      await Future.delayed(const Duration(milliseconds: 100));
+      await waitUntil(() => bloc.hasData);
 
       expect(bloc.hasMore, isFalse);
     });
@@ -235,13 +295,13 @@ void main() {
 
       // First load
       bloc.event(TimelineEvent.refresh);
-      await Future.delayed(const Duration(milliseconds: 100));
+      await waitUntil(() => firstGuid(states) == 'ep-old');
       expect((states.last as BlocPopulatedState<List<Episode>>).results!.length, 1);
       expect((states.last as BlocPopulatedState<List<Episode>>).results![0].guid, 'ep-old');
 
       // Refresh again — should clear and fetch fresh page
       bloc.event(TimelineEvent.refresh);
-      await Future.delayed(const Duration(milliseconds: 100));
+      await waitUntil(() => firstGuid(states) == 'ep-new');
       expect((states.last as BlocPopulatedState<List<Episode>>).results!.length, 1);
       expect((states.last as BlocPopulatedState<List<Episode>>).results![0].guid, 'ep-new');
     });
@@ -286,7 +346,7 @@ void main() {
       });
 
       bloc.jumpToDate(DateTime(2026, 7, 15));
-      await Future.delayed(const Duration(milliseconds: 100));
+      await waitUntil(() => populatedResults(states)?.length == 1);
 
       final lastState = states.last;
       expect(lastState, isA<BlocPopulatedState<List<Episode>>>());
@@ -309,7 +369,7 @@ void main() {
       });
 
       bloc.event(TimelineEvent.refresh);
-      await Future.delayed(const Duration(milliseconds: 100));
+      await waitUntil(() => states.isNotEmpty && states.last is BlocErrorState);
 
       expect(states.any((s) => s is BlocErrorState), isTrue);
     });
@@ -362,10 +422,10 @@ void main() {
       });
 
       bloc.event(TimelineEvent.refresh);
-      await Future.delayed(const Duration(milliseconds: 100));
+      await waitUntil(() => populatedResults(states)?.length == 20);
 
       bloc.event(TimelineEvent.loadMore);
-      await Future.delayed(const Duration(milliseconds: 100));
+      await waitUntil(() => populatedResults(states)?.length == 22);
 
       final results = (states.last as BlocPopulatedState<List<Episode>>).results!;
       expect(results.length, 22);
@@ -437,13 +497,13 @@ void main() {
       });
 
       bloc.event(TimelineEvent.refresh);
-      await Future.delayed(const Duration(milliseconds: 100));
+      await waitUntil(() => populatedResults(states)?.length == 1);
 
       expect((states.last as BlocPopulatedState<List<Episode>>).results!.length, 1);
       expect(bloc.hasHiddenPlayed, isTrue);
 
       bloc.event(TimelineEvent.toggleShowPlayed);
-      await Future.delayed(const Duration(milliseconds: 100));
+      await waitUntil(() => populatedResults(states)?.length == 2);
 
       expect((states.last as BlocPopulatedState<List<Episode>>).results!.length, 2);
       expect(bloc.hasHiddenPlayed, isFalse);
@@ -481,7 +541,7 @@ void main() {
       // and incorrectly concludes there are no more pages.
       bloc.event(TimelineEvent.refresh);
       bloc.event(TimelineEvent.refresh);
-      await Future.delayed(const Duration(milliseconds: 150));
+      await waitUntil(() => populatedResults(states)?.length == 20);
 
       final results = (states.last as BlocPopulatedState<List<Episode>>).results!;
       expect(results.length, 20);
@@ -518,7 +578,7 @@ void main() {
       bloc.loadMore();
 
       gate.complete(page);
-      await Future.delayed(const Duration(milliseconds: 50));
+      await waitUntil(() => populatedResults(states)?.length == 20);
 
       expect(states.last, isA<BlocPopulatedState<List<Episode>>>());
       expect((states.last as BlocPopulatedState<List<Episode>>).results!.length, 20);
@@ -564,22 +624,195 @@ void main() {
       bloc.state.listen(states.add);
 
       bloc.refresh();
-      await Future.delayed(const Duration(milliseconds: 30));
+      await waitUntil(() => populatedResults(states)?.length == 20);
       expect((states.last as BlocPopulatedState<List<Episode>>).results!.length, 20);
 
       bloc.loadMore();
-      await Future.delayed(const Duration(milliseconds: 10));
+      await waitUntil(() => callCount == 2);
 
       // Cache-only events must not cancel the in-flight page load; otherwise
       // the loaded page would never be emitted.
       bloc.event(TimelineEvent.toggleShowPlayed);
 
       gate.complete(page2);
-      await Future.delayed(const Duration(milliseconds: 50));
+      await waitUntil(() => populatedResults(states)?.length == 40);
 
       final last = states.last as BlocPopulatedState<List<Episode>>;
       expect(last.results!.length, 40);
       expect(bloc.showPlayed, isTrue);
+    });
+    test('pagination honours the cursor and stops at the end of the dataset', () async {
+      final episodes = List.generate(
+        25,
+        (i) => Episode(
+          guid: 'ep-$i',
+          podcast: 'Test',
+          title: 'Episode $i',
+          publicationDate: DateTime(2026, 7, 25).subtract(Duration(days: i)),
+          duration: 1000,
+        ),
+      );
+
+      final service = DatasetPodcastService(episodes);
+      final bloc = TimelineBloc(podcastService: service);
+      addTearDown(() => bloc.dispose());
+
+      final states = <BlocState>[];
+      bloc.state.listen(states.add);
+
+      bloc.refresh();
+      await waitUntil(() => populatedResults(states)?.length == 20);
+      expect(bloc.hasMore, isTrue);
+
+      bloc.loadMore();
+      await waitUntil(() => populatedResults(states)?.length == 25);
+      expect(bloc.hasMore, isFalse);
+
+      // Newest first, and the inclusive cursor must not duplicate the boundary
+      // episode.
+      final guids = populatedResults(states)!.map((e) => e.guid).toList();
+      expect(guids.toSet().length, 25);
+      expect(guids.first, 'ep-0');
+      expect(guids.last, 'ep-24');
+    });
+
+    test('jumpToDate loads a whole day that spans multiple pages', () async {
+      final day = DateTime(2026, 7, 10);
+      final episodes = <Episode>[
+        for (var i = 0; i < 30; i++)
+          Episode(
+            guid: 'new-$i',
+            podcast: 'Test',
+            title: 'New $i',
+            publicationDate: day.add(Duration(hours: 25 + i)),
+            duration: 1000,
+          ),
+        for (var i = 0; i < 25; i++)
+          Episode(
+            guid: 'day-$i',
+            podcast: 'Test',
+            title: 'Day $i',
+            publicationDate: day.add(Duration(minutes: 23 * 60 - i)),
+            duration: 1000,
+          ),
+        Episode(
+          guid: 'old-0',
+          podcast: 'Test',
+          title: 'Old 0',
+          publicationDate: day.subtract(const Duration(days: 1)),
+          duration: 1000,
+        ),
+      ];
+
+      final service = DatasetPodcastService(episodes);
+      final bloc = TimelineBloc(podcastService: service);
+      addTearDown(() => bloc.dispose());
+
+      final states = <BlocState>[];
+      bloc.state.listen(states.add);
+
+      bloc.jumpToDate(day);
+      await waitUntil(() => populatedResults(states)?.length == 25);
+
+      expect(populatedResults(states)!.every((e) => e.guid.startsWith('day-')), isTrue);
+      expect(bloc.dateFilter, day);
+    });
+
+    test('a jumpToDate event without a pending date degrades to a refresh', () async {
+      final service = DatasetPodcastService([
+        Episode(
+          guid: 'ep-1',
+          podcast: 'Test',
+          title: 'Episode 1',
+          publicationDate: DateTime(2026, 7, 15),
+          duration: 1000,
+        ),
+      ]);
+      final bloc = TimelineBloc(podcastService: service);
+      addTearDown(() => bloc.dispose());
+
+      final states = <BlocState>[];
+      bloc.state.listen(states.add);
+
+      // Sending the event directly (without calling jumpToDate first) used to
+      // throw a null check error.
+      bloc.event(TimelineEvent.jumpToDate);
+      await waitUntil(() => populatedResults(states)?.isNotEmpty == true);
+
+      expect(firstGuid(states), 'ep-1');
+      expect(bloc.dateFilter, isNull);
+    });
+
+    test('clearDateFilter re-emits the unfiltered list', () async {
+      final day = DateTime(2026, 7, 10);
+      final service = DatasetPodcastService([
+        Episode(
+          guid: 'new-1',
+          podcast: 'Test',
+          title: 'New 1',
+          publicationDate: day.add(const Duration(days: 1)),
+          duration: 1000,
+        ),
+        Episode(
+          guid: 'day-1',
+          podcast: 'Test',
+          title: 'Day 1',
+          publicationDate: day.add(const Duration(hours: 12)),
+          duration: 1000,
+        ),
+        Episode(
+          guid: 'day-2',
+          podcast: 'Test',
+          title: 'Day 2',
+          publicationDate: day.add(const Duration(hours: 8)),
+          duration: 1000,
+        ),
+      ]);
+      final bloc = TimelineBloc(podcastService: service);
+      addTearDown(() => bloc.dispose());
+
+      final states = <BlocState>[];
+      bloc.state.listen(states.add);
+
+      bloc.jumpToDate(day);
+      await waitUntil(() => populatedResults(states)?.length == 2);
+      expect(bloc.dateFilter, isNotNull);
+
+      bloc.clearDateFilter();
+      await waitUntil(() => populatedResults(states)?.length == 3);
+      expect(bloc.dateFilter, isNull);
+    });
+
+    test('a cache event during an in-flight refresh keeps the loading state', () async {
+      final gate = Completer<List<Episode>>();
+      final service = FakePodcastService(
+        loadBefore: (_, __) => gate.future,
+        countSince: (_) async => 1,
+      );
+      final bloc = TimelineBloc(podcastService: service);
+      addTearDown(() => bloc.dispose());
+
+      final states = <BlocState>[];
+      bloc.state.listen(states.add);
+
+      bloc.refresh();
+      await waitUntil(() => states.isNotEmpty);
+
+      // The refresh has cleared the list; a cache event must not switch to the
+      // empty default state while the page load is still in flight.
+      bloc.event(TimelineEvent.toggleShowPlayed);
+      expect(states.last, isA<BlocLoadingState>());
+
+      gate.complete([
+        Episode(
+          guid: 'ep-1',
+          podcast: 'Test',
+          title: 'Episode 1',
+          publicationDate: DateTime(2026, 7, 15),
+          duration: 1000,
+        ),
+      ]);
+      await waitUntil(() => populatedResults(states)?.isNotEmpty == true);
     });
   });
 }

@@ -14,6 +14,34 @@ import 'package:anytime/state/episode_state.dart';
 import 'package:anytime/state/library_state.dart';
 import 'package:podcast_search/podcast_search.dart' as pcast;
 
+/// Why a feed refresh request did not run.
+enum RefreshSkipReason {
+  /// Another refresh (manual, background or progress) is already running.
+  alreadyRunning,
+
+  /// No usable connectivity (offline, or mobile data disallowed).
+  noConnectivity,
+}
+
+/// Progress of a [PodcastService.refreshFeedsWithProgress] run.
+class RefreshProgress {
+  final int total;
+  final int completed;
+  final String currentSource;
+  final bool finished;
+
+  /// Set when the refresh did not run at all; see [RefreshSkipReason].
+  final RefreshSkipReason? skipped;
+
+  const RefreshProgress({
+    required this.total,
+    required this.completed,
+    required this.currentSource,
+    this.finished = false,
+    this.skipped,
+  });
+}
+
 /// The [PodcastService] handles interactions around podcasts including searching, fetching
 /// the trending/charts podcasts, loading the podcast RSS feed and anciallary items such as
 /// chapters and transcripts.

@@ -915,22 +915,28 @@ class EpisodeTransportControls extends StatelessWidget {
 /// episode length, time remaining (if episode has been started) and file size.
 class EpisodeSubtitle extends StatelessWidget {
   final Episode episode;
-  final String date;
   final Duration length;
 
-  EpisodeSubtitle(this.episode, {super.key})
-      : date = episode.publicationDate == null
-            ? ''
-            : DateFormat(episode.publicationDate!.year == DateTime.now().year ? 'd MMM' : 'd MMM yyyy')
-                .format(episode.publicationDate!),
-        length = Duration(seconds: episode.duration);
+  EpisodeSubtitle(this.episode, {super.key}) : length = Duration(seconds: episode.duration);
+
+  /// Formats the publication date for the current locale; empty when the
+  /// episode has no publication date.
+  String _dateLabel(BuildContext context) {
+    final publicationDate = episode.publicationDate;
+
+    if (publicationDate == null) return '';
+
+    final pattern = publicationDate.year == DateTime.now().year ? 'd MMM' : 'd MMM yyyy';
+
+    return DateFormat(pattern, Localizations.localeOf(context).toString()).format(publicationDate);
+  }
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     var timeRemaining = episode.timeRemaining;
-    var dateLabel = date;
-    var dateSemanticLabel = date;
+    var dateLabel = _dateLabel(context);
+    var dateSemanticLabel = dateLabel;
 
     String title;
     String semanticTitle;

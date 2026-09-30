@@ -11,6 +11,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:logging/logging.dart';
 
 // ignore_for_file: avoid_print
@@ -36,6 +37,10 @@ void main() async {
 
   var mobileSettingsService = (await MobileSettingsService.instance())!;
   certificateAuthorityBytes = await setupCertificateAuthority();
+
+  // Date and month names are formatted for the current locale (timeline date
+  // banners and episode subtitles); the locale data must be loaded first.
+  await initializeDateFormatting();
 
   runApp(AnytimePodcastApp(
     mobileSettingsService: mobileSettingsService,

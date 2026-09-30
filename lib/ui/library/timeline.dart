@@ -119,9 +119,17 @@ class _TimelineState extends State<Timeline> {
           );
         }
 
+        // Unknown/default state (e.g. before the first load): keep showing a
+        // spinner rather than a blank screen.
         return const SliverFillRemaining(
           hasScrollBody: false,
-          child: SizedBox.shrink(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              PlatformProgressIndicator(),
+            ],
+          ),
         );
       },
     );
@@ -250,7 +258,7 @@ class _TimelineState extends State<Timeline> {
   /// Builds a banner shown when a date filter is active.
   Widget _buildFilterBanner(BuildContext context, TimelineBloc bloc) {
     final theme = Theme.of(context);
-    final dateStr = DateFormat.yMMMd().format(bloc.dateFilter!);
+    final dateStr = DateFormat.yMMMd(Localizations.localeOf(context).toString()).format(bloc.dateFilter!);
 
     return Container(
       color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),

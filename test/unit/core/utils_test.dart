@@ -39,5 +39,17 @@ void main() {
 
       expect(normalizeAudioUrl(url), url);
     });
+
+    test('preserves percent-encoded slashes', () {
+      // Uri.path and Uri.replace(path:) keep existing escape sequences, so a
+      // path containing only %2F (an encoded slash) is never rewritten.
+      const url = 'https://example.com/a%2F%2Fb.mp3';
+
+      expect(normalizeAudioUrl(url), url);
+    });
+
+    test('collapses literal slashes without touching encoded ones', () {
+      expect(normalizeAudioUrl('https://example.com//a%2Fb//c.mp3'), 'https://example.com/a%2Fb/c.mp3');
+    });
   });
 }

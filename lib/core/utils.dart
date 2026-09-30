@@ -136,6 +136,11 @@ String? safeFile(String? s) {
 ///
 /// Returns [url] unchanged when it has no scheme, cannot be parsed, or its
 /// path is already normal. Query and fragment are preserved.
+///
+/// This only collapses consecutive slashes in the path: it deliberately does
+/// not normalise anything else (no lower-casing, no default-port removal, no
+/// percent-encoding changes), so it must not be used as a general-purpose URL
+/// canonicaliser.
 String normalizeAudioUrl(String url) {
   final uri = Uri.tryParse(url);
 

@@ -655,13 +655,23 @@ class DefaultAudioPlayerService extends AudioPlayerService {
       final normalized = normalizeAudioUrl(uri);
 
       if (normalized != uri) {
-        log.info('Normalized streaming URL from $uri to $normalized');
+        // Redact query and fragment: streaming URLs are often signed and the
+        // token must not end up in device logs.
+        log.info('Normalized streaming URL ${_redactUrl(uri)} -> ${_redactUrl(normalized)}');
       }
 
       uri = normalized;
     }
 
     return uri;
+  }
+
+  /// Strips the query and fragment from [url] so signed parameters are not
+  /// written to logs.
+  String _redactUrl(String url) {
+    final cut = url.indexOf(RegExp(r'[?#]'));
+
+    return cut >= 0 ? url.substring(0, cut) : url;
   }
 
   Future<void> _persistState() async {
@@ -909,6 +919,8 @@ class DefaultAudioPlayerService extends AudioPlayerService {
           // "not an MP3" failure is recognised by its string representation
           // and demoted to a fine log; anything else (network, parser) is a
           // real problem worth a warning with the stack trace.
+          // TODO(mp3_info): replace the string check once the package exports
+          // the exception type.
           if (e.toString().contains('InvalidMP3FileException')) {
             log.fine('No embedded ID3 chapters available: $e');
           } else {

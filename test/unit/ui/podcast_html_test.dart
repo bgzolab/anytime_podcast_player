@@ -83,5 +83,40 @@ void main() {
       expect(stripInlineColors("<td bgcolor='#fff' width='10'>Hi</td>"), "<td width='10'>Hi</td>");
       expect(stripInlineColors('<font color=#333>Hi</font>'), '<font>Hi</font>');
     });
+
+    test('never rewrites colour-like text inside other attribute values', () {
+      const title = '<a title="use color=red here">Hi</a>';
+      const info = '<p data-info="bgcolor=#fff">Hi</p>';
+
+      expect(stripInlineColors(title), title);
+      expect(stripInlineColors(info), info);
+    });
+
+    test('handles quoted ">" inside attribute values', () {
+      expect(stripInlineColors('<p title="a>b" style="color:red">Hi</p>'), '<p title="a>b">Hi</p>');
+    });
+
+    test('cleans unquoted style attributes', () {
+      expect(stripInlineColors('<p style=color:red>Hi</p>'), '<p>Hi</p>');
+      expect(stripInlineColors('<p style=color:red;font-size:16px>Hi</p>'), '<p style="font-size:16px">Hi</p>');
+    });
+
+    test('keeps semicolons inside url()', () {
+      expect(
+        stripInlineColors('<p style="background:url(a;b.png);font-size:16px">Hi</p>'),
+        '<p style="background:url(a;b.png); font-size:16px">Hi</p>',
+      );
+    });
+
+    test('drops the colour fallback of background images', () {
+      expect(
+        stripInlineColors('<p style="background:#fff url(bg.png)">Hi</p>'),
+        '<p style="background:url(bg.png)">Hi</p>',
+      );
+      expect(
+        stripInlineColors('<p style="background:white url(bg.png) no-repeat">Hi</p>'),
+        '<p style="background:url(bg.png) no-repeat">Hi</p>',
+      );
+    });
   });
 }

@@ -26,8 +26,9 @@ void main() {
   setUp(() async {
     mockPath = MockPathProvder();
     PathProviderPlatform.instance = mockPath;
-    // A per-test database name keeps this file from racing other persistence
-    // tests that run in parallel against the shared temp directory.
+    // A per-test database name keeps this file's isolate from clashing with
+    // other test-file isolates (which share the temp directory) and from the
+    // previous teardown that deletes a fixed file name.
     databaseName = 'search_test_${DateTime.now().microsecondsSinceEpoch}.sqlite';
     repository = SqliteRepository(databaseName: databaseName);
   });

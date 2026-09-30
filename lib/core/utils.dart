@@ -120,6 +120,25 @@ String? safeFile(String? s) {
   return s?.replaceAll(RegExp(r'[^\w\s\.]+'), '').trim();
 }
 
+/// Formats a playback position for display.
+///
+/// With [includeHours] the result always carries an hours part (`hh:mm:ss`);
+/// otherwise the hours part is omitted when it is zero (`mm:ss`). Shared by
+/// the search results and the bookmark views so the formats stay consistent.
+String formatPlaybackPosition(Duration position, {bool includeHours = false}) {
+  String twoDigits(int n) => n >= 10 ? '$n' : '0$n';
+
+  final hours = position.inHours;
+  final minutes = position.inMinutes.remainder(60);
+  final seconds = position.inSeconds.remainder(60);
+
+  if (includeHours || hours > 0) {
+    return '${twoDigits(hours)}:${twoDigits(minutes)}:${twoDigits(seconds)}';
+  }
+
+  return '${twoDigits(minutes)}:${twoDigits(seconds)}';
+}
+
 /// Normalizes [url] by collapsing multiple consecutive slashes in the path
 /// into a single slash.
 ///

@@ -589,7 +589,7 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
                 IconButton(
                   icon: Icon(
                     Icons.search,
-                    semanticLabel: _getSearchTooltip(context, pageIndex),
+                    semanticLabel: _getSearchTooltip(context, _getSearchMode(pageIndex)),
                   ),
                   onPressed: () async {
                     final mode = _getSearchMode(pageIndex);
@@ -646,16 +646,18 @@ class _AnytimeHomePageState extends State<AnytimeHomePage> with WidgetsBindingOb
     }
   }
 
-  String _getSearchTooltip(BuildContext context, int? pageIndex) {
-    switch (pageIndex) {
-      case 0:
+  /// The search tooltip for [mode]; derived from the mode so the tab-index
+  /// mapping lives in exactly one place ([_getSearchMode]).
+  String _getSearchTooltip(BuildContext context, SearchMode mode) {
+    switch (mode) {
+      case SearchMode.home:
         return L.of(context)!.search_episodes_tooltip;
-      case 1:
+      case SearchMode.discovery:
         return L.of(context)!.search_for_podcasts_hint;
-      case 2:
+      case SearchMode.my:
         return L.of(context)!.search_bookmarks_tooltip;
-      default:
-        return L.of(context)!.search_for_podcasts_hint;
+      case SearchMode.download:
+        return L.of(context)!.search_downloads_hint;
     }
   }
 }

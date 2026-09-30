@@ -1959,5 +1959,11 @@
     "placeholders": {
       "count": {}
     }
+  },
+  "search_failed_message": "Search failed. Please try again.",
+  "@search_failed_message": {
+    "description": "Error state when a local search fails",
+    "type": "text",
+    "placeholders": {}
   }
 }

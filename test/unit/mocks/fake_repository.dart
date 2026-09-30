@@ -14,11 +14,57 @@ class FakeRepository extends Fake implements Repository {
   final List<Bookmark> _bookmarks = [];
   int _nextId = 1;
 
+  /// Episodes returned by the search methods; add to it from tests.
+  final List<Episode> searchableEpisodes = [];
+
+  /// Downloaded episodes returned by [searchDownloads].
+  final List<Episode> searchableDownloads = [];
+
   @override
   Future<List<Bookmark>> findAllBookmarks() async {
     final sorted = List<Bookmark>.from(_bookmarks);
     sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return sorted;
+  }
+
+  /// The term passed to the most recent search, so tests can assert trimming.
+  String? lastSearchTerm;
+
+  /// When true every search method throws, so error handling can be tested.
+  bool failSearches = false;
+
+  @override
+  Future<List<Bookmark>> searchBookmarks(String term) async {
+    lastSearchTerm = term;
+
+    if (failSearches) throw Exception('search failed');
+
+    final needle = term.toLowerCase();
+
+    return _bookmarks
+        .where((b) =>
+            (b.episodeTitle ?? '').toLowerCase().contains(needle) ||
+            (b.podcastName ?? '').toLowerCase().contains(needle) ||
+            (b.note ?? '').toLowerCase().contains(needle))
+        .toList();
+  }
+
+  @override
+  Future<List<Episode>> searchEpisodes(String term) async {
+    lastSearchTerm = term;
+
+    if (failSearches) throw Exception('search failed');
+
+    return searchableEpisodes.where((e) => (e.title ?? '').toLowerCase().contains(term.toLowerCase())).toList();
+  }
+
+  @override
+  Future<List<Episode>> searchDownloads(String term) async {
+    lastSearchTerm = term;
+
+    if (failSearches) throw Exception('search failed');
+
+    return searchableDownloads.where((e) => (e.title ?? '').toLowerCase().contains(term.toLowerCase())).toList();
   }
 
   @override

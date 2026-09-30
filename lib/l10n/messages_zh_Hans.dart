@@ -259,6 +259,7 @@ class MessageLookup extends MessageLookupByLibrary {
         'search_episodes_hint': MessageLookupByLibrary.simpleMessage('搜索单集'),
         'search_episodes_label': MessageLookupByLibrary.simpleMessage('搜索单集'),
         'search_episodes_tooltip': MessageLookupByLibrary.simpleMessage('搜索单集'),
+        'search_failed_message': MessageLookupByLibrary.simpleMessage('搜索失败，请重试。'),
         'search_for_podcasts_hint': MessageLookupByLibrary.simpleMessage('搜索播客'),
         'search_podcasts_hint': MessageLookupByLibrary.simpleMessage('搜索播客'),
         'search_podcasts_tooltip': MessageLookupByLibrary.simpleMessage('搜索播客'),

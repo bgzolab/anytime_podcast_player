@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:anytime/bloc/bookmark/bookmark_bloc.dart';
+import 'package:anytime/core/utils.dart';
 import 'package:anytime/entities/bookmark.dart';
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/state/bloc_state.dart';
@@ -297,15 +298,6 @@ class _BookmarkTile extends StatelessWidget {
 
   const _BookmarkTile({required this.bookmark, required this.onDelete});
 
-  String _formatPosition(int positionMs) {
-    final duration = Duration(milliseconds: positionMs);
-    String twoDigits(int n) => n >= 10 ? '$n' : '0$n';
-    var h = twoDigits(duration.inHours.toInt());
-    var m = twoDigits(duration.inMinutes.remainder(60).toInt());
-    var s = twoDigits(duration.inSeconds.remainder(60).toInt());
-    return '$h:$m:$s';
-  }
-
   String _formatDate(BuildContext context, DateTime date) =>
       DateFormat.yMMMd(Localizations.localeOf(context).toLanguageTag()).format(date);
 
@@ -332,7 +324,7 @@ class _BookmarkTile extends StatelessWidget {
           dense: true,
           leading: Icon(Icons.access_time, size: 18.0, color: theme.colorScheme.primary),
           title: Text(
-            _formatPosition(bookmark.positionMs),
+            formatPlaybackPosition(Duration(milliseconds: bookmark.positionMs), includeHours: true),
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
               fontFeatures: const [FontFeature.tabularFigures()],
@@ -352,7 +344,9 @@ class _BookmarkTile extends StatelessWidget {
           ),
           trailing: IconButton(
             icon: const Icon(Icons.play_circle_outline, size: 22.0),
-            tooltip: L.of(context)!.bookmark_seek_label(_formatPosition(bookmark.positionMs)),
+            tooltip: L
+                .of(context)!
+                .bookmark_seek_label(formatPlaybackPosition(Duration(milliseconds: bookmark.positionMs), includeHours: true)),
             onPressed: () => openBookmark(context, bookmark),
           ),
           onTap: () => openBookmark(context, bookmark),

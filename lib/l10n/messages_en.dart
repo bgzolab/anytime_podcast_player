@@ -267,6 +267,7 @@ class MessageLookup extends MessageLookupByLibrary {
         'search_episodes_hint': MessageLookupByLibrary.simpleMessage('Search episodes'),
         'search_episodes_label': MessageLookupByLibrary.simpleMessage('Search episodes'),
         'search_episodes_tooltip': MessageLookupByLibrary.simpleMessage('Search episodes'),
+        'search_failed_message': MessageLookupByLibrary.simpleMessage('Search failed. Please try again.'),
         'search_for_podcasts_hint': MessageLookupByLibrary.simpleMessage('Search for podcasts'),
         'search_podcasts_hint': MessageLookupByLibrary.simpleMessage('Search podcasts'),
         'search_podcasts_tooltip': MessageLookupByLibrary.simpleMessage('Search podcasts'),

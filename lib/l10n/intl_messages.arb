@@ -1,5 +1,5 @@
 {
-  "@@last_modified": "2026-09-30T02:39:24.912774",
+  "@@last_modified": "2026-09-30T12:06:50.202063",
   "app_title": "Anytime Podcast Player",
   "@app_title": {
     "description": "Full title for the application",
@@ -33,6 +33,18 @@
   "timeline": "Timeline",
   "@timeline": {
     "description": "Timeline tab label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "home": "Home",
+  "@home": {
+    "description": "Home tab label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "my_tab": "My",
+  "@my_tab": {
+    "description": "My tab label",
     "type": "text",
     "placeholders": {}
   },
@@ -115,6 +127,72 @@
   "settings_bookmark_on_skip_previous_subtitle": "When off, the headphone previous button rewinds instead",
   "@settings_bookmark_on_skip_previous_subtitle": {
     "description": "Subtitle for headphone previous button setting",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_appearance_label": "Appearance",
+  "@settings_appearance_label": {
+    "description": "Settings label for appearance page",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_use_system_font": "Use system font",
+  "@settings_use_system_font": {
+    "description": "Setting to use system font instead of bundled font",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_use_system_font_subtitle": "Disable bundled Montserrat font and use the system default font",
+  "@settings_use_system_font_subtitle": {
+    "description": "Subtitle for system font setting",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme": "Color scheme",
+  "@settings_color_scheme": {
+    "description": "Settings label for color scheme picker",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_system": "System dynamic color",
+  "@settings_color_scheme_system": {
+    "description": "Color scheme option: system dynamic color",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_blue": "Blue",
+  "@settings_color_scheme_blue": {
+    "description": "Color scheme option: blue",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_green": "Green",
+  "@settings_color_scheme_green": {
+    "description": "Color scheme option: green",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_purple": "Purple",
+  "@settings_color_scheme_purple": {
+    "description": "Color scheme option: purple",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_orange": "Orange",
+  "@settings_color_scheme_orange": {
+    "description": "Color scheme option: orange",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_teal": "Teal",
+  "@settings_color_scheme_teal": {
+    "description": "Color scheme option: teal",
+    "type": "text",
+    "placeholders": {}
+  },
+  "settings_color_scheme_pink": "Pink",
+  "@settings_color_scheme_pink": {
+    "description": "Color scheme option: pink",
     "type": "text",
     "placeholders": {}
   },
@@ -373,6 +451,108 @@
   "about_label": "About",
   "@about_label": {
     "description": "About menu item",
+    "type": "text",
+    "placeholders": {}
+  },
+  "undo_label": "Undo",
+  "@undo_label": {
+    "description": "Undo action label",
+    "type": "text",
+    "placeholders": {}
+  },
+  "see_all": "See All",
+  "@see_all": {
+    "description": "See all podcasts label in recent podcasts strip",
+    "type": "text",
+    "placeholders": {}
+  },
+  "episode_hidden": "Episode hidden",
+  "@episode_hidden": {
+    "description": "Snackbar message when an episode is swiped to ignore",
+    "type": "text",
+    "placeholders": {}
+  },
+  "my_section_app": "App",
+  "@my_section_app": {
+    "description": "Section header for app settings on the My page",
+    "type": "text",
+    "placeholders": {}
+  },
+  "my_section_more": "More",
+  "@my_section_more": {
+    "description": "Section header for additional entries on the My page",
+    "type": "text",
+    "placeholders": {}
+  },
+  "podcast_not_subscribed": "Podcast not found in your library. Subscribe first.",
+  "@podcast_not_subscribed": {
+    "description": "Snackbar when opening a podcast that is not subscribed",
+    "type": "text",
+    "placeholders": {}
+  },
+  "like_tooltip": "Like",
+  "@like_tooltip": {
+    "description": "Tooltip for the like button",
+    "type": "text",
+    "placeholders": {}
+  },
+  "like_coming_soon": "Like — coming soon",
+  "@like_coming_soon": {
+    "description": "Snackbar shown by the placeholder like button",
+    "type": "text",
+    "placeholders": {}
+  },
+  "about_section_links": "Links",
+  "@about_section_links": {
+    "description": "About page section header for links",
+    "type": "text",
+    "placeholders": {}
+  },
+  "about_section_legal": "Legal",
+  "@about_section_legal": {
+    "description": "About page section header for legal entries",
+    "type": "text",
+    "placeholders": {}
+  },
+  "about_author_telegram": "Author Telegram",
+  "@about_author_telegram": {
+    "description": "About page link to the author on Telegram",
+    "type": "text",
+    "placeholders": {}
+  },
+  "about_check_updates": "Check for Updates",
+  "@about_check_updates": {
+    "description": "About page link to releases",
+    "type": "text",
+    "placeholders": {}
+  },
+  "about_view_licenses": "View Licenses",
+  "@about_view_licenses": {
+    "description": "About page entry showing open source licenses",
+    "type": "text",
+    "placeholders": {}
+  },
+  "about_open_source_licenses": "Open source licenses",
+  "@about_open_source_licenses": {
+    "description": "Subtitle for the licenses entry",
+    "type": "text",
+    "placeholders": {}
+  },
+  "my_listening_stats": "Listening Stats",
+  "@my_listening_stats": {
+    "description": "Placeholder entry on the My page",
+    "type": "text",
+    "placeholders": {}
+  },
+  "my_customize": "Customize",
+  "@my_customize": {
+    "description": "Placeholder entry on the My page",
+    "type": "text",
+    "placeholders": {}
+  },
+  "coming_soon": "Coming Soon",
+  "@coming_soon": {
+    "description": "Placeholder label for future features",
     "type": "text",
     "placeholders": {}
   },

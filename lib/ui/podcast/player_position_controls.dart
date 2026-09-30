@@ -2,171 +2,206 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:math' as math;
+
 import 'package:anytime/bloc/podcast/audio_bloc.dart';
-import 'package:anytime/l10n/L.dart';
 import 'package:anytime/services/audio/audio_player_service.dart';
-import 'package:anytime/ui/widgets/position_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-/// This class handles the rendering of the positional controls: the current playback
-/// time, time remaining and the time [Slider].
+/// Position controls with animated wavy progress bar and time labels.
 class PlayerPositionControls extends StatefulWidget {
-  const PlayerPositionControls({
-    super.key,
-  });
+  const PlayerPositionControls({super.key});
 
   @override
   State<PlayerPositionControls> createState() => _PlayerPositionControlsState();
 }
 
-class _PlayerPositionControlsState extends State<PlayerPositionControls> {
-  /// Current playback position
-  var currentPosition = 0;
-
-  /// Indicates the user is moving the position slide. We should ignore
-  /// position updates until the user releases the slide.
+class _PlayerPositionControlsState extends State<PlayerPositionControls> with SingleTickerProviderStateMixin {
   var dragging = false;
+  int currentPosition = 0;
+  int episodeLength = 0;
+  late AnimationController _waveController;
 
-  /// Seconds left of this episode.
-  var timeRemaining = 0;
+  @override
+  void initState() {
+    super.initState();
+    _waveController = AnimationController(vsync: this, duration: const Duration(seconds: 2));
+  }
 
-  /// The length of the episode in seconds.
-  var episodeLength = 0;
+  @override
+  void dispose() {
+    _waveController.dispose();
+    super.dispose();
+  }
+
+  void _toggleWave(AudioState state) {
+    if (state == AudioState.playing || state == AudioState.buffering) {
+      if (!_waveController.isAnimating) _waveController.repeat();
+    } else {
+      if (_waveController.isAnimating) _waveController.stop();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final audioBloc = Provider.of<AudioBloc>(context);
-    final screenReader = MediaQuery.accessibleNavigationOf(context);
 
-    return StreamBuilder<PositionState>(
-        stream: audioBloc.playPosition,
-        builder: (context, snapshot) {
-          var position = snapshot.hasData ? snapshot.data!.position.inSeconds : 0;
-          episodeLength = snapshot.hasData ? snapshot.data!.length.inSeconds : 0;
-          var divisions = episodeLength == 0 ? 1 : episodeLength;
+    return StreamBuilder<AudioState>(
+      stream: audioBloc.playingState,
+      builder: (context, stateSnapshot) {
+        _toggleWave(stateSnapshot.data ?? AudioState.stopped);
 
-          // If a screen reader is enabled, will make divisions ten seconds each.
-          if (screenReader) {
-            divisions = episodeLength ~/ 10;
-          }
+        return StreamBuilder<PositionState>(
+          stream: audioBloc.playPosition,
+          builder: (context, snapshot) {
+            var pos = snapshot.hasData ? snapshot.data!.position.inSeconds : 0;
+            episodeLength = snapshot.hasData ? snapshot.data!.length.inSeconds : 0;
+            if (!dragging) currentPosition = pos.clamp(0, episodeLength);
+            final progress = episodeLength > 0 ? currentPosition / episodeLength : 0.0;
 
-          if (!dragging) {
-            currentPosition = position;
-
-            if (currentPosition < 0) {
-              currentPosition = 0;
-            }
-
-            if (currentPosition > episodeLength) {
-              currentPosition = episodeLength;
-            }
-
-            timeRemaining = episodeLength - position;
-
-            if (timeRemaining < 0) {
-              timeRemaining = 0;
-            }
-          }
-
-          return Padding(
-            padding: const EdgeInsets.only(
-              left: 16.0,
-              right: 16.0,
-              top: 0.0,
-              bottom: 4.0,
-            ),
-            child: Row(
-              children: <Widget>[
-                FittedBox(
-                  child: Text(
-                    _formatDuration(Duration(seconds: currentPosition)),
-                    semanticsLabel:
-                        '${L.of(context)!.now_playing_episode_position} ${_formatDuration(Duration(seconds: currentPosition))}',
-                    style: const TextStyle(
-                      fontFeatures: [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: snapshot.hasData
-                      ? PositionSlider(
-                          label: _formatDuration(Duration(seconds: currentPosition)),
-                          onChanged: (value) {
-                            setState(() {
-                              _calculatePositions(value.toInt());
-
-                              // Normally, we only want to trigger a position change when the user has finished
-                              // sliding; however, with a screen reader enabled that will never trigger. Instead,
-                              // we'll use the 'normal' change event.
-                              if (screenReader) {
-                                return snapshot.data!.buffering ? null : audioBloc.transitionPosition(value);
-                              }
-                            });
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final w = constraints.maxWidth;
+                      return GestureDetector(
+                        onTapDown: (d) => _seek(w, d.localPosition.dx, audioBloc),
+                        onHorizontalDragUpdate: (d) {
+                          setState(() => dragging = true);
+                          if (w > 0 && episodeLength > 0) {
+                            currentPosition = (d.localPosition.dx / w * episodeLength).round().clamp(0, episodeLength);
+                          }
+                        },
+                        onHorizontalDragEnd: (_) {
+                          setState(() => dragging = false);
+                          if (episodeLength > 0) audioBloc.transitionPosition(currentPosition.toDouble());
+                        },
+                        child: AnimatedBuilder(
+                          animation: _waveController,
+                          builder: (context, _) {
+                            final animating = _waveController.isAnimating;
+                            return CustomPaint(
+                              size: Size(w, 24),
+                              painter: _WavyPainter(
+                                progress: progress,
+                                phase: animating ? _waveController.value * 2 * math.pi : 0,
+                                animating: animating,
+                                color: colorScheme.primary,
+                                bgColor: colorScheme.surfaceContainerHighest,
+                              ),
+                            );
                           },
-                          onChangeStart: (value) {
-                            if (!snapshot.data!.buffering) {
-                              setState(() {
-                                dragging = true;
-                                _calculatePositions(currentPosition);
-                              });
-                            }
-                          },
-                          onChangeEnd: (value) {
-                            setState(() {
-                              dragging = false;
-                            });
-
-                            return snapshot.data!.buffering ? null : audioBloc.transitionPosition(value);
-                          },
-                          value: currentPosition.toDouble(),
-                          min: 0.0,
-                          max: episodeLength.toDouble(),
-                          divisions: divisions,
-                          activeColor: theme.colorScheme.primary,
-                          semanticFormatterCallback: (double newValue) {
-                            return _formatDuration(Duration(seconds: currentPosition));
-                          })
-                      : Slider(
-                          onChanged: null,
-                          value: 0,
-                          min: 0.0,
-                          max: 1.0,
-                          activeColor: theme.colorScheme.primary,
                         ),
-                ),
-                FittedBox(
-                  child: Text(
-                    _formatDuration(Duration(seconds: timeRemaining)),
-                    textAlign: TextAlign.right,
-                    semanticsLabel:
-                        '${L.of(context)!.now_playing_episode_time_remaining} ${_formatDuration(Duration(seconds: timeRemaining))}',
-                    style: const TextStyle(
-                      fontFeatures: [FontFeature.tabularFigures()],
-                    ),
+                      );
+                    },
                   ),
-                ),
-              ],
-            ),
-          );
-        });
+                  const SizedBox(height: 2),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(_fmt(Duration(seconds: currentPosition)),
+                          style:
+                              theme.textTheme.bodySmall?.copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
+                      Text(_fmt(Duration(seconds: episodeLength - currentPosition)),
+                          style:
+                              theme.textTheme.bodySmall?.copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
-  void _calculatePositions(int p) {
-    currentPosition = p;
-    timeRemaining = episodeLength - p;
+  void _seek(double w, double dx, AudioBloc bloc) {
+    if (w > 0 && episodeLength > 0) {
+      bloc.transitionPosition((dx / w * episodeLength).round().clamp(0, episodeLength).toDouble());
+    }
   }
 
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) {
-      if (n >= 10) return '$n';
-      return '0$n';
+  String _fmt(Duration d) {
+    final m = (d.inMinutes.remainder(60)).toString().padLeft(2, '0');
+    final s = (d.inSeconds.remainder(60)).toString().padLeft(2, '0');
+    return '${d.inHours.toString().padLeft(2, '0')}:$m:$s';
+  }
+}
+
+class _WavyPainter extends CustomPainter {
+  final double progress;
+  final double phase;
+  final bool animating;
+  final Color color;
+  final Color bgColor;
+
+  _WavyPainter({
+    required this.progress,
+    required this.phase,
+    required this.animating,
+    required this.color,
+    required this.bgColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final h = size.height / 2;
+    final w = size.width;
+    final amp = animating ? 5.0 : 0.0;
+    const waveLen = 22.0;
+    const stroke = 3.0;
+
+    final bg = Paint()
+      ..color = bgColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round;
+
+    final fg = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round;
+
+    final split = w * progress;
+
+    // Background wave
+    final bgPath = Path();
+    for (double x = 0; x <= w; x += 1) {
+      final y = h + math.sin((x / waveLen) * 2 * math.pi + phase) * amp;
+      (x == 0 ? bgPath.moveTo : bgPath.lineTo)(x, y);
+    }
+    canvas.drawPath(bgPath, bg);
+
+    // Foreground wave
+    if (progress > 0.01) {
+      final fgPath = Path();
+      for (double x = 0; x <= split; x += 1) {
+        final y = h + math.sin((x / waveLen) * 2 * math.pi + phase) * amp;
+        (x == 0 ? fgPath.moveTo : fgPath.lineTo)(x, y);
+      }
+      canvas.drawPath(fgPath, fg);
     }
 
-    var twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60).toInt());
-    var twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60).toInt());
-
-    return '${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds';
+    // Dot
+    if (progress > 0 && progress < 1) {
+      final dotY = h + math.sin((split / waveLen) * 2 * math.pi + phase) * amp;
+      canvas.drawCircle(
+          Offset(split, dotY),
+          stroke * 1.5,
+          Paint()
+            ..color = color
+            ..style = PaintingStyle.fill);
+    }
   }
+
+  @override
+  bool shouldRepaint(_WavyPainter o) => o.progress != progress || o.phase != phase || o.animating != animating;
 }

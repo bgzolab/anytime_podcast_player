@@ -102,4 +102,12 @@ abstract class SettingsService {
   set bookmarkOnSkipPrevious(bool value);
 
   bool get bookmarkOnSkipPrevious;
+
+  set useSystemFont(bool value);
+
+  bool get useSystemFont;
+
+  set colorScheme(String value);
+
+  String get colorScheme;
 }

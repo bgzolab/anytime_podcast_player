@@ -6,7 +6,6 @@ import 'package:anytime/bloc/podcast/podcast_bloc.dart';
 import 'package:anytime/entities/podcast.dart';
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/state/bloc_state.dart';
-import 'package:anytime/ui/widgets/slider_handle.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -52,6 +51,7 @@ class _EpisodeSortSelectorWidgetState extends State<EpisodeSortSelectorWidget> {
                         ? () {
                             showModalBottomSheet<void>(
                                 barrierLabel: L.of(context)!.scrim_episode_sort_selector,
+                                showDragHandle: true,
                                 isScrollControlled: true,
                                 context: context,
                                 backgroundColor: theme.secondaryHeaderColor,
@@ -97,7 +97,6 @@ class _EpisodeSortSliderState extends State<EpisodeSortSlider> {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          const SliderHandle(),
           Semantics(
             header: true,
             child: Padding(

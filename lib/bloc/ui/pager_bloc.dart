@@ -6,6 +6,9 @@ import 'package:rxdart/rxdart.dart';
 
 /// This BLoC provides a sink and stream to set and listen for the current
 /// page/tab on a bottom navigation bar.
+///
+/// The app uses 3 tabs: 0=Home, 1=Discover, 2=My.
+/// The [initialPage] is clamped to 0-2 in AppSettings.
 class PagerBloc {
   final BehaviorSubject<int> page;
 

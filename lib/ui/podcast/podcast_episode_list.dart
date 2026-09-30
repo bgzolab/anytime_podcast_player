@@ -5,7 +5,7 @@
 import 'package:anytime/bloc/podcast/queue_bloc.dart';
 import 'package:anytime/entities/episode.dart';
 import 'package:anytime/state/queue_event_state.dart';
-import 'package:anytime/ui/widgets/episode_tile.dart';
+import 'package:anytime/ui/widgets/compact_episode_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -52,12 +52,15 @@ class PodcastEpisodeList extends StatelessWidget {
                   playing = playingGuid == episode.guid;
                 }
 
-                return EpisodeTile(
-                  episode: episode,
-                  download: download,
-                  play: play,
-                  playing: playing,
-                  queued: queued,
+                return Card(
+                  child: CompactEpisodeTile(
+                    episode: episode,
+                    download: download,
+                    play: play,
+                    playing: playing,
+                    queued: queued,
+                    showPodcastName: false,
+                  ),
                 );
               },
               itemCount: episodes!.length,
@@ -119,12 +122,15 @@ class AccessibleSliverList extends StatelessWidget {
 
     return accessibleNavigation
         ? SliverPrototypeExtentList.builder(
-            prototypeItem: EpisodeTile(
-              episode: episode,
-              download: true,
-              play: true,
-              playing: false,
-              queued: false,
+            prototypeItem: Card(
+              child: CompactEpisodeTile(
+                episode: episode,
+                download: true,
+                play: true,
+                playing: false,
+                queued: false,
+                showPodcastName: false,
+              ),
             ),
             addAutomaticKeepAlives: false,
             itemBuilder: itemBuilder,

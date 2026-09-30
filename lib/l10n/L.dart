@@ -117,6 +117,26 @@ class L {
         );
   }
 
+  String get home {
+    return message('home') ??
+        Intl.message(
+          'Home',
+          name: 'home',
+          desc: 'Home tab label',
+          locale: localeName,
+        );
+  }
+
+  String get my_tab {
+    return message('my_tab') ??
+        Intl.message(
+          'My',
+          name: 'my_tab',
+          desc: 'My tab label',
+          locale: localeName,
+        );
+  }
+
   String get no_episodes_message {
     return message('no_episodes_message') ??
         Intl.message(
@@ -246,6 +266,116 @@ class L {
           'When off, the headphone previous button rewinds instead',
           name: 'settings_bookmark_on_skip_previous_subtitle',
           desc: 'Subtitle for headphone previous button setting',
+          locale: localeName,
+        );
+  }
+
+  String get settings_appearance_label {
+    return message('settings_appearance_label') ??
+        Intl.message(
+          'Appearance',
+          name: 'settings_appearance_label',
+          desc: 'Settings label for appearance page',
+          locale: localeName,
+        );
+  }
+
+  String get settings_use_system_font {
+    return message('settings_use_system_font') ??
+        Intl.message(
+          'Use system font',
+          name: 'settings_use_system_font',
+          desc: 'Setting to use system font instead of bundled font',
+          locale: localeName,
+        );
+  }
+
+  String get settings_use_system_font_subtitle {
+    return message('settings_use_system_font_subtitle') ??
+        Intl.message(
+          'Disable bundled Montserrat font and use the system default font',
+          name: 'settings_use_system_font_subtitle',
+          desc: 'Subtitle for system font setting',
+          locale: localeName,
+        );
+  }
+
+  String get settings_color_scheme {
+    return message('settings_color_scheme') ??
+        Intl.message(
+          'Color scheme',
+          name: 'settings_color_scheme',
+          desc: 'Settings label for color scheme picker',
+          locale: localeName,
+        );
+  }
+
+  String get settings_color_scheme_system {
+    return message('settings_color_scheme_system') ??
+        Intl.message(
+          'System dynamic color',
+          name: 'settings_color_scheme_system',
+          desc: 'Color scheme option: system dynamic color',
+          locale: localeName,
+        );
+  }
+
+  String get settings_color_scheme_blue {
+    return message('settings_color_scheme_blue') ??
+        Intl.message(
+          'Blue',
+          name: 'settings_color_scheme_blue',
+          desc: 'Color scheme option: blue',
+          locale: localeName,
+        );
+  }
+
+  String get settings_color_scheme_green {
+    return message('settings_color_scheme_green') ??
+        Intl.message(
+          'Green',
+          name: 'settings_color_scheme_green',
+          desc: 'Color scheme option: green',
+          locale: localeName,
+        );
+  }
+
+  String get settings_color_scheme_purple {
+    return message('settings_color_scheme_purple') ??
+        Intl.message(
+          'Purple',
+          name: 'settings_color_scheme_purple',
+          desc: 'Color scheme option: purple',
+          locale: localeName,
+        );
+  }
+
+  String get settings_color_scheme_orange {
+    return message('settings_color_scheme_orange') ??
+        Intl.message(
+          'Orange',
+          name: 'settings_color_scheme_orange',
+          desc: 'Color scheme option: orange',
+          locale: localeName,
+        );
+  }
+
+  String get settings_color_scheme_teal {
+    return message('settings_color_scheme_teal') ??
+        Intl.message(
+          'Teal',
+          name: 'settings_color_scheme_teal',
+          desc: 'Color scheme option: teal',
+          locale: localeName,
+        );
+  }
+
+  String get settings_color_scheme_pink {
+    return message('settings_color_scheme_pink') ??
+        Intl.message(
+          'Pink',
+          name: 'settings_color_scheme_pink',
+          desc: 'Color scheme option: pink',
           locale: localeName,
         );
   }
@@ -677,6 +807,176 @@ class L {
           'About',
           name: 'about_label',
           desc: 'About menu item',
+          locale: localeName,
+        );
+  }
+
+  String get undo_label {
+    return message('undo_label') ??
+        Intl.message(
+          'Undo',
+          name: 'undo_label',
+          desc: 'Undo action label',
+          locale: localeName,
+        );
+  }
+
+  String get see_all {
+    return message('see_all') ??
+        Intl.message(
+          'See All',
+          name: 'see_all',
+          desc: 'See all podcasts label in recent podcasts strip',
+          locale: localeName,
+        );
+  }
+
+  String get episode_hidden {
+    return message('episode_hidden') ??
+        Intl.message(
+          'Episode hidden',
+          name: 'episode_hidden',
+          desc: 'Snackbar message when an episode is swiped to ignore',
+          locale: localeName,
+        );
+  }
+
+  String get my_section_app {
+    return message('my_section_app') ??
+        Intl.message(
+          'App',
+          name: 'my_section_app',
+          desc: 'Section header for app settings on the My page',
+          locale: localeName,
+        );
+  }
+
+  String get my_section_more {
+    return message('my_section_more') ??
+        Intl.message(
+          'More',
+          name: 'my_section_more',
+          desc: 'Section header for additional entries on the My page',
+          locale: localeName,
+        );
+  }
+
+  String get podcast_not_subscribed {
+    return message('podcast_not_subscribed') ??
+        Intl.message(
+          'Podcast not found in your library. Subscribe first.',
+          name: 'podcast_not_subscribed',
+          desc: 'Snackbar when opening a podcast that is not subscribed',
+          locale: localeName,
+        );
+  }
+
+  String get like_tooltip {
+    return message('like_tooltip') ??
+        Intl.message(
+          'Like',
+          name: 'like_tooltip',
+          desc: 'Tooltip for the like button',
+          locale: localeName,
+        );
+  }
+
+  String get like_coming_soon {
+    return message('like_coming_soon') ??
+        Intl.message(
+          'Like — coming soon',
+          name: 'like_coming_soon',
+          desc: 'Snackbar shown by the placeholder like button',
+          locale: localeName,
+        );
+  }
+
+  String get about_section_links {
+    return message('about_section_links') ??
+        Intl.message(
+          'Links',
+          name: 'about_section_links',
+          desc: 'About page section header for links',
+          locale: localeName,
+        );
+  }
+
+  String get about_section_legal {
+    return message('about_section_legal') ??
+        Intl.message(
+          'Legal',
+          name: 'about_section_legal',
+          desc: 'About page section header for legal entries',
+          locale: localeName,
+        );
+  }
+
+  String get about_author_telegram {
+    return message('about_author_telegram') ??
+        Intl.message(
+          'Author Telegram',
+          name: 'about_author_telegram',
+          desc: 'About page link to the author on Telegram',
+          locale: localeName,
+        );
+  }
+
+  String get about_check_updates {
+    return message('about_check_updates') ??
+        Intl.message(
+          'Check for Updates',
+          name: 'about_check_updates',
+          desc: 'About page link to releases',
+          locale: localeName,
+        );
+  }
+
+  String get about_view_licenses {
+    return message('about_view_licenses') ??
+        Intl.message(
+          'View Licenses',
+          name: 'about_view_licenses',
+          desc: 'About page entry showing open source licenses',
+          locale: localeName,
+        );
+  }
+
+  String get about_open_source_licenses {
+    return message('about_open_source_licenses') ??
+        Intl.message(
+          'Open source licenses',
+          name: 'about_open_source_licenses',
+          desc: 'Subtitle for the licenses entry',
+          locale: localeName,
+        );
+  }
+
+  String get my_listening_stats {
+    return message('my_listening_stats') ??
+        Intl.message(
+          'Listening Stats',
+          name: 'my_listening_stats',
+          desc: 'Placeholder entry on the My page',
+          locale: localeName,
+        );
+  }
+
+  String get my_customize {
+    return message('my_customize') ??
+        Intl.message(
+          'Customize',
+          name: 'my_customize',
+          desc: 'Placeholder entry on the My page',
+          locale: localeName,
+        );
+  }
+
+  String get coming_soon {
+    return message('coming_soon') ??
+        Intl.message(
+          'Coming Soon',
+          name: 'coming_soon',
+          desc: 'Placeholder label for future features',
           locale: localeName,
         );
   }

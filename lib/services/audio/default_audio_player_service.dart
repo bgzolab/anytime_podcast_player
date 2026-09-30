@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:anytime/core/environment.dart';
+import 'package:flutter/foundation.dart';
 import 'package:anytime/core/utils.dart';
 import 'package:anytime/entities/chapter.dart';
 import 'package:anytime/entities/downloadable.dart';
@@ -120,6 +121,7 @@ class DefaultAudioPlayerService extends AudioPlayerService {
           settings: settingsService,
           podcastService: podcastService,
           onSkipToPrevious: () async => await onSkipToPrevious?.call() ?? false,
+          onSkipToNext: () => skipToNext(),
         ),
         config: const AudioServiceConfig(
           androidResumeOnClick: true,
@@ -336,6 +338,37 @@ class DefaultAudioPlayerService extends AudioPlayerService {
     if (_audioUnavailable()) return;
 
     await _audioHandler.fastForward();
+  }
+
+  @override
+  Future<void> skipToNext() async {
+    if (_queue.isNotEmpty) {
+      if (_currentEpisode != null) {
+        _queue.add(_currentEpisode!);
+      }
+      _currentEpisode = null;
+      var ep = _queue.removeAt(0);
+      await _playNextEpisode(episode: ep);
+      _updateQueueState();
+    } else if (_nextEpisode != null) {
+      playEpisode(episode: _nextEpisode!);
+    }
+  }
+
+  @override
+  Future<void> skipToPrevious() async {
+    if (_queue.isNotEmpty) {
+      if (_currentEpisode != null) {
+        _queue.insert(0, _currentEpisode!);
+      }
+      _currentEpisode = null;
+      var ep = _queue.removeLast();
+      await _playNextEpisode(episode: ep);
+      _updateQueueState();
+    } else {
+      await seek(position: 0);
+      await play();
+    }
   }
 
   @override
@@ -1062,11 +1095,14 @@ class _DefaultAudioPlayerHandler extends BaseAudioHandler with SeekHandler {
 
   Future<bool> Function()? onSkipToPrevious;
 
+  VoidCallback? onSkipToNext;
+
   _DefaultAudioPlayerHandler({
     required this.repository,
     required this.settings,
     required this.podcastService,
     this.onSkipToPrevious,
+    this.onSkipToNext,
   }) {
     _initPlayer();
   }
@@ -1247,7 +1283,13 @@ class _DefaultAudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   }
 
   @override
-  Future<void> skipToNext() => fastForward();
+  Future<void> skipToNext() async {
+    if (onSkipToNext != null) {
+      onSkipToNext!();
+    } else {
+      await fastForward();
+    }
+  }
 
   @override
   Future<void> skipToPrevious() async {

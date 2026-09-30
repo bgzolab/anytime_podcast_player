@@ -7,7 +7,6 @@ import 'package:anytime/bloc/settings/settings_bloc.dart';
 import 'package:anytime/core/extensions.dart';
 import 'package:anytime/entities/app_settings.dart';
 import 'package:anytime/l10n/L.dart';
-import 'package:anytime/ui/widgets/slider_handle.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -53,6 +52,7 @@ class _SpeedSelectorWidgetState extends State<SpeedSelectorWidget> {
                 onTap: () {
                   showModalBottomSheet<void>(
                       context: context,
+                      showDragHandle: true,
                       backgroundColor: theme.secondaryHeaderColor,
                       barrierLabel: L.of(context)!.scrim_speed_selector,
                       shape: const RoundedRectangleBorder(
@@ -125,7 +125,6 @@ class _SpeedSliderState extends State<SpeedSlider> {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          const SliderHandle(),
           Padding(
             padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
             child: Text(

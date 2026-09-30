@@ -24,11 +24,35 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static m20(timestamp) => "跳转到 ${timestamp}";
 
+  static m0(days) => "${Intl.plural(days, one: '一天前', other: '${days}天前')}";
+
+  static m1(hours) => "${Intl.plural(hours, one: '一小时前', other: '${hours}小时前')}";
+
+  static m2(minutes) => "剩余${minutes}分钟";
+
+  static m3(minutes) => "${Intl.plural(minutes, one: '一分钟前', other: '${minutes}分钟前')}";
+
+  static m4(seconds) => "剩余${seconds}秒";
+
+  static m5(weeks) => "${Intl.plural(weeks, one: '一周前', other: '${weeks}周前')}";
+
+  static m6(days) => "${Intl.plural(days, one: '1天前', other: '${days}天前')}";
+
+  static m7(hours) => "${Intl.plural(hours, one: '1小时前', other: '${hours}小时前')}";
+
   static m8(minutes) => "剩余${minutes}分钟";
+
+  static m9(minutes) => "${Intl.plural(minutes, one: '1分钟前', other: '${minutes}分钟前')}";
 
   static m10(seconds) => "剩余${seconds}秒";
 
+  static m11(weeks) => "${Intl.plural(weeks, one: '1周前', other: '${weeks}周前')}";
+
   static m21(total) => "完成！已更新 ${total} 个来源";
+
+  static m12(episodes) => "${Intl.plural(episodes, one: '1 个新单集', other: '${episodes} 个新单集')}";
+
+  static m13(episodes) => "${Intl.plural(episodes, one: '1 个未播放单集', other: '${episodes} 个未播放单集')}";
 
   static m14(minutes) => "${minutes} 分钟";
 
@@ -46,7 +70,13 @@ class MessageLookup extends MessageLookupByLibrary {
   final Map<String, dynamic> messages = _notInlinedMessages(_notInlinedMessages);
 
   static Map<String, dynamic> _notInlinedMessages(_) => {
+        'about_author_telegram': MessageLookupByLibrary.simpleMessage('作者 Telegram'),
+        'about_check_updates': MessageLookupByLibrary.simpleMessage('检查更新'),
         'about_label': MessageLookupByLibrary.simpleMessage('关于'),
+        'about_open_source_licenses': MessageLookupByLibrary.simpleMessage('开源许可'),
+        'about_section_legal': MessageLookupByLibrary.simpleMessage('法律信息'),
+        'about_section_links': MessageLookupByLibrary.simpleMessage('链接'),
+        'about_view_licenses': MessageLookupByLibrary.simpleMessage('查看开源许可'),
         'add_rss_feed_option': MessageLookupByLibrary.simpleMessage('添加 RSS Feed'),
         'alert_sync_title_body': MessageLookupByLibrary.simpleMessage('Anytime 正在更新您的播客库'),
         'alert_sync_title_label': MessageLookupByLibrary.simpleMessage('播客库更新'),
@@ -71,6 +101,7 @@ class MessageLookup extends MessageLookupByLibrary {
         'clear_queue_button_label': MessageLookupByLibrary.simpleMessage('清空队列'),
         'clear_search_button_label': MessageLookupByLibrary.simpleMessage('清空搜索文本'),
         'close_button_label': MessageLookupByLibrary.simpleMessage('关闭'),
+        'coming_soon': MessageLookupByLibrary.simpleMessage('即将推出'),
         'consent_message':
             MessageLookupByLibrary.simpleMessage('此资助链接将带您前往外部网站，您可以直接在该网站上支持本节目。链接由播客作者提供，不受 Anytime 控制。'),
         'continue_button_label': MessageLookupByLibrary.simpleMessage('继续'),
@@ -96,22 +127,34 @@ class MessageLookup extends MessageLookupByLibrary {
         'episode_filter_semantic_label': MessageLookupByLibrary.simpleMessage('单集筛选'),
         'episode_filter_started_label': MessageLookupByLibrary.simpleMessage('已开始'),
         'episode_filter_unplayed_label': MessageLookupByLibrary.simpleMessage('未播放'),
+        'episode_hidden': MessageLookupByLibrary.simpleMessage('已隐藏'),
         'episode_label': MessageLookupByLibrary.simpleMessage('单集'),
+        'episode_semantic_time_days_ago': m0,
+        'episode_semantic_time_hours_ago': m1,
+        'episode_semantic_time_minute_remaining': m2,
+        'episode_semantic_time_minutes_ago': m3,
+        'episode_semantic_time_second_remaining': m4,
+        'episode_semantic_time_weeks_ago': m5,
         'episode_sort_alphabetical_ascending_label': MessageLookupByLibrary.simpleMessage('字母 A-Z'),
         'episode_sort_alphabetical_descending_label': MessageLookupByLibrary.simpleMessage('字母 Z-A'),
         'episode_sort_earliest_first_label': MessageLookupByLibrary.simpleMessage('最早优先'),
         'episode_sort_latest_first_label': MessageLookupByLibrary.simpleMessage('最新优先'),
         'episode_sort_none_label': MessageLookupByLibrary.simpleMessage('默认'),
         'episode_sort_semantic_label': MessageLookupByLibrary.simpleMessage('单集排序'),
+        'episode_time_days_ago': m6,
+        'episode_time_hours_ago': m7,
         'episode_time_minute_remaining': m8,
+        'episode_time_minutes_ago': m9,
         'episode_time_now': MessageLookupByLibrary.simpleMessage('刚刚'),
         'episode_time_second_remaining': m10,
+        'episode_time_weeks_ago': m11,
         'error_no_connection': MessageLookupByLibrary.simpleMessage('无法播放该单集。请检查您的连接并重试。'),
         'error_playback_fail': MessageLookupByLibrary.simpleMessage('播放过程中出现意外错误。请检查您的连接并重试。'),
         'fast_forward_button_label': MessageLookupByLibrary.simpleMessage('单集快进 30 秒'),
         'feedback_menu_item_label': MessageLookupByLibrary.simpleMessage('反馈'),
         'go_back_button_label': MessageLookupByLibrary.simpleMessage('返回'),
         'hide_played_episodes_tooltip': MessageLookupByLibrary.simpleMessage('隐藏已播放的单集'),
+        'home': MessageLookupByLibrary.simpleMessage('首页'),
         'jump_to_date_tooltip': MessageLookupByLibrary.simpleMessage('跳转到时间线中的日期'),
         'label_episode_actions': MessageLookupByLibrary.simpleMessage('单集操作'),
         'label_megabytes': MessageLookupByLibrary.simpleMessage('兆字节'),
@@ -133,12 +176,19 @@ class MessageLookup extends MessageLookupByLibrary {
         'library_sort_date_followed_label': MessageLookupByLibrary.simpleMessage('关注时间'),
         'library_sort_latest_episodes_label': MessageLookupByLibrary.simpleMessage('最新单集'),
         'library_sort_unplayed_count_label': MessageLookupByLibrary.simpleMessage('未播放单集数'),
+        'like_coming_soon': MessageLookupByLibrary.simpleMessage('喜欢功能即将推出'),
+        'like_tooltip': MessageLookupByLibrary.simpleMessage('喜欢'),
         'mark_episodes_not_played_label': MessageLookupByLibrary.simpleMessage('标记全部单集为未听'),
         'mark_episodes_played_label': MessageLookupByLibrary.simpleMessage('标记全部单集为已听'),
         'mark_played_label': MessageLookupByLibrary.simpleMessage('标为已听'),
         'mark_unplayed_label': MessageLookupByLibrary.simpleMessage('标为未听'),
         'minimise_player_window_button_label': MessageLookupByLibrary.simpleMessage('最小化播放器窗口'),
         'more_label': MessageLookupByLibrary.simpleMessage('更多'),
+        'my_customize': MessageLookupByLibrary.simpleMessage('自定义'),
+        'my_listening_stats': MessageLookupByLibrary.simpleMessage('收听统计'),
+        'my_section_app': MessageLookupByLibrary.simpleMessage('应用'),
+        'my_section_more': MessageLookupByLibrary.simpleMessage('更多'),
+        'my_tab': MessageLookupByLibrary.simpleMessage('我的'),
         'new_episodes_label': MessageLookupByLibrary.simpleMessage('有新单集上线'),
         'new_episodes_view_now_label': MessageLookupByLibrary.simpleMessage('立即查看'),
         'no_bookmarks_found': MessageLookupByLibrary.simpleMessage('未找到书签'),
@@ -172,6 +222,7 @@ class MessageLookup extends MessageLookupByLibrary {
         'podcast_context_queue_latest_episode_label': MessageLookupByLibrary.simpleMessage('将最新单集添加到队列'),
         'podcast_context_queue_next_episode_label': MessageLookupByLibrary.simpleMessage('将下一集未播放的单集添加到队列'),
         'podcast_funding_dialog_header': MessageLookupByLibrary.simpleMessage('播客赞助'),
+        'podcast_not_subscribed': MessageLookupByLibrary.simpleMessage('未在订阅库中找到该播客，请先订阅。'),
         'podcast_options_overflow_menu_semantic_label': MessageLookupByLibrary.simpleMessage('选项菜单'),
         'queue_add_label': MessageLookupByLibrary.simpleMessage('添加'),
         'queue_clear_button_label': MessageLookupByLibrary.simpleMessage('清除'),
@@ -206,14 +257,17 @@ class MessageLookup extends MessageLookupByLibrary {
         'search_podcasts_tooltip': MessageLookupByLibrary.simpleMessage('搜索播客'),
         'search_provider_label': MessageLookupByLibrary.simpleMessage('搜索提供方'),
         'search_transcript_label': MessageLookupByLibrary.simpleMessage('搜索转写'),
+        'see_all': MessageLookupByLibrary.simpleMessage('查看全部'),
         'semantic_announce_loading': MessageLookupByLibrary.simpleMessage('加载中，请稍候。'),
         'semantic_announce_searching': MessageLookupByLibrary.simpleMessage('正在搜索，请稍候。'),
         'semantic_chapter_link_label': MessageLookupByLibrary.simpleMessage('章节网页链接'),
         'semantic_current_chapter_label': MessageLookupByLibrary.simpleMessage('当前章节'),
         'semantic_current_value_label': MessageLookupByLibrary.simpleMessage('当前值'),
+        'semantic_new_episodes_count': m12,
         'semantic_playing_options_collapse_label': MessageLookupByLibrary.simpleMessage('关闭播放选项滑块'),
         'semantic_playing_options_expand_label': MessageLookupByLibrary.simpleMessage('打开播放选项滑块'),
         'semantic_podcast_artwork_label': MessageLookupByLibrary.simpleMessage('播客封面'),
+        'semantic_unplayed_episodes_count': m13,
         'semantics_add_to_queue': MessageLookupByLibrary.simpleMessage('添加单集到队列'),
         'semantics_collapse_podcast_description': MessageLookupByLibrary.simpleMessage('收起播客描述'),
         'semantics_decrease_playback_speed': MessageLookupByLibrary.simpleMessage('降低播放速度'),
@@ -233,6 +287,7 @@ class MessageLookup extends MessageLookupByLibrary {
         'semantics_play_pause_toggle': MessageLookupByLibrary.simpleMessage('播放与暂停开关'),
         'semantics_podcast_details_header': MessageLookupByLibrary.simpleMessage('播客详情和单集页面'),
         'semantics_remove_from_queue': MessageLookupByLibrary.simpleMessage('从队列移除单集'),
+        'settings_appearance_label': MessageLookupByLibrary.simpleMessage('外观'),
         'settings_auto_open_now_playing': MessageLookupByLibrary.simpleMessage('单集开始时的开启全屏模式'),
         'settings_auto_update_episodes': MessageLookupByLibrary.simpleMessage('自动更新节目单'),
         'settings_auto_update_episodes_10min': MessageLookupByLibrary.simpleMessage('距离上次更新已 10 分钟'),
@@ -253,6 +308,14 @@ class MessageLookup extends MessageLookupByLibrary {
         'settings_background_refresh_option_subtitle': MessageLookupByLibrary.simpleMessage('在屏幕关闭时刷新单集。这会增加电池消耗。'),
         'settings_bookmark_on_skip_previous': MessageLookupByLibrary.simpleMessage('耳机上一曲按钮创建书签'),
         'settings_bookmark_on_skip_previous_subtitle': MessageLookupByLibrary.simpleMessage('关闭时，耳机上一曲按钮将改为倒退'),
+        'settings_color_scheme': MessageLookupByLibrary.simpleMessage('主题色'),
+        'settings_color_scheme_blue': MessageLookupByLibrary.simpleMessage('蓝色'),
+        'settings_color_scheme_green': MessageLookupByLibrary.simpleMessage('绿色'),
+        'settings_color_scheme_orange': MessageLookupByLibrary.simpleMessage('橙色'),
+        'settings_color_scheme_pink': MessageLookupByLibrary.simpleMessage('粉色'),
+        'settings_color_scheme_purple': MessageLookupByLibrary.simpleMessage('紫色'),
+        'settings_color_scheme_system': MessageLookupByLibrary.simpleMessage('跟随系统'),
+        'settings_color_scheme_teal': MessageLookupByLibrary.simpleMessage('青色'),
         'settings_continuous_play_option': MessageLookupByLibrary.simpleMessage('连续播放'),
         'settings_continuous_play_subtitle': MessageLookupByLibrary.simpleMessage('当队列为空时，自动播放该播客的下一集'),
         'settings_data_divider_label': MessageLookupByLibrary.simpleMessage('数据'),
@@ -278,6 +341,8 @@ class MessageLookup extends MessageLookupByLibrary {
         'settings_theme_value_auto': MessageLookupByLibrary.simpleMessage('系统主题'),
         'settings_theme_value_dark': MessageLookupByLibrary.simpleMessage('深色主题'),
         'settings_theme_value_light': MessageLookupByLibrary.simpleMessage('浅色主题'),
+        'settings_use_system_font': MessageLookupByLibrary.simpleMessage('使用系统字体'),
+        'settings_use_system_font_subtitle': MessageLookupByLibrary.simpleMessage('关闭后使用应用内置字体'),
         'share_episode_option_label': MessageLookupByLibrary.simpleMessage('分享单集'),
         'share_podcast_option_label': MessageLookupByLibrary.simpleMessage('分享播客'),
         'show_notes_label': MessageLookupByLibrary.simpleMessage('节目笔记'),
@@ -308,6 +373,7 @@ class MessageLookup extends MessageLookupByLibrary {
         'transcript_why_not_label': MessageLookupByLibrary.simpleMessage('为什么没有？'),
         'transcript_why_not_url':
             MessageLookupByLibrary.simpleMessage('https://anytimeplayer.app/docs/anytime_transcript_support_en.html'),
+        'undo_label': MessageLookupByLibrary.simpleMessage('撤销'),
         'unknown_episode': MessageLookupByLibrary.simpleMessage('未知单集'),
         'unknown_podcast': MessageLookupByLibrary.simpleMessage('未知播客'),
         'unsubscribe_button_label': MessageLookupByLibrary.simpleMessage('取消关注'),

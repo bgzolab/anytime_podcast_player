@@ -68,13 +68,21 @@ class AppSettings {
   /// True if showing a status icon in the notification bar during fetch is enabled
   final bool updatesNotification;
 
-  /// The default tab shown on app start
-  /// (0=Timeline, 1=Library, 2=Discover, 3=Downloads, 4=Bookmarks).
+  /// The default tab shown on app start (0=Home, 1=Discover, 2=My).
+  /// Auto-clamped to 0-2 range for backward compatibility with old 5-tab settings.
   final int defaultTab;
 
   /// If true, the headphone "previous track" button creates a bookmark
   /// instead of rewinding.
   final bool bookmarkOnSkipPrevious;
+
+  /// If true, the app uses the system default font instead of the bundled
+  /// Montserrat font.
+  final bool useSystemFont;
+
+  /// The color scheme key: 'system' for dynamic colors, or a preset key
+  /// like 'blue', 'green', 'purple', 'orange', 'teal', 'pink'.
+  final String colorScheme;
 
   AppSettings({
     required this.theme,
@@ -98,9 +106,11 @@ class AppSettings {
     required this.backgroundUpdate,
     required this.backgroundUpdateMobileData,
     required this.updatesNotification,
-    required this.defaultTab,
+    required int defaultTab,
     required this.bookmarkOnSkipPrevious,
-  });
+    required this.useSystemFont,
+    required this.colorScheme,
+  }) : defaultTab = defaultTab.clamp(0, 2);
 
   AppSettings.sensibleDefaults()
       : theme = 'dark',
@@ -125,7 +135,9 @@ class AppSettings {
         backgroundUpdateMobileData = false,
         updatesNotification = false,
         defaultTab = 0,
-        bookmarkOnSkipPrevious = false;
+        bookmarkOnSkipPrevious = false,
+        useSystemFont = false,
+        colorScheme = 'system';
 
   AppSettings copyWith({
     String? theme,
@@ -152,6 +164,8 @@ class AppSettings {
     bool? updatesNotification,
     int? defaultTab,
     bool? bookmarkOnSkipPrevious,
+    bool? useSystemFont,
+    String? colorScheme,
   }) =>
       AppSettings(
         theme: theme ?? this.theme,
@@ -177,5 +191,7 @@ class AppSettings {
         updatesNotification: updatesNotification ?? this.updatesNotification,
         defaultTab: defaultTab ?? this.defaultTab,
         bookmarkOnSkipPrevious: bookmarkOnSkipPrevious ?? this.bookmarkOnSkipPrevious,
+        useSystemFont: useSystemFont ?? this.useSystemFont,
+        colorScheme: colorScheme ?? this.colorScheme,
       );
 }

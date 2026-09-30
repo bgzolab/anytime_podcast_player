@@ -7,7 +7,6 @@ import 'package:anytime/bloc/settings/settings_bloc.dart';
 import 'package:anytime/entities/app_settings.dart';
 import 'package:anytime/entities/sleep.dart';
 import 'package:anytime/l10n/L.dart';
-import 'package:anytime/ui/widgets/slider_handle.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -80,6 +79,7 @@ class _SleepSelectorWidgetState extends State<SleepSelectorWidget> {
                             showModalBottomSheet<void>(
                                 isScrollControlled: true,
                                 context: context,
+                                showDragHandle: true,
                                 backgroundColor: theme.secondaryHeaderColor,
                                 barrierLabel: L.of(context)!.scrim_sleep_timer_selector,
                                 shape: const RoundedRectangleBorder(
@@ -138,7 +138,6 @@ class _SleepSliderState extends State<SleepSlider> {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                const SliderHandle(),
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
                   child: Semantics(
@@ -266,36 +265,35 @@ class SleepSelectorEntry extends StatelessWidget {
 
         Navigator.pop(context);
       },
-      child: Padding(
-        padding: const EdgeInsets.only(
-          top: 4.0,
-          bottom: 4.0,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            if (sleep.type == SleepType.none)
-              Text(
-                L.of(context)!.sleep_off_label,
-                style: theme.textTheme.bodyLarge,
-              ),
-            if (sleep.type == SleepType.time)
-              Text(
-                L.of(context)!.sleep_minute_label(sleep.duration.inMinutes.toString()),
-                style: theme.textTheme.bodyLarge,
-              ),
-            if (sleep.type == SleepType.episode)
-              Text(
-                L.of(context)!.sleep_episode_label,
-                style: theme.textTheme.bodyLarge,
-              ),
-            if (sleep == current)
-              const Icon(
-                Icons.check,
-                size: 18.0,
-              ),
-          ],
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              if (sleep.type == SleepType.none)
+                Text(
+                  L.of(context)!.sleep_off_label,
+                  style: theme.textTheme.bodyLarge,
+                ),
+              if (sleep.type == SleepType.time)
+                Text(
+                  L.of(context)!.sleep_minute_label(sleep.duration.inMinutes.toString()),
+                  style: theme.textTheme.bodyLarge,
+                ),
+              if (sleep.type == SleepType.episode)
+                Text(
+                  L.of(context)!.sleep_episode_label,
+                  style: theme.textTheme.bodyLarge,
+                ),
+              if (sleep == current)
+                const Icon(
+                  Icons.check,
+                  size: 18.0,
+                ),
+            ],
+          ),
         ),
       ),
     );

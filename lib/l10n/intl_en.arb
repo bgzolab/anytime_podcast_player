@@ -1859,5 +1859,83 @@
     "description": "Color scheme option: pink",
     "type": "text",
     "placeholders": {}
+  },
+  "my_section_app": "App",
+  "@my_section_app": {
+    "description": "Section header for app settings on the My page",
+    "type": "text",
+    "placeholders": {}
+  },
+  "my_section_more": "More",
+  "@my_section_more": {
+    "description": "Section header for additional entries on the My page",
+    "type": "text",
+    "placeholders": {}
+  },
+  "podcast_not_subscribed": "Podcast not found in your library. Subscribe first.",
+  "@podcast_not_subscribed": {
+    "description": "Snackbar when opening a podcast that is not subscribed",
+    "type": "text",
+    "placeholders": {}
+  },
+  "like_tooltip": "Like",
+  "@like_tooltip": {
+    "description": "Tooltip for the like button",
+    "type": "text",
+    "placeholders": {}
+  },
+  "like_coming_soon": "Like — coming soon",
+  "@like_coming_soon": {
+    "description": "Snackbar shown by the placeholder like button",
+    "type": "text",
+    "placeholders": {}
+  },
+  "about_section_links": "Links",
+  "@about_section_links": {
+    "description": "About page section header for links",
+    "type": "text",
+    "placeholders": {}
+  },
+  "about_section_legal": "Legal",
+  "@about_section_legal": {
+    "description": "About page section header for legal entries",
+    "type": "text",
+    "placeholders": {}
+  },
+  "about_author_telegram": "Author Telegram",
+  "@about_author_telegram": {
+    "description": "About page link to the author on Telegram",
+    "type": "text",
+    "placeholders": {}
+  },
+  "about_check_updates": "Check for Updates",
+  "@about_check_updates": {
+    "description": "About page link to releases",
+    "type": "text",
+    "placeholders": {}
+  },
+  "about_view_licenses": "View Licenses",
+  "@about_view_licenses": {
+    "description": "About page entry showing open source licenses",
+    "type": "text",
+    "placeholders": {}
+  },
+  "about_open_source_licenses": "Open source licenses",
+  "@about_open_source_licenses": {
+    "description": "Subtitle for the licenses entry",
+    "type": "text",
+    "placeholders": {}
+  },
+  "my_listening_stats": "Listening Stats",
+  "@my_listening_stats": {
+    "description": "Placeholder entry on the My page",
+    "type": "text",
+    "placeholders": {}
+  },
+  "my_customize": "Customize",
+  "@my_customize": {
+    "description": "Placeholder entry on the My page",
+    "type": "text",
+    "placeholders": {}
   }
 }

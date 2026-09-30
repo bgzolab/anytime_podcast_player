@@ -841,6 +841,136 @@ class L {
         );
   }
 
+  String get my_section_app {
+    return message('my_section_app') ??
+        Intl.message(
+          'App',
+          name: 'my_section_app',
+          desc: 'Section header for app settings on the My page',
+          locale: localeName,
+        );
+  }
+
+  String get my_section_more {
+    return message('my_section_more') ??
+        Intl.message(
+          'More',
+          name: 'my_section_more',
+          desc: 'Section header for additional entries on the My page',
+          locale: localeName,
+        );
+  }
+
+  String get podcast_not_subscribed {
+    return message('podcast_not_subscribed') ??
+        Intl.message(
+          'Podcast not found in your library. Subscribe first.',
+          name: 'podcast_not_subscribed',
+          desc: 'Snackbar when opening a podcast that is not subscribed',
+          locale: localeName,
+        );
+  }
+
+  String get like_tooltip {
+    return message('like_tooltip') ??
+        Intl.message(
+          'Like',
+          name: 'like_tooltip',
+          desc: 'Tooltip for the like button',
+          locale: localeName,
+        );
+  }
+
+  String get like_coming_soon {
+    return message('like_coming_soon') ??
+        Intl.message(
+          'Like — coming soon',
+          name: 'like_coming_soon',
+          desc: 'Snackbar shown by the placeholder like button',
+          locale: localeName,
+        );
+  }
+
+  String get about_section_links {
+    return message('about_section_links') ??
+        Intl.message(
+          'Links',
+          name: 'about_section_links',
+          desc: 'About page section header for links',
+          locale: localeName,
+        );
+  }
+
+  String get about_section_legal {
+    return message('about_section_legal') ??
+        Intl.message(
+          'Legal',
+          name: 'about_section_legal',
+          desc: 'About page section header for legal entries',
+          locale: localeName,
+        );
+  }
+
+  String get about_author_telegram {
+    return message('about_author_telegram') ??
+        Intl.message(
+          'Author Telegram',
+          name: 'about_author_telegram',
+          desc: 'About page link to the author on Telegram',
+          locale: localeName,
+        );
+  }
+
+  String get about_check_updates {
+    return message('about_check_updates') ??
+        Intl.message(
+          'Check for Updates',
+          name: 'about_check_updates',
+          desc: 'About page link to releases',
+          locale: localeName,
+        );
+  }
+
+  String get about_view_licenses {
+    return message('about_view_licenses') ??
+        Intl.message(
+          'View Licenses',
+          name: 'about_view_licenses',
+          desc: 'About page entry showing open source licenses',
+          locale: localeName,
+        );
+  }
+
+  String get about_open_source_licenses {
+    return message('about_open_source_licenses') ??
+        Intl.message(
+          'Open source licenses',
+          name: 'about_open_source_licenses',
+          desc: 'Subtitle for the licenses entry',
+          locale: localeName,
+        );
+  }
+
+  String get my_listening_stats {
+    return message('my_listening_stats') ??
+        Intl.message(
+          'Listening Stats',
+          name: 'my_listening_stats',
+          desc: 'Placeholder entry on the My page',
+          locale: localeName,
+        );
+  }
+
+  String get my_customize {
+    return message('my_customize') ??
+        Intl.message(
+          'Customize',
+          name: 'my_customize',
+          desc: 'Placeholder entry on the My page',
+          locale: localeName,
+        );
+  }
+
   String get coming_soon {
     return message('coming_soon') ??
         Intl.message(

@@ -46,7 +46,7 @@ class AboutPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32),
-          _buildSectionHeader(context, 'Links'),
+          _buildSectionHeader(context, L.of(context)!.about_section_links),
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
             shape: tileShape,
@@ -61,14 +61,14 @@ class AboutPage extends StatelessWidget {
                 ),
                 _LinkTile(
                   icon: Icons.send,
-                  title: 'Author Telegram',
+                  title: L.of(context)!.about_author_telegram,
                   subtitle: '@imbgzo',
                   url: 'https://t.me/imbgzo',
                   tileShape: tileShape,
                 ),
                 _LinkTile(
                   icon: Icons.update,
-                  title: 'Check for Updates',
+                  title: L.of(context)!.about_check_updates,
                   subtitle: 'GitHub Releases',
                   url: 'https://github.com/bgzo-sandbox/anytime_podcast_player/releases',
                   tileShape: tileShape,
@@ -78,7 +78,7 @@ class AboutPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          _buildSectionHeader(context, 'Legal'),
+          _buildSectionHeader(context, L.of(context)!.about_section_legal),
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
             shape: tileShape,
@@ -86,8 +86,8 @@ class AboutPage extends StatelessWidget {
               children: [
                 _LinkTile(
                   icon: Icons.description_outlined,
-                  title: 'View Licenses',
-                  subtitle: 'Open source licenses',
+                  title: L.of(context)!.about_view_licenses,
+                  subtitle: L.of(context)!.about_open_source_licenses,
                   url: '',
                   tileShape: tileShape,
                   isLast: true,

@@ -74,7 +74,7 @@ class _MyPageState extends State<MyPage> {
     return ListView(
       children: [
         _buildHeader(context),
-        _buildSectionHeader(context, 'Library'),
+        _buildSectionHeader(context, L.of(context)!.library),
         Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
           child: Column(
@@ -130,7 +130,7 @@ class _MyPageState extends State<MyPage> {
             ],
           ),
         ),
-        _buildSectionHeader(context, 'App'),
+        _buildSectionHeader(context, L.of(context)!.my_section_app),
         Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
           child: Column(
@@ -166,19 +166,19 @@ class _MyPageState extends State<MyPage> {
             ],
           ),
         ),
-        _buildSectionHeader(context, 'More'),
+        _buildSectionHeader(context, L.of(context)!.my_section_more),
         Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
           child: Column(
             children: [
-              const _MenuTile(
+              _MenuTile(
                 icon: Icons.bar_chart_outlined,
-                title: 'Listening Stats',
+                title: L.of(context)!.my_listening_stats,
                 enabled: false,
               ),
-              const _MenuTile(
+              _MenuTile(
                 icon: Icons.tune_outlined,
-                title: 'Customize',
+                title: L.of(context)!.my_customize,
                 enabled: false,
               ),
             ],

@@ -322,7 +322,7 @@ class NowPlayingEpisode extends StatelessWidget {
     if (match == null) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Podcast not found in your library. Subscribe first.')),
+          SnackBar(content: Text(L.of(context)!.podcast_not_subscribed)),
         );
       }
       return;

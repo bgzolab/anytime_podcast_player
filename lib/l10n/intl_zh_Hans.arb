@@ -1836,5 +1836,83 @@
     "placeholders": {
       "episodes": {}
     }
+  },
+  "my_section_app": "应用",
+  "my_section_more": "更多",
+  "@my_section_app": {
+    "description": "Section header for app settings on the My page",
+    "type": "text",
+    "placeholders": {}
+  },
+  "@my_section_more": {
+    "description": "Section header for additional entries on the My page",
+    "type": "text",
+    "placeholders": {}
+  },
+  "podcast_not_subscribed": "未在订阅库中找到该播客，请先订阅。",
+  "@podcast_not_subscribed": {
+    "description": "Snackbar when opening a podcast that is not subscribed",
+    "type": "text",
+    "placeholders": {}
+  },
+  "like_tooltip": "喜欢",
+  "@like_tooltip": {
+    "description": "Tooltip for the like button",
+    "type": "text",
+    "placeholders": {}
+  },
+  "like_coming_soon": "喜欢功能即将推出",
+  "@like_coming_soon": {
+    "description": "Snackbar shown by the placeholder like button",
+    "type": "text",
+    "placeholders": {}
+  },
+  "about_section_links": "链接",
+  "@about_section_links": {
+    "description": "About page section header for links",
+    "type": "text",
+    "placeholders": {}
+  },
+  "about_section_legal": "法律信息",
+  "@about_section_legal": {
+    "description": "About page section header for legal entries",
+    "type": "text",
+    "placeholders": {}
+  },
+  "about_author_telegram": "作者 Telegram",
+  "@about_author_telegram": {
+    "description": "About page link to the author on Telegram",
+    "type": "text",
+    "placeholders": {}
+  },
+  "about_check_updates": "检查更新",
+  "@about_check_updates": {
+    "description": "About page link to releases",
+    "type": "text",
+    "placeholders": {}
+  },
+  "about_view_licenses": "查看开源许可",
+  "@about_view_licenses": {
+    "description": "About page entry showing open source licenses",
+    "type": "text",
+    "placeholders": {}
+  },
+  "about_open_source_licenses": "开源许可",
+  "@about_open_source_licenses": {
+    "description": "Subtitle for the licenses entry",
+    "type": "text",
+    "placeholders": {}
+  },
+  "my_listening_stats": "收听统计",
+  "@my_listening_stats": {
+    "description": "Placeholder entry on the My page",
+    "type": "text",
+    "placeholders": {}
+  },
+  "my_customize": "自定义",
+  "@my_customize": {
+    "description": "Placeholder entry on the My page",
+    "type": "text",
+    "placeholders": {}
   }
 }

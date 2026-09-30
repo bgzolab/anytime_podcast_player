@@ -66,10 +66,10 @@ class _LikeButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       icon: const Icon(Icons.favorite_border, size: 28),
-      tooltip: 'Like',
+      tooltip: L.of(context)!.like_tooltip,
       onPressed: () {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Like — coming soon'), duration: Duration(seconds: 1)),
+          SnackBar(content: Text(L.of(context)!.like_coming_soon), duration: const Duration(seconds: 1)),
         );
       },
     );

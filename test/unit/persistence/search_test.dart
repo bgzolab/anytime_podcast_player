@@ -21,11 +21,15 @@ void main() {
 
   MockPathProvder mockPath;
   SqliteRepository? repository;
+  late String databaseName;
 
   setUp(() async {
     mockPath = MockPathProvder();
     PathProviderPlatform.instance = mockPath;
-    repository = SqliteRepository();
+    // A per-test database name keeps this file from racing other persistence
+    // tests that run in parallel against the shared temp directory.
+    databaseName = 'search_test_${DateTime.now().microsecondsSinceEpoch}.sqlite';
+    repository = SqliteRepository(databaseName: databaseName);
   });
 
   tearDown(() async {
@@ -34,10 +38,13 @@ void main() {
       repository = null;
     }
 
-    var f = File('${Directory.systemTemp.path}/anytime.sqlite');
+    // SQLite keeps sidecar files; remove them with the database.
+    for (final suffix in ['', '-wal', '-shm']) {
+      final f = File('${Directory.systemTemp.path}/$databaseName$suffix');
 
-    if (f.existsSync()) {
-      f.deleteSync();
+      if (f.existsSync()) {
+        f.deleteSync();
+      }
     }
   });
 

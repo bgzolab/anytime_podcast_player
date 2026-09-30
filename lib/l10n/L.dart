@@ -664,6 +664,16 @@ class L {
         );
   }
 
+  String get search_failed_message {
+    return message('search_failed_message') ??
+        Intl.message(
+          'Search failed. Please try again.',
+          name: 'search_failed_message',
+          desc: 'Error state when a local search fails',
+          locale: localeName,
+        );
+  }
+
   String get no_episodes_found {
     return message('no_episodes_found') ??
         Intl.message(

@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:anytime/bloc/bookmark/bookmark_bloc.dart';
+import 'package:anytime/core/utils.dart';
 import 'package:anytime/bloc/podcast/audio_bloc.dart';
 import 'package:anytime/entities/bookmark.dart';
 import 'package:anytime/l10n/L.dart';
@@ -170,7 +171,7 @@ class _BookmarkViewState extends State<BookmarkView> {
             child: ListTile(
               leading: Icon(Icons.bookmark, color: Theme.of(context).colorScheme.primary),
               title: Text(
-                _formatPosition(bookmark.positionMs),
+                formatPlaybackPosition(Duration(milliseconds: bookmark.positionMs), includeHours: true),
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   fontFeatures: const [FontFeature.tabularFigures()],
@@ -193,14 +194,5 @@ class _BookmarkViewState extends State<BookmarkView> {
         );
       },
     );
-  }
-
-  String _formatPosition(int positionMs) {
-    final duration = Duration(milliseconds: positionMs);
-    String twoDigits(int n) => n >= 10 ? '$n' : '0$n';
-    var h = twoDigits(duration.inHours.toInt());
-    var m = twoDigits(duration.inMinutes.remainder(60).toInt());
-    var s = twoDigits(duration.inSeconds.remainder(60).toInt());
-    return '$h:$m:$s';
   }
 }

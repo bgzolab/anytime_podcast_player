@@ -5,6 +5,7 @@
 import 'dart:io';
 
 import 'package:anytime/bloc/search/search_bloc.dart';
+import 'package:anytime/core/utils.dart';
 import 'package:anytime/bloc/search/search_state_event.dart';
 import 'package:anytime/entities/bookmark.dart';
 import 'package:anytime/entities/episode.dart';
@@ -17,6 +18,7 @@ import 'package:anytime/ui/widgets/episode_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
 
 /// This widget renders the search bar and allows the user to search for content
@@ -38,6 +40,7 @@ class Search extends StatefulWidget {
 }
 
 class _SearchState extends State<Search> {
+  final _log = Logger('Search');
   late TextEditingController _searchController;
   late FocusNode _searchFocusNode;
 
@@ -47,6 +50,7 @@ class _SearchState extends State<Search> {
   List<Episode> _episodeResults = [];
   List<Bookmark> _bookmarkResults = [];
   bool _isLocalSearching = false;
+  bool _searchError = false;
   bool _hasSearched = false;
 
   @override
@@ -90,12 +94,14 @@ class _SearchState extends State<Search> {
         _episodeResults = [];
         _bookmarkResults = [];
         _hasSearched = false;
+        _searchError = false;
       });
       return;
     }
 
     setState(() {
       _isLocalSearching = true;
+      _searchError = false;
       _hasSearched = true;
     });
 
@@ -119,13 +125,16 @@ class _SearchState extends State<Search> {
           // Handled by SearchBloc
           break;
       }
-    } catch (e) {
+    } catch (e, stack) {
+      _log.warning('Local search failed for "$term"', e, stack);
+
       if (!mounted || generation != _searchGeneration) return;
 
       setState(() {
         _episodeResults = [];
         _bookmarkResults = [];
         _isLocalSearching = false;
+        _searchError = true;
       });
     }
   }
@@ -143,6 +152,7 @@ class _SearchState extends State<Search> {
       if (episodes != null) _episodeResults = episodes;
       if (bookmarks != null) _bookmarkResults = bookmarks;
       _isLocalSearching = false;
+      _searchError = false;
     });
   }
 
@@ -160,13 +170,17 @@ class _SearchState extends State<Search> {
   }
 
   void _onSubmitted(String value) {
+    // Search terms with surrounding whitespace would match nothing and show a
+    // misleading empty state.
+    final term = value.trim();
+
     SemanticsService.sendAnnouncement(View.of(context), L.of(context)!.semantic_announce_searching, TextDirection.ltr);
 
     if (_mode == SearchMode.discovery) {
       final bloc = Provider.of<SearchBloc>(context, listen: false);
-      bloc.search(SearchTermEvent(value));
+      bloc.search(SearchTermEvent(term));
     } else {
-      _performLocalSearch(value);
+      _performLocalSearch(term);
     }
   }
 
@@ -216,11 +230,17 @@ class _SearchState extends State<Search> {
                   semanticLabel: L.of(context)!.clear_search_button_label,
                 ),
                 onPressed: () {
+                  // Invalidate any in-flight local search so it cannot write
+                  // stale results after the clear.
+                  _searchGeneration++;
+
                   _searchController.clear();
                   setState(() {
                     _episodeResults = [];
                     _bookmarkResults = [];
                     _hasSearched = false;
+                    _isLocalSearching = false;
+                    _searchError = false;
                   });
                   if (_mode == SearchMode.discovery) {
                     final bloc = Provider.of<SearchBloc>(context, listen: false);
@@ -248,6 +268,13 @@ class _SearchState extends State<Search> {
       return const SliverFillRemaining(
         hasScrollBody: false,
         child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_searchError) {
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: _buildEmptyState(Icons.error_outline, L.of(context)!.search_failed_message),
       );
     }
 
@@ -349,13 +376,7 @@ class _BookmarkSearchTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final position = Duration(milliseconds: bookmark.positionMs);
-    final hours = position.inHours;
-    final minutes = position.inMinutes.remainder(60);
-    final seconds = position.inSeconds.remainder(60);
-    final positionStr = hours > 0
-        ? '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}'
-        : '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    final positionStr = formatPlaybackPosition(Duration(milliseconds: bookmark.positionMs));
 
     return ListTile(
       leading: const Icon(Icons.bookmark, size: 32),

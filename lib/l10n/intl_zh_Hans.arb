@@ -1936,5 +1936,11 @@
     "placeholders": {
       "count": {}
     }
+  },
+  "search_failed_message": "搜索失败，请重试。",
+  "@search_failed_message": {
+    "description": "Error state when a local search fails",
+    "type": "text",
+    "placeholders": {}
   }
 }

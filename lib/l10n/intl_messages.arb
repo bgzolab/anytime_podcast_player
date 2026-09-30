@@ -1,5 +1,5 @@
 {
-  "@@last_modified": "2026-09-30T12:06:50.202063",
+  "@@last_modified": "2026-09-30T13:02:02.639248",
   "app_title": "Anytime Podcast Player",
   "@app_title": {
     "description": "Full title for the application",
@@ -367,6 +367,12 @@
   "no_downloads_found": "No downloads found",
   "@no_downloads_found": {
     "description": "Displayed when no downloads match the search query",
+    "type": "text",
+    "placeholders": {}
+  },
+  "downloads_not_supported": "Downloads are not supported on this platform",
+  "@downloads_not_supported": {
+    "description": "Displayed when the user attempts to download on a platform without a download manager",
     "type": "text",
     "placeholders": {}
   },

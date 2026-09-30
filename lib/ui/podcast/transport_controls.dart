@@ -13,6 +13,7 @@ import 'package:anytime/l10n/L.dart';
 import 'package:anytime/services/audio/audio_player_service.dart';
 import 'package:anytime/ui/podcast/now_playing.dart';
 import 'package:anytime/ui/widgets/action_text.dart';
+import 'package:anytime/ui/widgets/download_action.dart';
 import 'package:anytime/ui/widgets/download_button.dart';
 import 'package:anytime/ui/widgets/play_pause_button.dart';
 import 'package:flutter/material.dart';
@@ -234,7 +235,7 @@ class DownloadControl extends StatelessWidget {
             }
 
             return DownloadButton(
-              onPressed: () => podcastBloc.downloadEpisode(episode),
+              onPressed: () => startEpisodeDownload(context, podcastBloc, episode),
               title: episode.title!,
               icon: Icons.save_alt,
               percent: 0,

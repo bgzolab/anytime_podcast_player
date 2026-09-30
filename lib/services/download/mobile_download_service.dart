@@ -42,7 +42,19 @@ class MobileDownloadService extends DownloadService {
   }
 
   @override
+  bool get supported => downloadManager.supported;
+
+  @override
   Future<bool> downloadEpisode(Episode episode) async {
+    // Short-circuit on platforms without a download manager: fetching
+    // chapters/transcripts and creating directories would all be wasted work
+    // before failing anyway.
+    if (!downloadManager.supported) {
+      log.warning('Download manager is not supported on this platform; ignoring download request');
+
+      return false;
+    }
+
     try {
       final season = episode.season > 0 ? episode.season.toString() : '';
       final epno = episode.episode > 0 ? episode.episode.toString() : '';

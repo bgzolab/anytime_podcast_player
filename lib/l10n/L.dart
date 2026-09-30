@@ -671,6 +671,16 @@ class L {
         );
   }
 
+  String get downloads_not_supported {
+    return message('downloads_not_supported') ??
+        Intl.message(
+          'Downloads are not supported on this platform',
+          name: 'downloads_not_supported',
+          desc: 'Displayed when the user attempts to download on a platform without a download manager',
+          locale: localeName,
+        );
+  }
+
   String get no_bookmarks_found {
     return message('no_bookmarks_found') ??
         Intl.message(

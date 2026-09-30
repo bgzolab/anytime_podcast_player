@@ -5,7 +5,7 @@
 import 'dart:io';
 
 import 'package:anytime/repository/repository.dart';
-import 'package:anytime/repository/sembast/sembast_repository.dart';
+import 'package:anytime/repository/sqlite/sqlite_repository.dart';
 import 'package:anytime/services/notifications/notification_service.dart';
 import 'package:anytime/services/podcast/mobile_opml_service.dart';
 import 'package:anytime/services/podcast/mobile_podcast_service.dart';
@@ -13,6 +13,7 @@ import 'package:anytime/services/podcast/opml_service.dart';
 import 'package:anytime/services/podcast/podcast_service.dart';
 import 'package:anytime/state/opml_state.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 import '../mocks/mock_notification_service.dart';
@@ -21,18 +22,22 @@ import '../mocks/mock_podcast_api.dart';
 import '../mocks/mock_settings_service.dart';
 
 void main() {
+  // Run SQLite on the Dart VM (desktop tests and CI) instead of a device.
+  sqfliteFfiInit();
+  databaseFactory = databaseFactoryFfi;
+
   final api = MockPodcastApi();
   final mockPath = MockPathProvder();
   const dbName = 'anytime-opml.db';
   late OPMLService opmlService;
   late PodcastService podcastService;
   late NotificationService notificationService;
-  Repository repository;
+  late Repository repository;
 
   setUp(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     PathProviderPlatform.instance = mockPath;
-    repository = SembastRepository(databaseName: dbName);
+    repository = SqliteRepository(databaseName: dbName);
     notificationService = MockNotificationService();
 
     podcastService = MobilePodcastService(
@@ -46,6 +51,8 @@ void main() {
   });
 
   tearDown(() async {
+    await repository.close();
+
     var f = File('${Directory.systemTemp.path}/$dbName');
 
     if (f.existsSync()) {

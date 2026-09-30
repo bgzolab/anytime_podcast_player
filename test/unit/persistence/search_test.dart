@@ -7,27 +7,34 @@ import 'dart:io';
 import 'package:anytime/entities/bookmark.dart';
 import 'package:anytime/entities/episode.dart';
 import 'package:anytime/entities/podcast.dart';
-import 'package:anytime/repository/sembast/sembast_repository.dart';
+import 'package:anytime/repository/sqlite/sqlite_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 import '../mocks/mock_path_provider.dart';
 
 void main() {
+  // Run SQLite on the Dart VM (desktop tests and CI) instead of a device.
+  sqfliteFfiInit();
+  databaseFactory = databaseFactoryFfi;
+
   MockPathProvder mockPath;
-  SembastRepository? repository;
+  SqliteRepository? repository;
 
   setUp(() async {
     mockPath = MockPathProvder();
     PathProviderPlatform.instance = mockPath;
-    repository = SembastRepository(cleanup: false);
+    repository = SqliteRepository();
   });
 
   tearDown(() async {
-    await repository!.close();
-    repository = null;
+    if (repository != null) {
+      await repository!.close();
+      repository = null;
+    }
 
-    var f = File('${Directory.systemTemp.path}/anytime.db');
+    var f = File('${Directory.systemTemp.path}/anytime.sqlite');
 
     if (f.existsSync()) {
       f.deleteSync();

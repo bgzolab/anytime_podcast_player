@@ -118,5 +118,56 @@ void main() {
         '<p style="background:url(bg.png) no-repeat">Hi</p>',
       );
     });
+
+    test('handles whitespace around the attribute equals sign', () {
+      expect(stripInlineColors('<p style = "color:red">Hi</p>'), '<p>Hi</p>');
+      expect(
+        stripInlineColors('<font color = "#333333" face="Arial">Hi</font>'),
+        '<font face="Arial">Hi</font>',
+      );
+      expect(
+        stripInlineColors('<p style = "color:red;font-size:16px">Hi</p>'),
+        '<p style="font-size:16px">Hi</p>',
+      );
+    });
+
+    test('drops background colours placed after the image', () {
+      expect(
+        stripInlineColors('<p style="background:url(bg.png) #fff">Hi</p>'),
+        '<p style="background:url(bg.png)">Hi</p>',
+      );
+      expect(
+        stripInlineColors('<p style="background:url(bg.png) coral no-repeat">Hi</p>'),
+        '<p style="background:url(bg.png) no-repeat">Hi</p>',
+      );
+      expect(
+        stripInlineColors('<p style="background:transparent url(bg.png)">Hi</p>'),
+        '<p style="background:url(bg.png)">Hi</p>',
+      );
+    });
+
+    test('keeps background position and size keywords', () {
+      expect(
+        stripInlineColors('<p style="background:center/cover url(bg.png)">Hi</p>'),
+        '<p style="background:center/cover url(bg.png)">Hi</p>',
+      );
+    });
+
+    test('leaves quotes inside unquoted attribute values alone', () {
+      const html = "<p data-x=it's>Hi</p>";
+
+      expect(stripInlineColors(html), html);
+    });
+
+    test('does not split declarations inside quoted strings', () {
+      expect(
+        stripInlineColors('<p style="font-family:\'a;b\'">Hi</p>'),
+        '<p style="font-family:\'a;b\'">Hi</p>',
+      );
+      expect(
+        stripInlineColors('<p style="color:red;font-family:\'a;b\'">Hi</p>'),
+        '<p style="font-family:\'a;b\'">Hi</p>',
+      );
+    });
   });
 }

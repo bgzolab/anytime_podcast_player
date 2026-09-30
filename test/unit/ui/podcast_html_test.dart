@@ -169,5 +169,39 @@ void main() {
         '<p style="font-family:\'a;b\'">Hi</p>',
       );
     });
+
+    test('does not split declarations at escaped quotes', () {
+      // The escaped quote stays inside the string.
+      expect(
+        stripInlineColors(r'''<p style="font-family:'a\'b';color:red">Hi</p>'''),
+        r'''<p style="font-family:'a\'b'">Hi</p>''',
+      );
+    });
+
+    test('keeps images from minified multi-layer backgrounds', () {
+      expect(
+        stripInlineColors('<p style="background:red,url(bg.png)">Hi</p>'),
+        '<p style="background:url(bg.png)">Hi</p>',
+      );
+      expect(
+        stripInlineColors('<p style="background:url(a.png),url(b.png)">Hi</p>'),
+        '<p style="background:url(a.png), url(b.png)">Hi</p>',
+      );
+    });
+
+    test('keeps box keywords and negative positions', () {
+      expect(
+        stripInlineColors('<p style="background:url(bg.png) padding-box #333">Hi</p>'),
+        '<p style="background:url(bg.png) padding-box">Hi</p>',
+      );
+      expect(
+        stripInlineColors('<p style="background:url(bg.png) -5px -5px">Hi</p>'),
+        '<p style="background:url(bg.png) -5px -5px">Hi</p>',
+      );
+      expect(
+        stripInlineColors('<p style="background:no-repeat 25%/contain url(bg.png) #000">Hi</p>'),
+        '<p style="background:no-repeat 25%/contain url(bg.png)">Hi</p>',
+      );
+    });
   });
 }

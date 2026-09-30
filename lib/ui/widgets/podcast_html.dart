@@ -242,6 +242,14 @@ List<String> _splitDeclarations(String value) {
 
     // Quoted strings (e.g. font-family:'a;b') must not be split.
     if (quote != null) {
+      if (char == '\\' && i + 1 < value.length) {
+        // An escaped character stays inside the string.
+        current.write(char);
+        current.write(value[i + 1]);
+        i++;
+        continue;
+      }
+
       if (char == quote) quote = null;
 
       current.write(char);
@@ -271,11 +279,11 @@ List<String> _splitDeclarations(String value) {
   return declarations;
 }
 
-/// Matches the non-colour parts of a `background` shorthand: layout keywords,
-/// lengths/percentages and the `/` position-size separator.
+/// Matches the non-colour parts of a `background` shorthand: layout and box
+/// keywords, lengths/percentages and the `/` position-size separator.
 final _backgroundKeyword = RegExp(
-  r'^(repeat(-x|-y)?|no-repeat|space|round|fixed|local|scroll|left|right|top|bottom|center|cover|contain|none|inherit|initial|unset|revert)$'
-  r'|^[\d.]+(%|px|em|rem|vh|vw|vmin|vmax|pt|pc|cm|mm|in|q)?$',
+  r'^(repeat(-x|-y)?|no-repeat|space|round|fixed|local|scroll|left|right|top|bottom|center|cover|contain|border-box|padding-box|content-box|none|inherit|initial|unset|revert)$'
+  r'|^[+-]?[\d.]+(%|px|em|rem|vh|vw|vmin|vmax|pt|pc|cm|mm|in|q)?$',
   caseSensitive: false,
 );
 
@@ -286,7 +294,8 @@ final _backgroundKeyword = RegExp(
 /// allows any order), so the value is tokenised outside parentheses rather
 /// than only looking before the image. A bare token that is neither a layout
 /// keyword/length nor a `url(...)` is treated as a colour and dropped, which
-/// also covers the long tail of named CSS colours.
+/// also covers the long tail of named CSS colours. Minified values that glue
+/// colours and images together (`red,url(a.png)`) keep their `url(...)` parts.
 ///
 /// Returns null when the value has no image reference (a plain colour).
 String? _stripBackgroundColour(String value) {
@@ -296,17 +305,23 @@ String? _stripBackgroundColour(String value) {
   final current = StringBuffer();
   var depth = 0;
 
-  void flush() {
-    final token = current.toString().trim();
+  void addToken(String token) {
+    final trimmed = token.trim();
 
-    current.clear();
+    if (trimmed.isEmpty) return;
 
-    if (token.isEmpty) return;
+    final lower = trimmed.toLowerCase();
 
-    final lower = token.toLowerCase();
+    if (_isBackgroundKeywordToken(lower)) {
+      kept.add(trimmed);
 
-    if (lower.startsWith('url(') || _isBackgroundKeywordToken(lower)) {
-      kept.add(token);
+      return;
+    }
+
+    if (lower.contains('url(')) {
+      for (final match in RegExp(r'url\([^)]*\)', caseSensitive: false).allMatches(trimmed)) {
+        kept.add(match.group(0)!);
+      }
     }
   }
 
@@ -316,17 +331,28 @@ String? _stripBackgroundColour(String value) {
     if (char == '(') depth++;
     if (char == ')' && depth > 0) depth--;
 
-    if (_isWhitespace(char.codeUnitAt(0))) {
-      flush();
+    if (depth == 0 && (char == ',' || _isWhitespace(char.codeUnitAt(0)))) {
+      addToken(current.toString());
+      current.clear();
+
+      if (char == ',') kept.add(',');
+
       continue;
     }
 
     current.write(char);
   }
 
-  flush();
+  addToken(current.toString());
 
-  return kept.isEmpty ? null : kept.join(' ');
+  if (kept.isEmpty) return null;
+
+  // Normalise the separators: commas left at the edges or doubled up by
+  // removed colour layers are dropped.
+  final joined = kept.join(' ').replaceAll(RegExp(r'\s*,\s*'), ', ');
+  final parts = joined.split(',').map((part) => part.trim()).where((part) => part.isNotEmpty).toList();
+
+  return parts.isEmpty ? null : parts.join(', ');
 }
 
 /// Whether [token] consists only of non-colour `background` keywords, lengths

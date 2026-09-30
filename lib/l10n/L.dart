@@ -209,6 +209,28 @@ class L {
         );
   }
 
+  String bookmarks_episode_count(int count) {
+    return message('bookmarks_episode_count') ??
+        Intl.message(
+          '''${Intl.plural(count, one: '1 episode', other: '$count episodes')}''',
+          args: [count],
+          name: 'bookmarks_episode_count',
+          desc: 'Number of bookmarked episodes in a podcast group.',
+          locale: localeName,
+        );
+  }
+
+  String bookmarks_bookmark_count(int count) {
+    return message('bookmarks_bookmark_count') ??
+        Intl.message(
+          '''${Intl.plural(count, one: '1 bookmark', other: '$count bookmarks')}''',
+          args: [count],
+          name: 'bookmarks_bookmark_count',
+          desc: 'Number of bookmarks for a podcast or episode.',
+          locale: localeName,
+        );
+  }
+
   String get unknown_episode {
     return message('unknown_episode') ??
         Intl.message(

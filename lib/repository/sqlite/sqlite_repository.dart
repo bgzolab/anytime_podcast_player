@@ -70,6 +70,9 @@ class SqliteRepository extends Repository {
   Future<void> deletePodcast(Podcast podcast) async {
     final db = await _db;
     await db.transaction((txn) async {
+      // Episodes and their bookmarks go with the subscription; otherwise the
+      // bookmarks would keep pointing at episodes that no longer exist.
+      await txn.delete('bookmark', where: 'podcastGuid = ?', whereArgs: [podcast.guid]);
       await txn.delete('episode', where: 'pguid = ?', whereArgs: [podcast.guid]);
       await txn.delete('podcast', where: 'id = ?', whereArgs: [podcast.id]);
     });
@@ -327,7 +330,18 @@ class SqliteRepository extends Repository {
   @override
   Future<void> deleteEpisode(Episode episode) async {
     final db = await _db;
-    final count = await db.delete('episode', where: 'id = ?', whereArgs: [episode.id]);
+    final count = await db.transaction((txn) async {
+      final deleted = await txn.delete('episode', where: 'id = ?', whereArgs: [episode.id]);
+
+      if (deleted > 0 && episode.guid.isNotEmpty) {
+        // The episode's bookmarks are removed with it; they cannot be opened
+        // once the episode is gone.
+        await txn.delete('bookmark', where: 'episodeGuid = ?', whereArgs: [episode.guid]);
+      }
+
+      return deleted;
+    });
+
     if (count > 0) {
       _episodeSubject.add(EpisodeDeleteState(episode));
     }
@@ -337,11 +351,19 @@ class SqliteRepository extends Repository {
   Future<void> deleteEpisodes(List<Episode> episodes) async {
     if (episodes.isEmpty) return;
     final db = await _db;
-    final batch = db.batch();
-    for (var e in episodes) {
-      batch.delete('episode', where: 'id = ?', whereArgs: [e.id]);
-    }
-    await batch.commit(noResult: true);
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+
+      for (var e in episodes) {
+        batch.delete('episode', where: 'id = ?', whereArgs: [e.id]);
+
+        if (e.guid.isNotEmpty) {
+          batch.delete('bookmark', where: 'episodeGuid = ?', whereArgs: [e.guid]);
+        }
+      }
+
+      await batch.commit(noResult: true);
+    });
   }
 
   @override

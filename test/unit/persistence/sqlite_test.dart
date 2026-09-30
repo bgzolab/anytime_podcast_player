@@ -268,6 +268,45 @@ void main() {
       expect(bookmarks.length, 1);
       expect(bookmarks.first.note, 'updated');
     });
+
+    test('deleting an episode removes its bookmarks', () async {
+      await persistenceService!.saveBookmark(Bookmark(
+        episodeGuid: 'EP001',
+        episodeTitle: 'Episode 1',
+        positionMs: 1000,
+        createdAt: DateTime(2026, 7, 18),
+      ));
+
+      final episode =
+          await persistenceService!.saveEpisode(Episode(guid: 'EP001', podcast: 'Podcast 1', title: 'Episode 1'));
+
+      await persistenceService!.deleteEpisode(episode);
+
+      expect(await persistenceService!.findBookmarksByEpisodeGuid('EP001'), isEmpty);
+    });
+
+    test('deleting a podcast removes its episodes and bookmarks', () async {
+      await persistenceService!.saveBookmark(Bookmark(
+        episodeGuid: 'EP001',
+        episodeTitle: 'Episode 1',
+        podcastGuid: podcast1.guid,
+        podcastName: 'Podcast 1',
+        positionMs: 1000,
+        createdAt: DateTime(2026, 7, 18),
+      ));
+
+      podcast1.episodes = <Episode>[
+        Episode(guid: 'EP001', pguid: podcast1.guid, podcast: podcast1.title, title: 'Episode 1'),
+      ];
+
+      await persistenceService!.savePodcast(podcast1);
+
+      await persistenceService!.deletePodcast(podcast1);
+
+      expect(await persistenceService!.findBookmarksByEpisodeGuid('EP001'), isEmpty);
+      expect(await persistenceService!.findEpisodesByPodcastGuid(podcast1.guid), isEmpty);
+      expect(await persistenceService!.findPodcastById(podcast1.id!), isNull);
+    });
   });
 
   group('Timeline pagination', () {

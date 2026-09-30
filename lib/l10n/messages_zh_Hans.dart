@@ -24,6 +24,10 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static m20(timestamp) => "跳转到 ${timestamp}";
 
+  static m21(count) => "${Intl.plural(count, other: '${count} 个书签')}";
+
+  static m22(count) => "${Intl.plural(count, other: '${count} 集')}";
+
   static m0(days) => "${Intl.plural(days, one: '一天前', other: '${days}天前')}";
 
   static m1(hours) => "${Intl.plural(hours, one: '一小时前', other: '${hours}小时前')}";
@@ -48,7 +52,7 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static m11(weeks) => "${Intl.plural(weeks, one: '1周前', other: '${weeks}周前')}";
 
-  static m21(total) => "完成！已更新 ${total} 个来源";
+  static m23(total) => "完成！已更新 ${total} 个来源";
 
   static m12(episodes) => "${Intl.plural(episodes, one: '1 个新单集', other: '${episodes} 个新单集')}";
 
@@ -64,7 +68,7 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static m18(seconds) => "${seconds}秒";
 
-  static m22(dateStr) => "显示 ${dateStr}";
+  static m24(dateStr) => "显示 ${dateStr}";
 
   @override
   final Map<String, dynamic> messages = _notInlinedMessages(_notInlinedMessages);
@@ -91,6 +95,8 @@ class MessageLookup extends MessageLookupByLibrary {
         'bookmark_delete_label': MessageLookupByLibrary.simpleMessage('删除书签'),
         'bookmark_episode_missing': MessageLookupByLibrary.simpleMessage('所在单集已不存在'),
         'bookmark_seek_label': m20,
+        'bookmarks_bookmark_count': m21,
+        'bookmarks_episode_count': m22,
         'bookmarks_label': MessageLookupByLibrary.simpleMessage('书签'),
         'bookmarks_load_failed': MessageLookupByLibrary.simpleMessage('无法加载书签'),
         'cancel_button_label': MessageLookupByLibrary.simpleMessage('取消'),
@@ -230,7 +236,7 @@ class MessageLookup extends MessageLookupByLibrary {
         'queue_clear_label': MessageLookupByLibrary.simpleMessage('您确定要清除队列吗？'),
         'queue_clear_label_title': MessageLookupByLibrary.simpleMessage('清空队列'),
         'queue_remove_label': MessageLookupByLibrary.simpleMessage('删除'),
-        'refresh_done': m21,
+        'refresh_done': m23,
         'refresh_feed_label': MessageLookupByLibrary.simpleMessage('刷新节目'),
         'refresh_feeds_failed': MessageLookupByLibrary.simpleMessage('无法刷新节目源'),
         'refresh_feeds_tooltip': MessageLookupByLibrary.simpleMessage('刷新节目'),
@@ -369,7 +375,7 @@ class MessageLookup extends MessageLookupByLibrary {
         'timeline_date_unknown': MessageLookupByLibrary.simpleMessage('未知'),
         'timeline_date_yesterday': MessageLookupByLibrary.simpleMessage('昨天'),
         'timeline_failed_to_load': MessageLookupByLibrary.simpleMessage('加载时间线失败'),
-        'timeline_showing_date': m22,
+        'timeline_showing_date': m24,
         'transcript_label': MessageLookupByLibrary.simpleMessage('转写'),
         'transcript_why_not_label': MessageLookupByLibrary.simpleMessage('为什么没有？'),
         'transcript_why_not_url':

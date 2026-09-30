@@ -1920,5 +1920,21 @@
     "description": "Displayed when the user attempts to download on a platform without a download manager",
     "type": "text",
     "placeholders": {}
+  },
+  "bookmarks_episode_count": "{count,plural, other{{count} 集}}",
+  "@bookmarks_episode_count": {
+    "description": "Number of bookmarked episodes in a podcast group.",
+    "type": "text",
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "bookmarks_bookmark_count": "{count,plural, other{{count} 个书签}}",
+  "@bookmarks_bookmark_count": {
+    "description": "Number of bookmarks for a podcast or episode.",
+    "type": "text",
+    "placeholders": {
+      "count": {}
+    }
   }
 }

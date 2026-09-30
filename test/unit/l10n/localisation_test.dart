@@ -4,16 +4,17 @@
 
 import 'package:anytime/l10n/L.dart';
 import 'package:anytime/l10n/messages_en.dart' as messages_en;
+import 'package:anytime/services/podcast/podcast_service.dart';
 import 'package:anytime/l10n/messages_all_locales.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 
-/// Expected entry counts for the upstream catalogues; the single place to
-/// update when the provider lists change.
-const _expectedCategoryCounts = {
-  'discovery_categories_itunes': 20,
-  'discovery_categories_pindex': 113,
+/// Expected entry counts for the upstream catalogues, tied to the genre
+/// constants that are submitted to the API so the two cannot drift.
+final _expectedCategoryCounts = <String, int>{
+  'discovery_categories_itunes': PodcastService.itunesGenres.length,
+  'discovery_categories_pindex': PodcastService.podcastIndexGenres.length,
 };
 
 void main() {

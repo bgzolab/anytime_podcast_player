@@ -3192,8 +3192,9 @@ class L {
 String? englishCatalogueMessage(String messageKey) {
   final message = messages_en.messages.messages[messageKey];
 
-  // Simple messages are stored as a zero-argument getter in the generated
-  // catalogue (MessageLookupByLibrary.simpleMessage).
+  // Simple messages are stored as an evaluated String in the generated
+  // catalogue; the zero-argument function branch is defensive in case
+  // intl_translation changes the shape it generates.
   if (message is String) return message;
   if (message is String Function()) return message();
 

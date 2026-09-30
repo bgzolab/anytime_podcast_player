@@ -117,6 +117,7 @@ class MessageLookup extends MessageLookupByLibrary {
             '全部,幕后花絮,另类,动物,动画,艺术,天文学,汽车,航空,棒球,篮球,美容,书籍,佛教,商业,职业,化学,基督教,气候,喜剧,评论,课程,手工艺,板球,加密货币,文化,每日,设计,纪录片,戏剧,地球,教育,娱乐,创业,家庭,奇幻,时尚,小说,电影,健身,美食,橄榄球,游戏,园艺,高尔夫,政府,健康,印度教,历史,爱好,冰球,家居,教程,即兴,访谈,投资,伊斯兰教,期刊,犹太教,儿童,语言,学习,休闲,生活,管理,漫画,营销,数学,医学,心理健康,音乐,自然,大自然,新闻,非营利,营养,育儿,表演,个人,宠物,哲学,物理学,地点,政治,情感关系,宗教,评测,角色扮演,英式橄榄球,跑步,科学,自我提升,性,足球,社交,社会,精神生活,体育,单口喜剧,故事,游泳,电视,桌面游戏,技术,网球,旅行,真实犯罪,电子游戏,视觉,排球,天气,荒野,摔跤'),
         'download_episode_button_label': MessageLookupByLibrary.simpleMessage('下载单集'),
         'downloads': MessageLookupByLibrary.simpleMessage('下载'),
+        'downloads_not_supported': MessageLookupByLibrary.simpleMessage('当前平台不支持下载'),
         'empty_queue_message': MessageLookupByLibrary.simpleMessage('您的播放队列为空'),
         'episode_details_button_label': MessageLookupByLibrary.simpleMessage('显示单集信息'),
         'episode_filter_clear_filters_button_label': MessageLookupByLibrary.simpleMessage('清除筛选'),

@@ -9,6 +9,7 @@ import 'dart:ui';
 import 'package:anytime/core/environment.dart';
 import 'package:anytime/entities/downloadable.dart';
 import 'package:anytime/services/download/download_manager.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:logging/logging.dart';
@@ -23,8 +24,13 @@ class MobileDownloaderManager implements DownloadManager {
   var _lastUpdateTime = 0;
 
   /// False on platforms without a `flutter_downloader` implementation (e.g.
-  /// Windows). All download actions are then ignored safely.
-  var _supported = true;
+  /// Windows). Checked synchronously at construction so callers can
+  /// short-circuit before performing any side effects; `_init` may still flip
+  /// this off if the platform channel turns out to be missing.
+  var _supported = defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
+
+  @override
+  bool get supported => _supported;
 
   @override
   Stream<DownloadProgress> get downloadProgress => downloadController.stream;
@@ -34,6 +40,12 @@ class MobileDownloaderManager implements DownloadManager {
   }
 
   Future _init() async {
+    if (!_supported) {
+      log.fine('Download manager is not supported on this platform; skipping initialisation');
+
+      return;
+    }
+
     log.fine('Initialising download manager');
 
     try {

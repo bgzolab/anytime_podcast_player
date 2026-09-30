@@ -182,6 +182,7 @@ class AnytimePodcastAppState extends State<AnytimePodcastApp> {
     return MultiProvider(
       providers: [
         Provider<Repository>.value(value: widget.repository),
+        Provider<NotificationService>.value(value: widget.notificationService),
         Provider<SearchBloc>(
           create: (_) => SearchBloc(
             podcastService: widget.podcastService!,

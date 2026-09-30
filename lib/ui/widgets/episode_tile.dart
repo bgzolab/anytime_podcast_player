@@ -17,6 +17,7 @@ import 'package:anytime/ui/podcast/episode_details.dart';
 import 'package:anytime/ui/podcast/now_playing.dart';
 import 'package:anytime/ui/podcast/transport_controls.dart';
 import 'package:anytime/ui/widgets/action_text.dart';
+import 'package:anytime/ui/widgets/download_action.dart';
 import 'package:anytime/ui/widgets/tile_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -518,7 +519,7 @@ class _CupertinoAccessibleEpisodeTileState extends State<_CupertinoAccessibleEpi
                                 episodeBloc.deleteDownload(widget.episode);
                                 Navigator.pop(context, 'Cancel');
                               } else {
-                                podcastBloc.downloadEpisode(widget.episode);
+                                startEpisodeDownload(context, podcastBloc, widget.episode);
                                 Navigator.pop(context, 'Cancel');
                               }
                             },
@@ -728,7 +729,7 @@ class _AndroidAccessibleEpisodeTileState extends State<_AndroidAccessibleEpisode
                         if (widget.episode.downloadState != DownloadState.downloading && !widget.episode.downloaded)
                           SimpleDialogOption(
                             onPressed: () {
-                              podcastBloc.downloadEpisode(widget.episode);
+                              startEpisodeDownload(context, podcastBloc, widget.episode);
                               Navigator.pop(context, '');
                             },
                             padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),

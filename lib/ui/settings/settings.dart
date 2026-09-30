@@ -8,6 +8,7 @@ import 'package:anytime/bloc/settings/settings_bloc.dart';
 import 'package:anytime/core/utils.dart';
 import 'package:anytime/entities/app_settings.dart';
 import 'package:anytime/l10n/L.dart';
+import 'package:anytime/services/notifications/notification_service.dart';
 import 'package:anytime/state/opml_state.dart';
 import 'package:anytime/ui/library/opml_export.dart';
 import 'package:anytime/ui/library/opml_import.dart';
@@ -51,6 +52,7 @@ class _SettingsState extends State<Settings> {
     var settingsBloc = Provider.of<SettingsBloc>(context);
     var podcastBloc = Provider.of<PodcastBloc>(context);
     var opmlBloc = Provider.of<OPMLBloc>(context);
+    var notificationService = Provider.of<NotificationService>(context, listen: false);
 
     return StreamBuilder<AppSettings>(
         stream: settingsBloc.settings,
@@ -179,21 +181,25 @@ class _SettingsState extends State<Settings> {
                   ),
                 ]),
               ),
-              SettingsDividerLabel(label: L.of(context)!.settings_notification_divider_label),
-              Card(
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  MergeSemantics(
-                    child: ListTile(
-                      title: Text(L.of(context)!.settings_refresh_notification_option),
-                      subtitle: Text(L.of(context)!.settings_refresh_notification_option_subtitle),
-                      trailing: Switch.adaptive(
-                        value: snapshot.data!.updatesNotification,
-                        onChanged: (value) => setState(() => settingsBloc.updateNotification(value)),
+              // Notifications are not available on every platform (e.g.
+              // Windows); hide the option entirely where they are unsupported.
+              if (notificationService.supported) ...[
+                SettingsDividerLabel(label: L.of(context)!.settings_notification_divider_label),
+                Card(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    MergeSemantics(
+                      child: ListTile(
+                        title: Text(L.of(context)!.settings_refresh_notification_option),
+                        subtitle: Text(L.of(context)!.settings_refresh_notification_option_subtitle),
+                        trailing: Switch.adaptive(
+                          value: snapshot.data!.updatesNotification,
+                          onChanged: (value) => setState(() => settingsBloc.updateNotification(value)),
+                        ),
                       ),
                     ),
-                  ),
-                ]),
-              ),
+                  ]),
+                ),
+              ],
               SettingsDividerLabel(label: L.of(context)!.settings_data_divider_label),
               Card(
                 child: Column(mainAxisSize: MainAxisSize.min, children: [

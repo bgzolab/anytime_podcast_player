@@ -94,6 +94,12 @@ class PodcastBloc extends Bloc {
     _init();
   }
 
+  /// Whether downloads are supported on the current platform.
+  ///
+  /// The UI can use this to tell the user up front instead of starting a
+  /// download that can only fail.
+  bool get downloadsSupported => downloadService.supported;
+
   void _init() {
     /// When someone starts listening for subscriptions, load them.
     _subscriptions = BehaviorSubject<List<Podcast>>(onListen: _loadSubscriptions);

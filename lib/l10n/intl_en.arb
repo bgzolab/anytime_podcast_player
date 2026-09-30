@@ -1937,5 +1937,11 @@
     "description": "Placeholder entry on the My page",
     "type": "text",
     "placeholders": {}
+  },
+  "downloads_not_supported": "Downloads are not supported on this platform",
+  "@downloads_not_supported": {
+    "description": "Displayed when the user attempts to download on a platform without a download manager",
+    "type": "text",
+    "placeholders": {}
   }
 }

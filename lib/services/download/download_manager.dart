@@ -19,6 +19,9 @@ class DownloadProgress {
 }
 
 abstract class DownloadManager {
+  /// Whether downloads are supported on the current platform.
+  bool get supported;
+
   Future<String?> enqueueTask(String url, String downloadPath, String fileName);
 
   Stream<DownloadProgress> get downloadProgress;

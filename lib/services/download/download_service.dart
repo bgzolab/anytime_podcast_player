@@ -5,6 +5,9 @@
 import 'package:anytime/entities/episode.dart';
 
 abstract class DownloadService {
+  /// Whether downloads are supported on the current platform.
+  bool get supported;
+
   Future<bool> downloadEpisode(Episode episode);
 
   Future<Episode?> findEpisodeByTaskId(String taskId);

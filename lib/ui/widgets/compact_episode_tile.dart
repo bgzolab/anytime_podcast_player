@@ -16,6 +16,7 @@ import 'package:anytime/services/audio/audio_player_service.dart';
 import 'package:anytime/state/queue_event_state.dart';
 import 'package:anytime/ui/podcast/episode_details.dart';
 import 'package:anytime/ui/podcast/now_playing.dart';
+import 'package:anytime/ui/widgets/download_action.dart';
 import 'package:anytime/ui/widgets/episode_tile.dart';
 import 'package:anytime/ui/widgets/tile_image.dart';
 import 'package:flutter/material.dart';
@@ -360,7 +361,7 @@ class _BuildDownloadButton extends StatelessWidget {
       icon: const Icon(Icons.save_alt),
       style: IconButton.styleFrom(padding: EdgeInsets.zero),
       visualDensity: VisualDensity.compact,
-      onPressed: () => podcastBloc.downloadEpisode(episode),
+      onPressed: () => startEpisodeDownload(context, podcastBloc, episode),
     );
   }
 

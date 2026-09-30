@@ -2,6 +2,9 @@ import 'package:anytime/services/notifications/notification_service.dart';
 
 class MockNotificationService extends NotificationService {
   @override
+  bool get supported => true;
+
+  @override
   Future<bool> isAllowed() async {
     return true;
   }

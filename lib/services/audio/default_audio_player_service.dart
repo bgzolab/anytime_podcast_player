@@ -46,6 +46,16 @@ class DefaultAudioPlayerService extends AudioPlayerService {
   var _initialised = false;
   var _initialising = true;
   var _cold = false;
+
+  /// Test hook that replaces the platform `AudioService.init` call so tests can
+  /// drive the initialisation window with a fake handler.
+  @visibleForTesting
+  final Future<AudioHandler> Function()? audioServiceInitializer;
+
+  /// The last playback request received while the platform audio service was
+  /// still initialising. Replayed once initialisation finishes so a tap during
+  /// the startup window is not silently lost.
+  Future<void> Function()? _pendingPlaybackRequest;
   var _playbackSpeed = 1.0;
   var _trimSilence = false;
   var _volumeBoost = false;
@@ -102,6 +112,7 @@ class DefaultAudioPlayerService extends AudioPlayerService {
     required this.repository,
     required this.settingsService,
     required this.podcastService,
+    this.audioServiceInitializer,
   }) {
     _initialiseAudioService();
   }
@@ -115,24 +126,26 @@ class DefaultAudioPlayerService extends AudioPlayerService {
   /// instead of crashing on an uninitialised handler.
   Future<void> _initialiseAudioService() async {
     try {
-      final value = await AudioService.init(
-        builder: () => _DefaultAudioPlayerHandler(
-          repository: repository,
-          settings: settingsService,
-          podcastService: podcastService,
-          onSkipToPrevious: () async => await onSkipToPrevious?.call() ?? false,
-          onSkipToNext: () => skipToNext(),
-        ),
-        config: const AudioServiceConfig(
-          androidResumeOnClick: true,
-          androidNotificationChannelName: 'Anytime Podcast Player',
-          androidNotificationIcon: 'drawable/ic_stat_name',
-          androidNotificationOngoing: false,
-          androidStopForegroundOnPause: true,
-          rewindInterval: Duration(seconds: 10),
-          fastForwardInterval: Duration(seconds: 30),
-        ),
-      );
+      final value = audioServiceInitializer != null
+          ? await audioServiceInitializer!()
+          : await AudioService.init(
+              builder: () => _DefaultAudioPlayerHandler(
+                repository: repository,
+                settings: settingsService,
+                podcastService: podcastService,
+                onSkipToPrevious: () async => await onSkipToPrevious?.call() ?? false,
+                onSkipToNext: () => skipToNext(),
+              ),
+              config: const AudioServiceConfig(
+                androidResumeOnClick: true,
+                androidNotificationChannelName: 'Anytime Podcast Player',
+                androidNotificationIcon: 'drawable/ic_stat_name',
+                androidNotificationOngoing: false,
+                androidStopForegroundOnPause: true,
+                rewindInterval: Duration(seconds: 10),
+                fastForwardInterval: Duration(seconds: 30),
+              ),
+            );
 
       _audioHandler = value;
       _initialised = true;
@@ -143,11 +156,20 @@ class DefaultAudioPlayerService extends AudioPlayerService {
     _initialising = false;
 
     // Queue state is independent of the platform audio service, so it is
-    // loaded even when playback is unavailable on this platform.
-    _loadQueue();
+    // loaded even when playback is unavailable on this platform. It must be
+    // loaded before any pending playback request is replayed; otherwise the
+    // replay's queue updates would be overwritten by the stored queue.
+    await _loadQueue();
 
     if (_initialised) {
       _handleAudioServiceTransitions();
+      _replayPendingPlaybackRequest();
+    } else if (_pendingPlaybackRequest != null) {
+      // Initialisation failed (e.g. Windows): drop the pending request and tell
+      // the user instead of leaving it stranded without feedback.
+      _pendingPlaybackRequest = null;
+
+      _playbackError.add(501);
     }
   }
 
@@ -155,15 +177,24 @@ class DefaultAudioPlayerService extends AudioPlayerService {
   /// where `audio_service`/`just_audio` have no implementation).
   ///
   /// Playback actions are ignored safely; when [notify] is true the user is
-  /// notified through the existing playback error channel.
-  bool _audioUnavailable({bool notify = false}) {
+  /// notified through the existing playback error channel. Requests that
+  /// arrive while the platform audio service is still initialising can be
+  /// replayed once it becomes ready by passing [replay].
+  bool _audioUnavailable({bool notify = false, Future<void> Function()? replay}) {
     if (_initialised) return false;
 
     // Requests that arrive while the platform audio service is still
-    // initialising are ignored without an error notification; only platforms
-    // that definitely failed to initialise report an error to the user.
+    // initialising are held (the last one wins) and replayed once
+    // initialisation has finished, so the user's first tap on a cold start is
+    // not lost.
     if (_initialising) {
-      log.fine('Audio service is still initialising; playback action ignored');
+      if (replay != null) {
+        log.fine('Audio service is still initialising; playback request will be replayed');
+
+        _pendingPlaybackRequest = replay;
+      } else {
+        log.fine('Audio service is still initialising; action ignored');
+      }
 
       return true;
     }
@@ -177,8 +208,36 @@ class DefaultAudioPlayerService extends AudioPlayerService {
     return true;
   }
 
+  /// Replays the last playback request that arrived while the platform audio
+  /// service was initialising.
+  void _replayPendingPlaybackRequest() {
+    final request = _pendingPlaybackRequest;
+    _pendingPlaybackRequest = null;
+
+    if (request == null) return;
+
+    log.fine('Replaying playback request received during initialisation');
+
+    unawaited(request());
+  }
+
+  /// Drops a playback request that is waiting for initialisation; used when a
+  /// newer user action (pause/stop) arrives during the startup window so the
+  /// user's last action wins.
+  void _cancelPendingPlaybackRequest() {
+    if (_pendingPlaybackRequest != null) {
+      log.fine('Cancelling the playback request waiting for initialisation');
+
+      _pendingPlaybackRequest = null;
+    }
+  }
+
   @override
   Future<void> pause() async {
+    if (_initialising) {
+      _cancelPendingPlaybackRequest();
+    }
+
     if (_audioUnavailable()) return;
 
     await _audioHandler.pause();
@@ -186,7 +245,9 @@ class DefaultAudioPlayerService extends AudioPlayerService {
 
   @override
   Future<void> play() {
-    if (_audioUnavailable(notify: true)) return Future.value();
+    if (_audioUnavailable(notify: true, replay: () => _currentEpisode != null ? play() : Future.value())) {
+      return Future.value();
+    }
 
     if (_cold) {
       _cold = false;
@@ -249,8 +310,12 @@ class DefaultAudioPlayerService extends AudioPlayerService {
   Future<void> _playNextEpisode({required Episode episode, bool? resume, bool fresh = false}) async {
     if (episode.guid != '' && !_initialised) {
       // The platform audio service is unavailable (e.g. Windows); notify the
-      // user instead of silently doing nothing.
-      _audioUnavailable(notify: true);
+      // user instead of silently doing nothing. When it is still initialising,
+      // the request is replayed once it becomes ready.
+      _audioUnavailable(
+        notify: true,
+        replay: () => _playNextEpisode(episode: episode, resume: resume, fresh: fresh),
+      );
 
       return;
     }
@@ -454,6 +519,10 @@ class DefaultAudioPlayerService extends AudioPlayerService {
   Future<void> stop() async {
     _currentEpisode = null;
     _updateEpisodeState();
+
+    if (_initialising) {
+      _cancelPendingPlaybackRequest();
+    }
 
     if (_audioUnavailable()) return;
 
